@@ -1,0 +1,39 @@
+{
+  "name": "refprop",
+  "version": "1.0.0",
+  "description": "refprop interface for node.js",
+  "main": "node-refprop.node",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/EvilDrW/node-refprop/refprop.git"
+  },
+  "scripts": {
+    "test": "mocha",
+    "build": "node-gyp build",
+    "build:dev": "node-gyp build --debug",
+    "rebuild": "node-gyp rebuild",
+    "rebuild:dev": "node-gyp rebuild --debug",
+    "clean": "node-gyp clean",
+    "start": "node-gyp configure && node-gyp build && mocha"
+  },
+  "license": "MIT",
+  "binary": {
+    "module_name": "node-refprop",
+    "module_path": "./build/Release/"
+  },
+  "gypfile": true,
+  "devDependencies": {
+    "mocha": "^2.2.1",
+    "mathjs": ">= 3.17.0",
+    "should": "^5.2.0"
+  },
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "dependencies": {
+    "nan": "^2.14.0"
+  }
+}
