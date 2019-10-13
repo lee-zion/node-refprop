@@ -1,315 +1,560 @@
-neon               !short name
-7440-01-9          !CAS number
-neon               !full name
-Ne                 !chemical formula
-R-720              !synonym
-20.179             !molecular weight [g/mol]
-24.556             !triple point temperature [K] (Bedford et al., Metrologia, 33:133, 1996.)
-27.104             !normal boiling point [K]
-44.4918            !critical temperature [K]
-2678.6             !critical pressure [kPa]
-23.882             !critical density [mol/L]
--0.0387            !acentric factor
-0.0                !dipole moment [Debye]
-NBP                !default reference state
-8.0                !version number
-1065, 1913         !UN Number
-other              !family
-A1                 !Safety Group (ASHRAE Standard 34, 2010)
+Neon                 !Short name
+7440-01-9            !CAS number
+Neon                 !Full name
+Ne                   !Chemical formula {Ne}
+R-720                !Synonym
+20.179               !Molar mass [g/mol]
+24.5561              !Triple point temperature [K] (Bedford et al., Metrologia, 33:133, 1996.)
+27.1000              !Normal boiling point [K] (all digits are significant!)
+44.4                 !Critical temperature [K]
+2661.63              !Critical pressure [kPa]
+24.1                 !Critical density [mol/L]
+-0.0355              !Acentric factor
+0.0                  !Dipole moment [Debye]; (exactly zero for monatomic molecules)
+NBP                  !Default reference state
+10.0                 !Version number
+1065, 1913           !UN Number                                                 :UN:
+cryogen              !Family                                                    :Family:
+0.0                  !Heating value (upper) [kJ/mol]                            :Heat:
+A1                   !Safety Group (ASHRAE Standard 34, 2010)                   :Safety:
+1S/Ne                                     !Standard InChI String                :InChi:
+GKAOGPIIYCISHV-UHFFFAOYSA-N               !Standard InChI Key                   :InChiKey:
+8d757b40  (hydrogen)                      !Alternative fluid for mixing rules   :AltID:
+b912fce0                                  !Hash number from InChI Key           :Hash:
+
+
+
+
+!The fluid files contain general information about the fluid in the first 15 to 20 lines, followed by sections for the
+! equations of state, transport equations, and auxiliary equations.  Equations of state are listed first.  The NIST recommended
+! equations begin with a hash mark (#).  The secondary equations begin with the @ symbol.  These symbols can be swapped to
+! select a secondary equation as primary and the primary as secondary.  The equation of state section also contains auxiliary
+! equations for the ideal gas heat capacity or ideal gas Helmholtz energy.  Below the equations of state (both primary and
+! secondary) are the transport equations, first viscosity and then thermal conductivity.  These are then followed by the
+! secondary equations if available.  The transport section also contains auxiliary equations required to calculate either the
+! dilute gas state or the critical enhancement.  At the end of the file are additional but not necessary auxiliary equations,
+! including simple equations for the vapor pressure, saturated liquid and vapor densities, melting line (for some fluids), and
+! sublimation line (for even fewer fluids).  This section also contains the equations for dielectric constant and surface
+! tension if available.  The sections are divided by different symbols (these being _-+=^*~) to aid the eye in locating a
+! particular section.  Secondary equations are indented 10 spaces to avoid confusion with the NIST recommended equations.  The
+! end of the fluid file is marked with @END.  Anything below that is ignored.
 
 
 ! compiled by E.W. Lemmon, NIST Physical and Chemical Properties Division, Boulder, Colorado
-! 12-03-97 EWL, original version
-! 11-13-98 EWL, update format to version 6.1
-! 10-14-99 EWL, change ECS reference fluid to nitrogen
-! 10-14-99 EWL, add L-J parameters
-! 03-27-00 EWL, add viscosity equation of Rabinovich
-! 11-06-00 EWL, update transport format
-! 08-05-04 EWL, add Harvey and Lemmon dielectric correlation
-! 11-10-04 EWL, add sublimation line
-! 01-30-07 EWL, change triple point from 24.562 to 24.556 in accordance with Bedford et al., Metrologia, 33:133, 1996.
-! 03-05-10 EWL, add melting line and increase maximum density
-! 07-13-10 CKL, add ancillary equations
-! 10-15-10 MLH, revised lower temp limit on visc and therm. cond.
-! 12-06-12 EWL, add surface tension coefficients of Mulero et al. (2012)
+! 12-03-97 EWL, Original version.
+! 03-27-00 EWL, Add viscosity equation of Rabinovich.
+! 08-05-04 EWL, Add Harvey and Lemmon dielectric correlation.
+! 11-10-04 EWL, Add sublimation line.
+! 01-30-07 EWL, Change triple point from 24.562 to 24.556 in accordance with Bedford et al., Metrologia, 33:133, 1996.
+! 03-05-10 EWL, Add melting line and increase maximum density.
+! 07-13-10 CKL, Add ancillary equations.
+! 10-15-10 MLH, Revise lower temp limit on visc and therm. cond.
+! 12-06-12 EWL, Add surface tension coefficients of Mulero et al. (2012).
+! 07-20-16 MLH, Add ECS fit coefficients, revised LJ par.
+! 02-25-17 MLH, Revise ECS.
+! 05-15-17 EWL, Change the hard coded VS0 model to the VS7 reverse Polish notation.
+! 12-11-17 MLH, Adjust dilute gas ecs viscosity to match ref. value at 25 C from Berg and Moldover, JPCRD 41(4) 043104 (2012).
+! 02-13-18 MLH, Adjust dilute k due to adjusted viscosity from the change listed one line up.
+! 02-16-18 IHB, Adjust sublimation curve from Brown to match triple point (w/ AHH).
+! 03-15-18  MT, Add new equation of state of Thol et al. (2018).
+! 04-02-18 MLH, Redo thermal conductivity and viscosity with new EOS of Thol.
 
 
-#EOS               !equation of state specification
-FEQ  Helmholtz equation of state for neon of Katti et al. (1986).
-?LITERATURE REFERENCE \
-?Katti, R.S., Jacobsen, R.T, Stewart, R.B., and Jahangiri, M.,
+
+
+________________________________________________________________________________
+
+#EOS   !---Equation of state---
+FEQ    !Helmholtz equation of state for neon of Thol et al. (2018).
+:TRUECRITICALPOINT:  44.4      24.1           !True EOS critical point [K, mol/L] (where dP/dD=0 and d^2P/dD^2=0 at constant T)
+:DOI:
+?
+?```````````````````````````````````````````````````````````````````````````````
+?Thol, M., Beckmüller, R., Weiss, R., Harvey, A.H., Lemmon, E.W., Jacobsen, R.T, and Span, R.,
 ? "Thermodynamic Properties for Neon for Temperatures from the Triple
 ? Point to 700 K at Pressures to 700 MPa,"
-? Adv. Cryo. Eng., 31:1189-1197, 1986.
-?\
-?The uncertainties of the equation of state are 0.1% in density, 2% in heat
-?capacity, and 1% in the speed of sound, except in the critical region.
-?The uncertainty in vapor pressure is 0.2%.
-?\
-!end of info section
-24.556             !lower temperature limit [K]
-700.0              !upper temperature limit [K]
-700000.0           !upper pressure limit [kPa]
-90.56              !maximum density [mol/L]
-CPP                                    !pointer to Cp0 model
-20.179                                 !molecular weight [g/mol]
-24.556                                 !triple point temperature [K]
-43.368                                 !pressure at triple point [kPa]
-62.059                                 !density at triple point [mol/L]
-27.104                                 !normal boiling point temperature [K]
--0.0387                                !acentric factor
-44.4918      2678.6       23.882       !Tc [K], pc [kPa], rhoc [mol/L]
-44.4918                   23.882       !reducing parameters [K, mol/L]
-8.31434                                !gas constant [J/mol-K]
-      29  4      0  0       0  0       !# terms, # coeff/term for:  "normal" terms, critical, spare
- 0.353265344900E+01  0.500   1.00    0 !a(i),t(i),d(i),l(i)
--0.451395438400E+01  0.750   1.00    0
--0.152402795900E+00  3.500   1.00    0
- 0.218856860900E+01  0.500   2.00    0
--0.744299997000E+01  0.750   2.00    0
- 0.775562740200E+01  1.000   2.00    0
--0.312255312800E+01  1.500   2.00    0
- 0.101420689900E+01  2.500   2.00    0
--0.528921408600E-01  0.250   3.00    0
- 0.156684923900E+00  0.500   3.00    0
--0.222852705000E+00  2.500   3.00    0
--0.141015094200E-01  1.000   4.00    0
- 0.703622971900E-01  3.000   4.00    0
--0.588204836700E-01  4.000   4.00    0
- 0.157117274100E-01  5.000   4.00    0
- 0.129220276900E-02  1.000   6.00    0
- 0.790203560300E-03  5.000   6.00    0
--0.379440361600E-03  6.000   6.00    0
- 0.465279933300E-01  4.000   1.00    3
- 0.452400181800E-01  1.000   2.00    2
--0.238342199100E+00  5.000   2.00    2
- 0.629359013000E-02  8.000   2.00    4
--0.127231364400E-02 12.000   2.00    6
--0.175235256000E-06 32.000   2.00    6
- 0.718841923200E-02 10.000   4.00    2
--0.540300691400E-01  6.000   8.00    2
- 0.757822218700E-01  7.000   8.00    2
--0.380858825400E-01  8.000   8.00    2
- 0.603402243100E-02  9.000   8.00    2
-
-
-#AUX               !auxiliary model specification
-CPP  ideal gas heat capacity function
-?LITERATURE REFERENCE \
-?Katti, R.S., Jacobsen, R.T, Stewart, R.B., and Jahangiri, M.,
-? "Thermodynamic Properties for Neon for Temperatures from the Triple
-? Point to 700 K at Pressures to 700 MPa,"
-? Adv. Cryo. Eng., 31:1189-1197, 1986.
-?\
-!end of info section
-24.556             !lower temperature limit [K]
-700.0              !upper temperature limit [K]
-0.0                !upper pressure limit [kPa]
-0.0                !maximum density [mol/L]
-1.0          8.31434                   !reducing parameters for T, Cp0
-  1  0    0  0    0  0  0              !Nterms:  polynomial, exponential, cosh, sinh
- 2.5               0.00
-
-
-#TRN               !transport model specification
-ECS  Extended Corresponding States model (Nitrogen reference);  predictive mode.
-?LITERATURE REFERENCES \
+? to be submitted to Int. J. Thermophys., 2018.
 ?
-? *** ESTIMATION METHOD--- NOT STANDARD REFERENCE QUALITY---
-?     estimated uncertainty 10%
+!```````````````````````````````````````````````````````````````````````````````
+24.5561            !Lower temperature limit [K]
+725.0              !Upper temperature limit [K]
+1000000.0          !Upper pressure limit [kPa]
+99.62              !Maximum density [mol/L]
+CPP                                    !Pointer to Cp0 model
+20.179                                 !Molar mass [g/mol]
+24.5561                                !Triple point temperature [K]
+43.355                                 !Pressure at triple point [kPa]
+61.931                                 !Density at triple point [mol/L]
+27.1000                                !Normal boiling point temperature [K] (all digits are significant!)
+-0.0355                                !Acentric factor
+44.4          2661.63     24.1         !Tc [K], pc [kPa], rhoc [mol/L]
+44.4                      24.1         !Reducing parameters [K, mol/L]
+8.3144598                              !Gas constant [J/mol-K]
+  11  4   6 12   0 0    0 0  0 0  0 0  !# terms and # coefs/term for normal terms, Gaussian terms, and Gao terms
+  0.031522418  1.      4.  0.          !a(i),t(i),d(i),l(i)
+  3.7716418    0.431   1.  0.
+ -4.27399448   0.592   1.  0.
+ -0.756466758  1.105   2.  0.
+  0.066679921  0.49    3.  0.
+ -0.356928434  2.3     1.  2.
+ -0.053124761  3.18    3.  2.
+  0.9407234    1.36    2.  1.
+ -0.969302374  2.      2.  2.
+  0.461243234  0.5     4.  1.
+  0.008184422  1.12    7.  1.
+  7.84771604   0.41    1.  2. 2.   -0.76     -0.537    1.997    0.5775    0. 0. 0.
+  6.39604094   0.64    1.  2. 2.   -2.126    -0.765    1.782    0.9137    0. 0. 0.
+ -1.27480579   0.579   3.  2. 2.   -2.168    -0.883    1.663    0.7895    0. 0. 0.
+ -5.51887999   0.6     2.  2. 2.   -2.033    -0.751    1.837    0.6229    0. 0. 0.
+ -8.76652276   0.52    1.  2. 2.   -0.743    -0.531    1.953    0.4992    0. 0. 0.
+ -0.351732709  0.655   2.  2. 2.   -4.38    -11.4      1.658    0.869     0. 0. 0.
+
+
+
+#AUX   !---Auxiliary function for Cp0
+CPP    !Ideal gas heat capacity function for neon of Thol et al. (2018).
 ?
-? Uses method described in the following reference:
-? Huber, M.L., Laesecke, A., and Perkins, R.A.,
-? "Model for the Viscosity and Thermal Conductivity of Refrigerants,
-? Including a New Correlation for the Viscosity of R134a",
-? Ind. Eng. Chem. Res., 42:3163-3178, 2003.
-?\
-?Lennard-Jones parameters are estimated from method of Chung.
-?\
-?The Lennard-Jones parameters are taken from:
-?\
-?Reid, R.C., Prausnitz, J.M., and Poling, B.E.,
-? "The Properties of Gases and Liquids,"
-? 4th edition, New York, McGraw-Hill Book Company, 1987.
-?\
-?Although the ECS model as used here for neon is in a predictive mode,
-? the values of viscosity and thermal conductivity are generally within 5%
-? of calculated values from:
-?   Rabinovich, V.A., Vasserman, A.A., Nedostup, V.I., and Veksler, L.S.,
-?   "Thermophysical Properties of Neon, Argon, Krypton, and Xenon,"
-?   Hemisphere Publishing Corp., 1988.
-? except at low temperatures in the liquid region where differences in the
-? thermal conductivity can be as high as 30%.
-?\
-!end of info section
-24.57              !lower temperature limit [K]
-700.0              !upper temperature limit [K]
-700000.0           !upper pressure limit [kPa]
-62.060             !maximum density [mol/L]
-FEQ nitrogen.fld
-VS1                !model for reference fluid viscosity
-TC1                !model for reference fluid thermal conductivity
+?```````````````````````````````````````````````````````````````````````````````
+?Thol, M., Beckmüller, R., Weiss, R., Harvey, A.H., Lemmon, E.W., Jacobsen, R.T, and Span, R., 2018.
+?
+!```````````````````````````````````````````````````````````````````````````````
+0.                 !
+10000.             !
+0.                 !
+0.                 !
+1.0     8.3144598  !Reducing parameters for T, Cp0
+1 0   0 0   0 0 0  !Nterms:  polynomial, exponential, cosh, sinh
+ 2.5        0.0
+
+
+#AUX   !---Auxiliary function for PX0
+PX0    !Helmholtz energy ideal-gas function for neon of Thol et al. (2018).
+?
+?```````````````````````````````````````````````````````````````````````````````
+?Thol, M., Beckmüller, R., Weiss, R., Harvey, A.H., Lemmon, E.W., Jacobsen, R.T, and Span, R., 2018.
+?
+!```````````````````````````````````````````````````````````````````````````````
+1 2  0  0 0  0 0 0               !Nterms:  ai*log(tau**ti); ai*tau**ti; ai*log(1-exp(bi*tau))
+  1.5                   1.0      !ai, ti for [ai*log(tau**ti)] terms
+ -3.0384719151147275    0.0      !aj, ti for [ai*tau**ti] terms
+  3.253690479855404     1.0      !aj, ti for [ai*tau**ti] terms
+
+
+
+
+--------------------------------------------------------------------------------
+
+@EOS    !---Equation of state---
+FE1     !Helmholtz equation of state for neon of Katti et al. (1986).
+:DOI: 10.1007/978-1-4613-2213-9_132
+          ?
+          ?```````````````````````````````````````````````````````````````````````````````
+          ?Katti, R.S., Jacobsen, R.T, Stewart, R.B., and Jahangiri, M.,
+          ? "Thermodynamic Properties for Neon for Temperatures from the Triple
+          ? Point to 700 K at Pressures to 700 MPa,"
+          ? Adv. Cryo. Eng., 31:1189-1197, 1986. doi: 10.1007/978-1-4613-2213-9_132
+          ?
+          ?The uncertainties of the equation of state are 0.1% in density, 2% in heat
+          ? capacity, and 1% in the speed of sound, except in the critical region.
+          ? The uncertainty in vapor pressure is 0.2%.
+          ?
+          !```````````````````````````````````````````````````````````````````````````````
+          24.556             !Lower temperature limit [K]
+          700.0              !Upper temperature limit [K]
+          700000.0           !Upper pressure limit [kPa]
+          90.56              !Maximum density [mol/L]
+          CP1                                    !Pointer to Cp0 model
+          20.179                                 !Molar mass [g/mol]
+          24.556                                 !Triple point temperature [K]
+          43.368                                 !Pressure at triple point [kPa]
+          62.059                                 !Density at triple point [mol/L]
+          27.104                                 !Normal boiling point temperature [K]
+          -0.0387                                !Acentric factor
+          44.4918       2678.6      23.882       !Tc [K], pc [kPa], rhoc [mol/L]
+          44.4918                   23.882       !Reducing parameters [K, mol/L]
+          8.31434                                !Gas constant [J/mol-K]
+            29  4    0  0    0 0    0 0 0 0 0 0  !# terms and # coefs/term for normal terms, Gaussian terms, and Gao terms
+           3.532653449         0.5       1.  0.  !a(i),t(i),d(i),l(i)
+          -4.513954384         0.75      1.  0.
+          -0.1524027959        3.5       1.  0.
+           2.188568609         0.5       2.  0.
+          -7.44299997          0.75      2.  0.
+           7.755627402         1.0       2.  0.
+          -3.122553128         1.5       2.  0.
+           1.014206899         2.5       2.  0.
+          -0.05289214086       0.25      3.  0.
+           0.1566849239        0.5       3.  0.
+          -0.222852705         2.5       3.  0.
+          -0.01410150942       1.0       4.  0.
+           0.07036229719       3.0       4.  0.
+          -0.05882048367       4.0       4.  0.
+           0.01571172741       5.0       4.  0.
+           0.001292202769      1.0       6.  0.
+           0.0007902035603     5.0       6.  0.
+          -0.0003794403616     6.0       6.  0.
+           0.04652799333       4.0       1.  3.
+           0.04524001818       1.0       2.  2.
+          -0.2383421991        5.0       2.  2.
+           0.00629359013       8.0       2.  4.
+          -0.001272313644     12.0       2.  6.
+          -0.175235256e-6     32.0       2.  6.
+           0.007188419232     10.0       4.  2.
+          -0.05403006914       6.0       8.  2.
+           0.07578222187       7.0       8.  2.
+          -0.03808588254       8.0       8.  2.
+           0.006034022431      9.0       8.  2.
+
+
+@AUX    !---Auxiliary function for Cp0
+CP1     !Ideal gas heat capacity function for neon of Katti et al. (1986).
+          ?
+          ?```````````````````````````````````````````````````````````````````````````````
+          ?Katti, R.S., Jacobsen, R.T, Stewart, R.B., and Jahangiri, M.,
+          ?
+          !```````````````````````````````````````````````````````````````````````````````
+          0.                 !
+          10000.             !
+          0.                 !
+          0.                 !
+          1.0     8.31434    !Reducing parameters for T, Cp0
+          1 0   0 0   0 0 0  !Nterms:  polynomial, exponential, cosh, sinh
+           2.5        0.0
+
+
+@AUX    !---Auxiliary function for PH0
+PH1     !Ideal gas Helmholtz form for neon.
+          ?
+          ?```````````````````````````````````````````````````````````````````````````````
+          ?Katti, R.S., Jacobsen, R.T, Stewart, R.B., and Jahangiri, M.,
+          ?
+          !```````````````````````````````````````````````````````````````````````````````
+          0.                 !
+          10000.             !
+          0.                 !
+          0.                 !
+          1 2  0 0 0  0 0 0  !Nterms:  ai*log(tau**ti); ai*tau**ti; ai*log(1-exp(bi*tau)); cosh; sinh
+           1.5               1.0                 !ai, ti for [ai*log(tau**ti)] terms
+          -3.0597521577      0.0                 !aj, ti for [ai*tau**ti] terms
+           3.2525230449      1.0
+
+
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#TRN   !---ECS Transport---
+ECS    !Extended Corresponding States model (Nitrogen reference); fit to limited data for neon.
+:DOI: 10.6028/NIST.IR.8209
+?
+?```````````````````````````````````````````````````````````````````````````````
+?*** ESTIMATION METHOD *** NOT STANDARD REFERENCE QUALITY ***
+?Huber, M.L., "Models for the Viscosity, Thermal Conductivity, and Surface Tension
+? of Selected Pure Fluids as Implemented in REFPROP v10.0," NISTIR 8209, 2018.
+? doi: 10.6028/NIST.IR.8209
+?
+?VISCOSITY
+? Forster, S., "Viscosity Measurements in Liquid Neon, Argon, and Nitrogen," Cryogenics, 3, 176, 1963.
+? Slusar', V.P., Rudenko, N.S., and Tret'yakov, V.M., "Experimental Study of the Viscosity of Simple Substances along the Saturation Curve and under Pressure," Ukr. Fiz. Zh., 18:190-194, 1973. Based on comparisons with data sources above, estimated uncertainty in liquid phase is 10% along the saturation boundary, 10% along the vapor saturation boundary, 3% for atmospheric pressure, and 4% at pressures to 80 MPa.
+?
+?Data sources for liquid thermal conductivity:
+? Bewilogua, L and Yamashira, T., J., Low Temp. Phys., Vol 8, pp. 255-263, 1972. Estimated uncertainty in saturated liquid thermal conductivity is 5%, 3% in the gas phase at atmospheric pressure.
+?
+?The Lennard-Jones parameters were taken from Kestin, J., Ro, S.T., and Wakeham, W.A., "Viscosity of the Binary Gaseous Mixtures He-Ne and Ne-N2 in the Temperature Range 25-700°C," J. Chem. Phys., 56(12):5837-5842, 1972. doi: 10.1063/1.1677125
+?
+!```````````````````````````````````````````````````````````````````````````````
+24.5561            !Lower temperature limit [K]
+725.0              !Upper temperature limit [K]
+100000.0           !Upper pressure limit [kPa]
+70.0               !Maximum density [mol/L]
+FEQ NITROGEN.FLD
+VS1                !Model for reference fluid viscosity
+TC1                !Model for reference fluid thermal conductivity
+BIG                !Large molecule identifier
+0.989544 0. 0. 0.  !Large molecule parameters
 1                  !Lennard-Jones flag (0 or 1) (0 => use estimates)
-0.2820             !Lennard-Jones coefficient sigma [nm] for ECS method
-32.8               !Lennard-Jones coefficient epsilon/kappa [K] for ECS method
-1  0  0                       !number of terms in f_int term in Eucken correlation, spare1, spare2
- 1.32d-3        0.0  0.0  0.0 !coeff, power of T, spare 1, spare 2
-1  0  0                       !number of terms in psi (visc shape factor): poly,spare1,spare2
- 1.0            0.0  0.0  0.0 !coeff, power of Tr, power of Dr, spare
-1  0  0                       !number of terms in chi (t.c. shape factor): poly,spare1,spare2
- 1.0            0.0  0.0  0.0 !coeff, power of Tr, power of Dr, spare
-NUL                           !pointer to critical enhancement auxiliary function
+0.2707             !Lennard-Jones coefficient sigma [nm] for ECS method
+45.58              !Lennard-Jones coefficient epsilon/kappa [K] for ECS method
+1  0  0                  !Number of terms in f_int term in Eucken correlation, spare1, spare2
+ 0.00132       0. 0. 0.  !Coefficient, power of T, spare1, spare2  dummy; this term is zero
+2  0  0                  !Number of terms in psi (visc shape factor): poly,spare1,spare2
+ 1.12101       0. 0. 0.  !Coefficient, power of Tr, power of Dr, spare
+-0.0388911     0. 1. 0.  !Coefficient, power of Tr, power of Dr, spare
+2  0  0                  !Number of terms in chi (t.c. shape factor): poly,spare1,spare2
+ 0.83          0. 0. 0.  !Coefficient, power of Tr, power of Dr, spare
+ 0.0           0. 1. 0.  !Coefficient, power of Tr, power of Dr, spare
+TK3                !Pointer to critical enhancement auxiliary function
 
 
-@ETA               !viscosity model specification
-VS0  pure fluid viscosity model of Rabinovich et al. (1988).
-?LITERATURE REFERENCE \
-?Rabinovich, V.A., Vasserman, A.A., Nedostup, V.I., and Veksler, L.S.,
-? "Thermophysical Properties of Neon, Argon, Krypton, and Xenon,"
-? Hemisphere Publishing Corp., 1988.
-?\
-?The numbers calculated here do not exactly match those given by Rabinovich.
-?The ECS model is currently the preferred model.
-?\
-!end of info section
-24.57              !lower temperature limit [K]
-700.0              !upper temperature limit [K]
-700000.0           !upper pressure limit [kPa]
-62.06              !maximum density [mol/L]
-NEO                !pointer to hardcoded thermal conductivity model
-0 0 0 0 0 0 0 0    !number of terms for various pieces
-NUL                !pointer to critical enhancement auxiliary function
+#AUX   !---Auxiliary function for the thermal conductivity critical enhancement
+TK3    !Simplified thermal conductivity critical enhancement for neon of Perkins et al. (2013).
+?
+?```````````````````````````````````````````````````````````````````````````````
+?Perkins, R.A., Sengers, J.V., Abdulagatov, I.M., and Huber, M.L.,
+? "Simplified Model for the Critical Thermal-Conductivity Enhancement in Molecular Fluids,"
+? Int. J. Thermophys., 34(2):191-212, 2013. doi: 10.1007/s10765-013-1409-z
+?
+!```````````````````````````````````````````````````````````````````````````````
+0.                 !
+10000.             !
+0.                 !
+0.                 !
+9 0 0 0            !# terms:  CO2-terms, spare, spare, spare
+1.0  1.0  1.0      !Reducing parameters for T, rho, tcx [mW/(m-K)]
+0.63               !Nu (universal exponent)
+1.239              !Gamma (universal exponent)
+1.02               !R0 (universal amplitude)
+0.063              !Z (universal exponent--not used for t.c., only viscosity)
+1.0                !C (constant in viscosity eqn = 1/[2 - (alpha + gamma)/(2*nu)], but often set to 1)
+0.131e-9           !Xi0 (amplitude) [m]
+0.060              !Gam0 (amplitude) [-]
+0.331e-9           !Qd_inverse (modified effective cutoff parameter) [m]
+66.74              !Tref (reference temperature)=1.5*Tc [K]
 
 
-#STN        !surface tension specification
-ST1  surface tension model of Mulero et al. (2012)
-?LITERATURE REFERENCE \
-?Mulero, A., Cachadiña, I., and Parra, M.I.
+
+
+********************************************************************************
+
+@ETA    !---Viscosity---
+VS7     !Pure fluid viscosity model for neon of Rabinovich et al. (1988).
+          ?
+          ?```````````````````````````````````````````````````````````````````````````````
+          ?Rabinovich, V.A., Vasserman, A.A., Nedostup, V.I., and Veksler, L.S.,
+          ? "Thermophysical Properties of Neon, Argon, Krypton, and Xenon,"
+          ? Hemisphere Publishing Corp., 1988.
+          ?
+          ?The numbers calculated here do not exactly match those given by Rabinovich.
+          ? The ECS model is currently the preferred model.
+          ?
+          !```````````````````````````````````````````````````````````````````````````````
+          24.57              !Lower temperature limit [K]
+          700.0              !Upper temperature limit [K]
+          700000.0           !Upper pressure limit [kPa]
+          62.06              !Maximum density [mol/L]
+          NUL                !Pointer to the viscosity critical enhancement auxiliary function (none used)
+          !
+          !Define variables
+          $VR RED SUM:5 SUM:6 TEMP CNST / LOG10 * - CUBE CNST * DENS * =DEL
+          !
+          !Residual function etat----->!
+          $RF RED SUM:1 LOG10 CNST * SUM:6 + INV CNST * CNST TEMP * SQRT *     SUMDEL:6 *
+          !
+          !Coefficients
+          $CF
+           1.0   1.  82.907973636  0.  0         !Reducing parameters for eta, T, rho
+           1.03010         0.  0.  0.  0         !  c
+          -0.99175         0.  1.  0.  0
+           2.47127         0.  2.  0.  0
+          -3.11864         0.  3.  0.  0
+           1.57066         0.  4.  0.  0
+           0.48148         0.  0.  0.  0         !  b
+          -1.18732         0.  1.  0.  0
+           2.80277         0.  2.  0.  0
+          -5.41058         0.  3.  0.  0
+           7.04779         0.  4.  0.  0
+          -3.76608         0.  5.  0.  0
+           122.1           0.  0.  0.  0
+           0.035785660797684 0. 0. 0.  0
+           0.01  0.29944       1.  0.  0         !Reducing parameters for eta, T, rho
+           1.              1.  0.  0.  0
+          -2.78751         0.  0.  0.  0         !  a
+           17.67484        0.  0.  0.  0
+           311498.7       -2.  0.  0.  0
+          -48826500.      -3.  0.  0.  0
+           3938774000.    -4.  0.  0.  0
+          -1.654629e+11   -5.  0.  0.  0
+           2.86561e+12    -6.  0.  0.  0
+           390.69978483921 0.  0.  0.  0
+           20.179          0.  0.  0.  0
+           1.0             0.  0.  0.  0
+           0.27676         0.  1   0.  0         !  d
+           0.014355        0.  2   0.  0
+           2.6480          0.  3   0.  0
+          -1.9643          0.  4   0.  0
+           0.89161         0.  5   0.  0
+          NUL                !Pointer to the viscosity critical enhancement auxiliary function (none used)
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#STN   !---Surface tension---
+ST1    !Surface tension model for neon of Mulero et al. (2012).
+:DOI: 10.1063/1.4768782
+?
+?```````````````````````````````````````````````````````````````````````````````
+?Mulero, A., Cachadiña, I., and Parra, M.I.,
 ? "Recommended Correlations for the Surface Tension of Common Fluids,"
-? J. Phys. Chem. Ref. Data, 41, 043105, 2012.
-?\
-!end of info section
-0.0                !lower temperature limit [K]
-44.4918            !upper temperature limit [K]
-0.0                !(dummy) upper pressure limit
-0.0                !(dummy) maximum density
-3                           !number of terms in surface tension model
-44.4918                     !critical temperature used in fit (dummy)
- 0.012254    1.4136         !sigma0 and n
- 0.02728     1.4517
--0.025715    1.6567
+? J. Phys. Chem. Ref. Data, 41(4), 043105, 2012. doi: 10.1063/1.4768782
+?
+!```````````````````````````````````````````````````````````````````````````````
+0.                 !
+10000.             !
+0.                 !
+0.                 !
+3                  !Number of terms in surface tension model
+44.4918            !Critical temperature used in fit (dummy)
+ 0.012254  1.4136  !Sigma0 and n
+ 0.02728   1.4517
+-0.025715  1.6567
 
 
-#DE         !dielectric constant specification
-DE3  dielectric constant model of Harvey and Lemmon (2005).
-?LITERATURE REFERENCE \
-?Harvey, A.H. and Lemmon, E.W.
+#DE    !---Dielectric constant---
+DE3    !Dielectric constant model for neon of Harvey and Lemmon (2005).
+:DOI: 10.1007/s10765-005-2351-5
+?
+?```````````````````````````````````````````````````````````````````````````````
+?Harvey, A.H. and Lemmon, E.W.,
 ? "Method for Estimating the Dielectric Constant of Natural Gas Mixtures,"
-? Int. J. Thermophys., 26(1):31-46, 2005.
-?\
-!end of info section
-0.0                !lower temperature limit [K]
-2000.0             !upper temperature limit [K]
-0.0                !(dummy) upper pressure limit
-0.0                !(dummy) maximum density
-273.16 1000.0 1.0  !reducing parameters for t and d
-0 1 4 0 0 0                         !number of terms in dielectric constant model
- 0.9969           0.    1.    0.    !coef, t exp, d exp
--0.109            0.    2.    0.
- 0.0708           1.    2.    0.
--2.880            0.    3.    0.
--1.0              1.    3.    0.
+? Int. J. Thermophys., 26(1):31-46, 2005. doi: 10.1007/s10765-005-2351-5
+?
+!```````````````````````````````````````````````````````````````````````````````
+0.                 !
+10000.             !
+0.                 !
+0.                 !
+273.16 1000.0 1.0  !Reducing parameters for T and D
+0 1 4 0 0 0        !Number of terms in dielectric constant model
+ 0.9969   0. 1. 0. !Coefficient, T exp, D exp
+-0.109    0. 2. 0.
+ 0.0708   1. 2. 0.
+-2.880    0. 3. 0.
+-1.0      1. 3. 0.
 
 
-#MLT        !melting line specification
-ML1  melting line model of Lemmon (2010)
-?LITERATURE REFERENCE \
+#MLT   !---Melting line---
+ML1    !Melting line model for neon of Lemmon (2010).
+:DOI:
+?
+?```````````````````````````````````````````````````````````````````````````````
 ?Lemmon, E.W., preliminary equation, 2010.
-?\
-!end of info section
-24.556             !lower temperature limit [K]
-700.0              !upper temperature limit [K]
-0.0                !(dummy) upper pressure limit
-0.0                !(dummy) maximum density
-24.556   43.36814       !reducing temperature and pressure
-1 1 0 0 0 0                 !number of terms in melting line equation
- 1.           0.0           !coefficients and exponents
- 4437.        1.33
+?
+!```````````````````````````````````````````````````````````````````````````````
+0.                 !
+10000.             !
+0.                 !
+0.                 !
+24.556   43.36814  !Reducing temperature and pressure
+1 1 0 0 0 0        !Number of terms in melting line equation
+ 1.0          0.0  !Coefficients and exponents
+ 4437.0       1.33
 
 
-#SBL        !sublimation line specification
-SB3  sublimation line model of Lemmon (2004).
-?LITERATURE REFERENCE \
-?Lemmon, E.W., 2004.
-?\
-!end of info section
-24.556             !lower temperature limit [K]
-24.556             !upper temperature limit [K]
-0.0                !(dummy) upper pressure limit
-0.0                !(dummy) maximum density
-24.556 43.464      !reducing temperature and pressure
-0 1 0 0 0 0                 !number of terms in sublimation line equation
--10.65          1.          !coefficients and exponents
+#SBL   !---Sublimation line---
+SB2    !Sublimation line model for neon of Brown and Zeigler (2009).
+:DOI: 10.1007/978-1-4613-9856-1_76
+?
+?```````````````````````````````````````````````````````````````````````````````
+?Based on G.N. Brown and W.T. Ziegler, Adv. Cryo. Eng., 25:662-670, 1979.
+? Modified to match the triple point of the equation of state.
+?
+!```````````````````````````````````````````````````````````````````````````````
+0.                 !
+10000.             !
+0.                 !
+0.                 !
+1.0  1000.0        !Reducing temperature and pressure
+5 0 0 0 0 0        !Number of terms in sublimation line equation
+ 8.3071      0.0   !Coefficients and exponents
+-3.08555e2  -1.0
+ 9.8602e2   -2.0
+-9.0693e3   -3.0
+ 3.5142e4   -4.0
 
 
-#PS         !vapor pressure equation
-PS5  vapor pressure equation of Lemmon (2010).
-?LITERATURE REFERENCE \
-?Lemmon, C.K. and Lemmon, E.W., 2010.
-?\
-!end of info section
-24.556             !lower temperature limit [K]
-44.4918            !upper temperature limit [K]
-0.0                !(dummy) upper pressure limit
-0.0                !(dummy) maximum density
-44.4918   2678.6   !reducing parameters
-5 0 0 0 0 0        !number of terms in equation
--0.55805D+01   1.0
- 0.68795D-01   1.5
- 0.54840D+01   2.3
--0.83760D+01   2.8
- 0.34276D+01   3.4
+#PS    !---Vapor pressure---
+PS5    !Vapor pressure equation for neon of Thol et al. (2018)
+?
+?```````````````````````````````````````````````````````````````````````````````
+?Thol, M., Beckmüller, R., Weiss, R., Harvey, A.H., Lemmon, E.W., Jacobsen, R.T, and Span, R., 2018.
+?
+?Functional Form:  P=Pc*EXP[SUM(Ni*Theta^ti)*Tc/T] where Theta=1-T/Tc, Tc and Pc
+? are the reducing parameters below, which are followed by rows containing Ni and ti.
+?
+!```````````````````````````````````````````````````````````````````````````````
+0.                 !
+10000.             !
+0.                 !
+0.                 !
+44.4      2661.63  !Reducing parameters
+5 0 0 0 0 0        !Number of terms in equation
+-5.778   1.0
+ 1.113   1.5
+-1.2573  4.76
+ 0.792  14.6
+-1.338  17.0
 
 
-#DL         !saturated liquid density equation
-DL1  saturated liquid density equation of Lemmon (2010).
-?LITERATURE REFERENCE \
-?Lemmon, C.K. and Lemmon, E.W., 2010.
-?\
-!end of info section
-24.556             !lower temperature limit [K]
-44.4918            !upper temperature limit [K]
-0.0                !(dummy) upper pressure limit
-0.0                !(dummy) maximum density
-44.4918   23.882   !reducing parameters
-6 0 0 0 0 0        !number of terms in equation
- 0.10601D+01   0.33     !coefficients and exponents
- 0.12076D+03   1.4
--0.38553D+03   1.7
- 0.81655D+03   2.2
--0.89907D+03   2.6
- 0.35466D+03   3.0
+#DL    !---Saturated liquid density---
+DL1    !Saturated liquid density equation for neon of Thol et al. (2018)
+?
+?```````````````````````````````````````````````````````````````````````````````
+?Thol, M., Beckmüller, R., Weiss, R., Harvey, A.H., Lemmon, E.W., Jacobsen, R.T, and Span, R., 2018.
+?
+?Functional Form:  D=Dc*[1+SUM(Ni*Theta^ti)] where Theta=1-T/Tc, Tc and Dc are
+? the reducing parameters below, which are followed by rows containing Ni and ti.
+?
+!```````````````````````````````````````````````````````````````````````````````
+0.                 !
+10000.             !
+0.                 !
+0.                 !
+44.4      24.1     !Reducing parameters
+6 0 0 0 0 0        !Number of terms in equation
+ 5.96854   0.53
+-17.1      0.9
+ 41.99     1.3
+-58.941    1.72
+ 43.481    2.19
+-13.246    2.72
 
 
-#DV         !saturated vapor density equation
-DV3  saturated vapor density equation of Lemmon (2010).
-?LITERATURE REFERENCE \
-?Lemmon, C.K. and Lemmon, E.W., 2010.
-?\
-!end of info section
-24.556             !lower temperature limit [K]
-44.4918            !upper temperature limit [K]
-0.0                !(dummy) upper pressure limit
-0.0                !(dummy) maximum density
-44.4918   23.882   !reducing parameters
-5 0 0 0 0 0        !number of terms in equation
--0.23338D+01   0.444     !coefficients and exponents
--0.36834D+01   0.95
--0.85368D+02   3.5
- 0.22769D+03   4.1
--0.17290D+03   4.5
+#DV    !---Saturated vapor density---
+DV3    !Saturated vapor density equation for neon of Thol et al. (2018)
+?
+?```````````````````````````````````````````````````````````````````````````````
+?Thol, M., Beckmüller, R., Weiss, R., Harvey, A.H., Lemmon, E.W., Jacobsen, R.T, and Span, R., 2018.
+?
+?Functional Form:  D=Dc*EXP[SUM(Ni*Theta^ti)] where Theta=1-T/Tc, Tc and Dc are
+? the reducing parameters below, which are followed by rows containing Ni and ti.
+?
+!```````````````````````````````````````````````````````````````````````````````
+0.                 !
+10000.             !
+0.                 !
+0.                 !
+44.4      24.1     !reducing parameters
+6 0 0 0 0 0        !Number of terms in equation
+-6.0978   0.536    !coefficients and exponents
+ 14.88    0.94
+-43.06    1.367
+ 54.34    1.835
+-38.337   2.37
+-36.59    7.17
 
 
 @END
 c        1         2         3         4         5         6         7         8
 c2345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+
+                    @ETA               !Viscosity model specification
+                    VS0  pure fluid viscosity model of Rabinovich et al. (1988).
+                    ?
+                    ?```````````````````````````````````````````````````````````````````````````````
+                    ?Rabinovich, V.A., Vasserman, A.A., Nedostup, V.I., and Veksler, L.S.,
+                    ? "Thermophysical Properties of Neon, Argon, Krypton, and Xenon,"
+                    ? Hemisphere Publishing Corp., 1988.
+                    ?
+                    ?The numbers calculated here do not exactly match those given by Rabinovich.
+                    ? The ECS model is currently the preferred model.
+                    ?
+                    !```````````````````````````````````````````````````````````````````````````````
+                    24.57              !Lower temperature limit [K]
+                    700.0              !Upper temperature limit [K]
+                    700000.0           !Upper pressure limit [kPa]
+                    62.06              !Maximum density [mol/L]
+                    NEO                !Pointer to hardcoded thermal conductivity model
+                    0 0 0 0 0 0 0 0    !Number of terms for various pieces
+                    NUL                !Pointer to the viscosity critical enhancement auxiliary function (none used)

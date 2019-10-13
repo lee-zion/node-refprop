@@ -1,4889 +1,1719 @@
-c  begin file sat_sub.f
+c  Begin file SAT_SUB.FOR
 c
-c  This file contains routines for saturation properties
+c  This file contains routines for saturation properties.
 c
-c  contained here are:
-c     subroutine SATT (t,x,kph,p,rhol,rhov,xliq,xvap,ierr,herr)
-c     subroutine SATP (p,x,kph,t,rhol,rhov,xliq,xvap,ierr,herr)
-c     subroutine SATD (rho,x,kph,kr,t,p,rhol,rhov,xliq,xvap,ierr,herr)
-c     subroutine SATH (h,x,kph,nroot,k1,t1,p1,d1,k2,t2,p2,d2,ierr,herr)
-c     subroutine SATE (e,x,kph,nroot,k1,t1,p1,d1,k2,t2,p2,d2,ierr,herr)
-c     subroutine SATS (s,x,kph,nroot,k1,t1,p1,d1,k2,t2,p2,d2,
-c    &                 k3,t3,p3,d3,ierr,herr)
-c     subroutine MAXWELL (icomp,ts,ps,dl,dv,ierr,herr)
-c     subroutine EHMAXX (x,ieflag,ehmax,tehmax,ierr,herr)
-c     subroutine SMAXX (x,smx,tsmx,smn,tsmn,smmin,tsmmin,ierr,herr)
-c     subroutine CSATK (icomp,t,kph,p,rho,csat,ierr,herr)
-c     subroutine CV2PK (icomp,t,rho,cv2p,csat,ierr,herr)
-c     subroutine DPTSATK (icomp,t,kph,p,rho,csat,dpt,ierr,herr)
-c     subroutine TPRHOB (t,p,rho1,rho2,x,rho,ierr,herr)
-c     subroutine DLDV (t,p,rhol,rhov,xl,xv,ierr,herr)
-c     subroutine LIQSPNDL (t,x,rhol,ierr,herr)
-c     subroutine VAPSPNDL (t,x,rhov,ierr,herr)
-c     subroutine SETVSPNDL (icomp,ierr,herr)
-c     subroutine SETLSPNDL (icomp,ierr,herr)
-c     subroutine FNCRPT (x,d,p,t,ierr,herr)
-c     function CRTDEN (x,t,d)
-c     subroutine SATTEST (t,x,kph,p,x2,ierr,herr)
-c     subroutine SATPEST (p,x,kph,t,x2,ierr,herr)
-c     subroutine PTEST (inp,t,p,alpha,x,tc2,pc2,acf2,calc,xout,ierr,herr)
-c     subroutine SATTP (t,p,x,iFlsh,iGuess,d,Dl,Dv,xliq,xvap,q,ierr,herr)
-c     subroutine SATEST (iFlash,t,p,x,xliq,xvap,ierr,herr)
-c     subroutine SAT0EST (t,p,x,xliq,xvap,ierr,herr)
-c     subroutine GETXY (z,vf,philn,phi,x,y)
-c     subroutine LGPHI (iderv,iphase,t,rho,p,x,philn,dpt,dpdrho,ddt,cp,
-c    &                  ierr,herr)
-c     subroutine CRTPNT (z,tc,pc,rhoc,ierr,herr)
-c     subroutine SATGV (t,p,z,vf,b,ipv,ityp,isp,rhox,rhoy,x,y,ierr,herr)
+c  Contained here are:
+c     subroutine SATT    (T,z,kph,P,Dl,Dv,x,y,ierr,herr)
+c     subroutine SATP    (P,z,kph,T,Dl,Dv,x,y,ierr,herr)
+c     subroutine SATD    (D,z,kph,kr,T,P,Dl,Dv,x,y,ierr,herr)
+c     subroutine SATE    (e,z,kph,nroot,k1,T1,P1,D1,k2,T2,P2,D2,ierr,herr)
+c     subroutine SATH    (h,z,kph,nroot,k1,T1,P1,D1,k2,T2,P2,D2,ierr,herr)
+c     subroutine SATS    (s,z,kph,nroot,k1,T1,P1,D1,k2,T2,P2,D2,k3,T3,P3,D3,ierr,herr)
+c     subroutine SATTP   (T,P,z,iFlsh,iGuess,D,Dl,Dv,x,y,q,ierr,herr)
 c     subroutine SATSPLN (z,ierr,herr)
+c     subroutine SATGV   (T,P,z,vf,b,ipv,ityp,isp,Dx,Dy,x,y,ierr,herr)
+c     subroutine HEMAXX  (z,ieflag,hemax,Themax,Dhemax,ierr,herr)
+c     subroutine SMAXX   (z,ierr,herr)
+c     subroutine HVAPZTN (T,P,z,iTP,hvap,hvap0,ierr,herr)
+c     subroutine CSATK   (icomp,T,kph,P,D,Csat,ierr,herr)
+c     subroutine DPTSATK (icomp,T,kph,P,D,Csat,dPdT,ierr,herr)
+c     subroutine CV2PK   (icomp,T,D,Cv2p,Csat,ierr,herr)
+c     subroutine SATGUESS(kph,iprop,iFlag,ispl,x,T,P,D,h,s,Dy,y,ierr,herr)
+c     subroutine SATEST  (iFlash,T,P,z,x,y,ierr,herr)
+c     subroutine SAT0EST (T,P,z,x,y,ierr,herr)
+c     subroutine PTEST   (inp,T,P,alpha,z,calc,zout,ierr,herr)
+c     subroutine SATMAX  (icomp,z,Tcmax,Pcmax,Dcmax,ierr,herr)
+c     subroutine FNCRPT  (z,D,P,T,ierr,herr)
+c     subroutine CRTPNT  (z,Tc,Pc,Dc,ierr,herr)
+c     subroutine REDLINEAR (iFlag,z,Tred,Pred,Dred,ierr,herr)
+c
 c
 c ======================================================================
 c ======================================================================
 c
-      subroutine SATT (t,x,kph,p,rhol,rhov,xliq,xvap,ierr,herr)
+      subroutine SATT (T,z,kph,P,Dl,Dv,x,y,ierr,herr)
 c
-c  iterate for saturated liquid and vapor states given temperature
-c  and the composition of one phase
+c  Iterate for saturated liquid and vapor states given temperature
+c  and the composition of one phase.
 c
-c  inputs:
-c        t--temperature [K]
-c                       if t is negative, then use other variables as
-c                       initial guesses at abs(t)
-c        x--composition [array of mol frac] (phase specified by kph)
-c      kph--phase flag: 1 = input x is liquid composition (bubble point)
-c                       2 = input x is vapor composition (dew point)
-c                       3 = input x is liquid composition (freezing point)
-c                       4 = input x is vapor composition (sublimation point)
-c  outputs:
-c        p--pressure [kPa]
-c     rhol--molar density [mol/L] of saturated liquid
-c     rhov--molar density [mol/L] of saturated vapor
+c  Inputs:
+c        T--Temperature [K]
+c           If T is negative, all other variables are used as initial guesses at ABS(T).
+c        z--Composition (array of mole fractions) (phase specified by kph)
+c      kph--Phase flag:  1 - Input z is liquid composition (bubble point)
+c                       -1 - Force calculation in the liquid phase even if T<Ttrp
+c                        2 - Input z is vapor composition (dew point)
+c                       -2 - Force calculation in the vapor phase even if T<Ttrp
+c                        3 - Input z is liquid composition along the freezing line (melting line)
+c                        4 - Input z is vapor composition along the sublimation line
+c
+c  Outputs:
+c        P--Pressure [kPa]
+c       Dl--Molar density of saturated liquid [mol/L]
+c       Dv--Molar density of saturated vapor [mol/L]
 c           For a pseudo pure fluid, the density of the equilibrium phase
 c           is not returned.  Call SATT twice, once with kph=1 to get
-c           pliq and rhol, and once with kph=2 to get pvap and rhov.
-c     xliq--liquid phase composition [array of mol frac]
-c     xvap--vapor phase composition [array of mol frac]
-c     ierr--error flag:   0 = successful
-c                         1 = T < Tmin
-c                         8 = x out of range
-c                         9 = T and x out of range
-c                       120 = CRITP did not converge
-c                       121 = T > Tcrit
-c                       122 = TPRHO-liquid did not converge (pure fluid)
-c                       123 = TPRHO-vapor did not converge (pure fluid)
-c                       124 = pure fluid iteration did not converge
-c           following 3 error codes are advisory--iteration will either
-c           converge on later guess or error out (ierr = 128)
-c                      -125 = TPRHO did not converge for parent ph (mix)
-c                      -126 = TPRHO did not converge for incipient (mix)
-c                      -127 = composition iteration did not converge
-c                       128 = mixture iteration did not converge
-c     herr--error string (character*255 variable if ierr<>0)
+c           Pliq and Dl, and once with kph=2 to get Pvap and Dv.
+c        x--Liquid phase composition (array of mole fractions)
+c        y--Vapor phase composition  (array of mole fractions)
+c     ierr--Error flag:  0 - Successful
+c                      121 - T > Tcrit
+c                      124 - Pure fluid iteration did not converge
+c                      (See subroutine LIMITX for other possible error numbers.)
+c     herr--Error string (character*255)
 c
 c  written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
 c  07-11-95  MM, original version
-c  09-11-95  MM, add error string to argument list
-c  09-25-95  MM, rearrange argument list (outputs in order p, rho, x)
-c  10-06-95  MM, use stored acentric factor for pure fluids
-c  10-11-95  MM, RETURN if any error detected
-c  11-26-95  MM, Raoult's law as first guess for mixture
-c  11-29-95  MM, variable lower limit on coefficient/constant arrays
-c                to accommodate ECS reference fluid
-c  12-18-95  MM, fill xliq, xvap with zeros for undefined components
-c  12-19-20  MM, add full mixture iteration using fugacity
-c  12-27-95  MM, pratio for new pressure if no converge for TPRHO for mix
-c  01-09-96  MM, move check for supercritical outside nc = 1 block
-c  02-27-96  MM, parameter n0=-ncmax to accommodate ECS-thermo model
-c                add Zcrit to common /CCON/
-c  03-06-96  MM, reset warning from TPRHO if loop eventually converges
-c  03-19-96  MM, add dipole moment to /CCON/
-c  04-05-96  MM, test for supercritical '.ge. tc' rather than '.gt. tc'
-c  05-30-96  MM, check input temperature against limits
-c  06-03-96  MM, add 'EOS' to calling list for LIMITX
-c  06-05-96  MM, refine error numbers and messages;
-c                also ensure that all outputs are set on error condition
-c  11-14-96  MM, adjust pratio, etc to get closer to critical
-c   2-07-96 EWL, add pressure increment/decrement when TPRHO does not converge
-c   2-13-96 EWL, add initial guess for densities near the critical point
-c                return critical point values if within delta of Tc
-c   6-06-96 EWL, return critical point values for failure to converge if
-c                Tc - T < 10 mK
-c  10-01-97  MM, add compiler switch to allow access by DLL
-c  11-13-97 EWL, initialize fpit(j); potential bomb if no value when writing error message
-c  11-14-97 EWL, add line following 500 to improve critical region convergence
-c  02-09-98  MM, limit delp step, change delp if TPRHO does not converge
-c  02-11-98  MM, check that new guess for mix pressure is < p_crit
-c  03-24-98 EWL, use critical region initial guesses when converge fails
-c                due to liquid and vapor roots being equal
-c  04-06-98 EWL, call subroutine AG to get Gibbs energy
-c  07-30-98  MM, check for f1=0 in phase 2 iteration; separate kguess for each phase
-c  08-03-98 EWL, check for fpit(2)-fpit(1)<>0 before calculation of pit(3)
-c  12-01-98 EWL, add Reos and triple point pressure and density to /CCON/
-c  12-22-98 EWL, zero out all elements of xliq and xvap
-c  12-22-98 EWL, use pure fluid algorithm when called with a mixture but x(i)=1
-c  02-04-99 EWL, increase tolerance if number of iterations hits 8 or 12
-c  02-04-99 EWL, if fugacity is zero, don't restart, just change x2
-c  02-04-99 EWL, add check for equal densities
-c  02-04-99 EWL, allow pressure to be greater than critical pressure
-c  02-04-99 EWL, do not allow outer loop to converge if inner loop has not
-c  02-04-99 EWL, if TPRHO fails, set x2 to original values before restarting
-c  08-23-99 EWL, change khpsav to kphsav
-c  11-16-99 EWL, do not modify x2new(i) after the check for fugacity=0
-c                when x2(i)=x1(i)=0 (composition was set to zero by user)
-c  02-23-00 EWL, add kph=3,4 as inputs and call melting or sublimation lines
-c  03-14-00 MLH, change 'do 100 i=1,ncmax' from ncmax to nc
-c  12-18-00 EWL, use different pratio for dew and bubble sides
-c  02-27-01 EWL, don't allow too large of jumps on first mixture iteration for p
-c  07-16-01 EWL, add calls to ancillary equations to get better estimates
-c  07-16-01 EWL, call THERM one last time on the liquid side once converged
-c  11-08-01 EWL, add alternative method that converges near the critical point
-c  11-20-01 EWL, check for ierr=-16 (t<ttrp)
-c  02-25-02 EWL, allow initial guesses to be passed in by negating the pressure
-c  05-28-02 EWL, check for bad root in two phase
-c  09-19-02 EWL, add ancillary check for liquid pressure
-c  09-19-02 EWL, exit after calculating ancillaries for pseudo-pure fluids
-c  07-28-03 EWL, add check to keep x2 from bouncing around
-c  11-30-04 EWL, add checks to remove crashes (p>1.d5, rhol-rhov<.1)
-c  11-16-05 EWL, add check for negative temperature for use in getting initial values
-c  07-21-08 EWL, add missing parenthesis in check for delp-delp2
-c  02-18-08 EWL, add check for icomp<>old icomp (icsav)
-c  04-12-10 EWL, add check for dp/dT negative
-c  04-22-10 EWL, rename variables in TSTSAV
-c  09-15-11  MK, add call to Maxwell subroutine
+c  12-08-16 EWL, rewrite code for better efficiency and reading.
 c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SATT
-c
-      include 'commons.for'
-      character*255 herr,herr2,herr3
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax),x2org(ncmax),xs(ncmax)
-      dimension x2(ncmax),f1(ncmax),f2(ncmax),x2new(ncmax)
-      dimension pit(3),fpit(2)
-c
-      iaga=0
-      call ISPURE (x,icomp)
-      herr2=hnull
-      if (lsatt) then
-        if (ABS(t-tsavt).lt.1.0d-9 .and. kph.eq.kphsvt) then
-          lsame=.true.
-          if (icomp.ne.icsavt) lsame=.false.
-          if (icomp.eq.0) then
-            do i=1,nc
-              if (ABS(x(i)-xsavt(i)).gt.1.0d-9) lsame=.false.
-            enddo
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension x(ncmax),y(ncmax),z(ncmax),yOrg(ncmax),ys(ncmax)
+      dimension f1(ncmax),f2(ncmax),v(20),f(20)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SATT
+
+
+      if (iSatFlg1.gt.0) RETURN        !Don't do recursive calls.
+      iErrNum=iErrNum+1
+      sumx=1d0
+      iexit=0
+      ikph=0
+      v3=0
+      Dv=0d0
+      Dl=0d0
+      y(1:nc)=z(1:nc)
+      if (lAGA8) call SETEOSMX (heox)   !Save the state of the AGA-8 flag and then turn it off so that the saturation pressures will come from the FEQ models.
+      kph2=ABS(kph)
+      call ISPURE (z,icomp)
+      call SATMAX (icomp,z,Tc,Pc,Dc,ierr,herr)             !Get pure fluid critical point or mixture maximum T and P (but labeled here simply as Tc and Pc).
+      if (T.le.0.) goto 121
+
+c  Check if melting or sublimation line requested and call appropriate routines.
+      iw=0
+      if (iFluidID(icomp).eq.1 .or. iFluidID(icomp).eq.3) then
+       iw=iFluidID(icomp)
+       if (icomp.ne.0 .and. kph.eq.1 .and. T+1d-8.lt.Ttpn(icomp)) kph2=3                 !Check for water and T<Ttrp
+      endif
+      if (kph2.eq.3) then    !Liquid/solid (melting line)
+        Dl=Dtpn(icomp)
+        ierr=999
+        call MELTT (T,z,P,ierr,herr)
+        if (icomp.eq.1 .and. iw.eq.1) call MLTH2O (T,pp,P)           !Check for water.
+        if (icomp.eq.1 .and. iw.eq.3) call MLTD2O (T,pp,P)           !Check for heavy water.
+        if (ignbnd.eq.1 .or. ignbnd2.eq.1) goto 10
+        if (ierr.le.0) call TPRHO (T,P,z,1,1,Dl,ierr,herr)
+        if (ierr.gt.0) Dl=0d0
+        Dv=Dl
+        goto 500
+      endif
+ 10   if (kph.eq.4 .or. (icomp.ne.0 .and. kph.eq.2 .and.
+     &    T+1d-6.lt.Ttpn(icomp))) then           !Vapor/solid (sublimation line)
+        Dv=0d0
+        call SUBLT (T,z,P,ierr,herr)
+        if (ignbnd.eq.0 .and. ignbnd2.eq.0) then
+          if (ierr.le.0) then
+            call TPRHO (T,P,z,2,0,Dv,ierr,herr)
+            if (ierr.le.0) ikph=1      !Sublimation calculation succeeded, do not do temperature checks.
+            Dl=Dv
+            goto 500
           endif
-          if (lsame) then
-            p=psavt
-            rhol=dlsavt
-            rhov=dvsavt
-            do i=1,nc
-              xliq(i)=xlsavt(i)
-              xvap(i)=xvsavt(i)
-            enddo
-            ierr=0
-            herr=' '
-            RETURN
-          endif
+          if (kph.eq.4) goto 500
         endif
       endif
-c  set tolerance and maximum number of iterations
-      tolr=1.0d-6
-      itmax=25
-c     write (*,*) ' SATT--entering with t,kph = ',t,kph
-      ierr=0
-      iflag=0        !flag for equal densities close to critical
+
+      call LIMITS ('EOS',z,Tmin,Tmax,Dmax,Pmax)
+      if (T.gt.Tc+1d-8 .and. icomp.ne.0) goto 121          !T is above maxcondentherm for mixtures or above Tc for pure fluids.
+      if (T.gt.Tc-1d-8 .and. icomp.ne.0) goto 199          !Input temperature is nearly equal to Tc, return critical parameters for P and D.
       herr=' '
-      delp2=1.d6
-      fpit(1)=0.0d0
-      fpit(2)=0.0d0
-      initflg=0
-c  make the temperature negative to use the other parameters in the call
-c  statement as initial guesses
-      if (t.lt.0.d0) then
-        initflg=1
-        t=abs(t)
+
+      ierr=0
+      call SATSAVE (1,icomp,kph,T,P,D,Dl,Dv,q,x,y,z,ierr,iexit)      !Check if this calculation has already been done for the input conditions.
+      if (iexit.eq.1) GOTO 500
+
+      tolr=1d-10
+      itmax=25
+      InitFlg=0
+      kguess=1
+      if (T.lt.0. .and. T.gt.-1d4) then          !To use the input parameters as initial guesses for mixtures, send a negative temperature to this routine.
+        InitFlg=1
+        T=ABS(T)
       else
-        p=0.0d0
-        rhol=0.0d0
-        rhov=0.0d0
-        if (icomp.eq.0) then
-          do i=1,nc
-            xliq(i)=x(i)
-            xvap(i)=x(i)
-          enddo
+        call SATGUESS (kph,1,0,0,z,T,P,Dl,h,s,Dv,x,ierr,herr)        !Get initial estimates.
+        if (ierr.gt.0) kguess=0                  !Use values from SATGUESS as initial guesses to TPRHO.
+        if (kph2.eq.2) call SWAPV (Dl,Dv)
+        y(1:nc)=x(1:nc)
+        if (iAnc(icomp).ne.0) goto 400           !Check for pseudo-pure fluid.
+      endif
+      fd=1
+      if (T/Tc.lt.0.99d0) fd=1.2d0               !Very conservative estimates for the saturated density divided by the critical density (or vice versa).
+      if (T/Tc.lt.0.95d0) fd=1.5d0
+
+c  Check for mixture---------------------------------------
+      if (icomp.eq.0) goto 200
+
+      if (T.gt.0.99d0*Tc) goto 100     !Use alternative method for T close to Tc.
+c  Call new Maxwell routine of Matthias Kunick.
+c     call MAXWELL (icomp,T,P,Dl,Dv,ierr,herr)
+c     if (ierr.le.0) goto 400
+
+
+
+c
+c --------------------Start pure fluid iteration--------------------
+c  Iterate for saturated liquid and vapor states given temperature with the use of a simple
+c   successive substitution method.  The independent variable in the iteration is the vapor pressure.
+c   The convergence criteria is the equality of Gibbs free energy in both phases.
+      Pdel2=1d6
+      if (T/Tc.lt..5d0) itmax=itmax*2
+      do it=1,itmax
+        call TPRHO (T,P,z,1,kguess,Dl,ierr,herr)           !Get liquid density.
+        if (ierr.gt.0 .or. Dl.le.Dc*fd) then               !Don't let the liquid density go more than Dc*fd into the 2-phase region.
+          kguess=0
+          P=P*1.01d0                   !Root not found, increase pressure at a continuing rate as the number of iterations continues.
+          if (it.gt.7)  P=P*1.1d0
+          if (it.gt.14) P=P*1.2d0
         else
-          do i=1,nc
-            xliq(i)=0.d0
-            xvap(i)=0.d0
-          enddo
-          xliq(icomp)=1.d0
-          xvap(icomp)=1.d0
+          call TPRHO (T,P,z,2,kguess,Dv,ierr,herr)         !Get vapor density.
+          call PRESS (T,Dv,z,pp)
+          if (ierr.gt.0 .or. Dv.le.0. .or. Dv.gt.Dc/fd) then         !Don't let the vapor density go more than Dc/fd into the 2-phase region.
+            kguess=0
+            P=P*0.8d0
+            if (it.gt.7)  P=P*0.7d0
+            if (it.gt.14) P=P*0.5d0
+          else
+            kguess=1         !Use previous densities as initial guesses for calls to TPRHO after first iteration.
+            call AG (T,Dl,z,Aliq,Gliq)
+            call AG (T,Dv,z,Avap,Gvap)
+
+c  Check for convergence.
+            if (ABS(Dl-Dv).lt.1d-8) EXIT         !Check that liquid and vapor densities are different.
+            Pdel=(Gliq-Gvap)/(1d0/Dl-1d0/Dv)
+            if (ABS(Pdel).gt.0.4d0*P) Pdel=SIGN(0.4d0*P,Pdel)        !Check that Pdel will not result in negative [or very small] pressure.
+            P=P-Pdel
+            call TOLRNC (tolr,it,15,20,0,0,0)    !Loosen tolerance if not converging.
+            if (P.lt.1d-5) call TOLRNC (tolr,it,18,23,0,0,0)
+            if (ABS(Pdel/P).lt.tolr .or.
+     &          ABS((Pdel-Pdel2)/Pdel2).lt.1d-11) then     !The Pdel-Pdel2 check is only important for very low pressures on the liquid surface (propane or R124).  See comments in TPRHO.
+              call TPRHO (T,P,z,2,1,Dv,ierr,herr)          !Get vapor density.
+              if (ierr.gt.0 .or. P.gt.Pc .or. Dv.gt.Dc) EXIT
+              call TPRHO (T,P,z,1,1,Dl,ierr,herr)          !Get liquid density.
+              D=Dl                     !Call THERM again to get exact P at T and Dl.  This is only important for very low pressures.
+              if (P.lt.1.) D=Dv        !...(12-13-06 EWL)  Call THERM with Dv if P < 1 kPa.  This was put in place because some of the pressures
+              call PRESS (T,D,z,P1)    !                   were coming back erratically from the PR model (for example, butane at T<160 K)
+              if (ABS(P-P1)/P.gt.1d-5) call PRESS (T,Dv,z,P1)
+              if (ABS(P-P1)/P.lt.1d-5) P=P1
+              if (ierr.gt.0 .or. P.gt.Pc .or. Dl.lt.Dc) EXIT
+              goto 400       !Iteration is complete, exit routine.
+            endif
+            Pdel2=Pdel
+         endif
         endif
-      endif
-c
-c  check if melting or sublimation line requested and call appropriate routines.
-      if (kph.eq.3) then      !liquid/solid
-        call MELTT (t,x,p,ierr2,herr2)
-        rhol=dtpn(1)
-        if (p.gt.1.d-15) call TPRHO (t,p,x,1,1,rhol,ierr,herr)
-        if (ierr.eq.0) then
-          ierr=ierr2
-          herr=herr2
-        endif
-        goto 900
-      else if (kph.eq.4) then      !vapor/solid
-        call SUBLT (t,x,p,ierr2,herr2)
-        if (t.gt.0.d0) rhov=p/(R*t)
-        if (rhov.lt.1.d10) call TPRHO (t,p,x,2,1,rhov,ierr,herr)
-        if (ierr.eq.0) then
-          ierr=ierr2
-          herr=herr2
-        endif
-        goto 900
-      end if
-c
-c  check that input conditions (in this case t and x) are within limits
-c
-      Ddum=0.0d0
-      pdum=0.0d0
-      call LIMITX ('EOS',t,Ddum,pdum,x,tmin,tmax,rhomax,pmax,ierr,herr2)
-      if (ierr.gt.0 .or. ierr.eq.-16) then
-        if (ierr.eq.1 .and. t.lt.tmin .and. icomp.ne.0) then      !vapor/solid
-          ierr2=ierr
-          call SUBLT (t,x,p,ierr,herr)
-          if (t.gt.0.d0 .and. p.gt.0.d0) then
-            rhov=p/(R*t)
-            if (rhov.lt.1.d10) call TPRHO (t,p,x,2,1,rhov,ierr3,herr3)
-            goto 900
+        if (P.gt.1d5) EXIT
+      enddo
+c  Iteration has not converged, go to alternative method.
+
+
+
+c  Alternative method for finding saturation boundaries.  This routine work best near the
+c   critical point by finding the vapor and liquid spinodals, which then bound the iteration.
+ 100  call LIQSPNDL (T,z,Dli,ierr1,herr)
+      call VAPSPNDL (T,z,Dvi,ierr2,herr)
+      if (Dli.le.0) Dli=Dc*1.5d0
+      if (Dvi.le.0) Dvi=Dc/2d0
+      if ((ierr1.le.100 .and. ierr2.le.100) .or. ABS(T-Tc).lt.1d-2) then
+
+c  Get the spinodal pressures and find the densities in the opposite phase at those pressures.
+c   The liquid pressure could be negative.  These new densities will then bound the iteration,
+c   i.e., the liquid density will be between Dli and Dlj, and likewise for the vapor density.
+        call PRESS (T,Dli,z,Pl)
+        call PRESS (T,Dvi,z,Pv)
+        call TPRHOB (T,Pv,Dli,Dli*2d0,z,Dlj,ierr,herr)     !Find density between Dli and Dli*2 at the pressure of the vapor side.
+        Dvj=0d0
+        if (Pl.gt.0.) call TPRHOB (T,Pl,0d0,Dvi,z,Dvj,ierr,herr)     !Same for the pressure of the liquid side, with the density in the vapor.
+
+c  Find the saturation pressure.  Use the midpoint of the spinodal pressures for the
+c   initial guess. Get both densities, and call AG to get the Gibbs energy.
+        P=(Pl+Pv)/2d0
+        if (P.lt.0.) P=Pv/2d0
+        do it=1,20
+          call TPRHOB (T,P,Dvi,Dvj,z,Dv,ierr,herr)
+          if (ierr.gt.0 .or. Dv.lt.0.) then
+            P=P*1.001d0
+          else
+            call TPRHOB (T,P,Dli,Dlj,z,Dl,ierr,herr)
+            Pdel=P/10d0
+            if (ierr.le.0 .and. Dl.gt.0.) then
+              ddiv=1d0/Dl-1d0/Dv
+              if (ABS(ddiv).gt.1d-20) then
+                call AG (T,Dl,z,Aliq,Gliq)
+                call AG (T,Dv,z,Avap,Gvap)
+                Pdel=(Gliq-Gvap)/ddiv
+                if (ABS(Pdel).gt.P/2d0) Pdel=SIGN(P/2d0,Pdel)
+              endif
+            endif
+            P=ABS(P-Pdel)
+            if (ABS(Pdel/P)*100d0.lt.tolr) goto 400        !Exit when solved.
           endif
-          ierr=ierr2
-        endif
-        ierr=abs(ierr)
-c  T and/or x are out of bounds, set error flag and return
-        write (herr,1000) ierr,herr2(1:238),hnull
- 1000   format ('[SATT error',i3,'] ',a238,a1)
-        call ERRMSG (ierr,herr)
-        RETURN
-      end if
-c
-      call CRITP (x,tc,pc,rhoc,ierr,herr2)
-      if (ierr.gt.0) then
-c  error condition--set outputs, issue warning, and return
-        ierr=120
-        p=0.0d0
-        rhol=0.0d0
-        rhov=0.0d0
-        do i=1,nc
-          xliq(i)=x(i)
-          xvap(i)=x(i)
-        enddo
-        write (herr,1120) herr2(1:237),hnull
- 1120   format ('[SATT error 120] ',a237,a1)
-        call ERRMSG (ierr,herr)
-        RETURN
-      end if
-c
-      acf=0.d0
-      if (icomp.eq.0) then
-        do i=1,nc
-          acf=acf+x(i)*accen(i)
         enddo
       endif
-c
-      if (icomp.ne.0) acf=accen(icomp)
-      if (t.gt.tc-1.0d-8 .and. icomp.ne.0) then
-c  input temperature is equal to or greater than critical,
-c  return critical parameters for output pressure and densities
-        p=pc
-        rhol=rhoc
-        rhov=rhoc
-        do i=1,nc
-          xliq(i)=x(i)
-          xvap(i)=x(i)
+      goto 124     !Iteration has not converged.
+
+c  End of pure fluid iteration.
+
+
+
+
+c --------------------Start mixture iteration--------------------
+
+c  Start by calling new routines that converge better.  If these fail, then
+c   revert back to original method further below.
+ 200  if (iSpline.ne.0) then
+        call MAXT (z,TmaxT,TmaxP,TmaxD,ierr,herr)
+        if (ierr.eq.0 .and. T.gt.TmaxT+1d0 .and.
+     &      MixTyp.ne.2 .and. MixTyp.ne.3) goto 121        !T is above maxcondentherm.
+      endif
+      iTcdiff=0
+      do i=1,nc
+        do j=1,nc
+          if (ABS(Tcrit(i)-Tcrit(j)).gt.100.) iTcdiff=1
         enddo
-        if (t.gt.tc+1.0d-8) then
-c  supercritical temperature as input, set error flag and return
-c  critical parameters for output pressure and densities
-          ierr=121
-          write (herr,1121) t,tc,hnull
-          call ERRMSG (ierr,herr)
- 1121     format ('[SATT error 121] ',
-     &            'temperature input to saturation routine is ',
-     &            'greater than critical temperature; T =',g12.5,
-     &            ' K, Tcrit =',g12.5,' K.',a1)
-        end if
-        RETURN
-      end if
-c
-c  generate initial guess for pressure using acentric factor
-c
-      if (initflg.eq.0) then
-        p=pc*10.d0**(-2.333333d0*(1.d0+acf)*(tc/t-1.d0))
-      endif
-c  for near-critical states, generate initial guesses for density;
-c  using correlation developed by E.W. Lemmon, NIST
-      theta=(ABS(1.0d0-t/tc))**(1.0d0/3.0d0)*(1.5d0+acf)
-      rholi=rhoc*(1.0d0+1.113614d0*theta+0.080400d0*theta**2)
-      rhovi=rhoc*(1.0d0-1.078683d0*theta+5.014057d-2*theta**2)
-      if (rhovi.lt.0.d0) rhovi=1.d-6
-c
-      if (heos.eq.'AGA') then
-        heos='HMX'
-        iaga=1
-      endif
-c
+      enddo
+
       if (icomp.eq.0 .and. iSatFlg.eq.0) then
-        call SATTP (t,p,x,kph,0,d,rhol,rhov,xliq,xvap,q,ierr,herr)
-        if (ierr.eq.0 .and. kph.eq.2 .and. rhol.lt.rhov*0.8d0) then
-          call SATGV (t,p,x,1.d0,d,1,1,1,rhol,rhov,xliq,xvap,ierr,herr)
+        iSatFlg1=iSatFlg1+1            !A value of 0 for iSatFlg1 means it is safe to call SATT or SATP non-recursively
+        call SATTP (T,P,z,kph2,0,D,Dl,Dv,x,y,q,ierr,herr)
+        iSatFlg1=iSatFlg1-1
+        if (ierr.eq.0 .and. kph2.eq.2 .and. Dl.lt.Dv*0.8d0) then
+          call SATGV (T,P,z,1d0,d,1,1,1,Dl,Dv,x,y,ierr,herr)
         endif
-        if (ierr.eq.0) goto 900
+        if (ierr.le.0) goto 400
       endif
-c
-c  pure fluid iteration
-      if (icomp.ne.0) then
-        do i=1,nc
-          xliq(i)=0.d0
-          xvap(i)=0.d0
-        enddo
-        xliq(icomp)=1.d0
-        xvap(icomp)=1.d0
-c
-c  Iterate for saturated liquid and vapor states given temperature using
-c  a simple successive substitution method.  The independent variable
-c  in the iteration is the vapor pressure.  The convergence criteria
-c  is equality of Gibbs free energy in both phases.
-c
-        if ((t.gt.0.99d0*tc .or. iflag.eq.1) .and. ianc(icomp).eq.0)then
-          goto 300
+
+c  Iterate for the pressure and the composition of the incipient phase (vapor phase
+c   for a bubble point calculation, liquid for dew point) given temperature and the
+c   composition of the parent phase.  Iteration is generally based on the algorithm
+c   given by Smith and Van Ness (Intro to Chem. Engr. Thermo., McGraw-Hill, 1975);
+c   convergence criteria is the equality of fugacity for each component in both phases.
+      call ROOTSEARCH (0,0,0,v,f,v3,0,ib,lneg,lpos)        !Initialize root finding variables.
+      kgues1=1
+      kgues2=1
+      if (InitFlg.eq.0) then
+        if (iSpline.gt.0) then
+          call SATGUESS (kph2,1,0,1,z,T,P,Dl,h,s,Dv,x,ierr,herr)
+          if (kph2.eq.2) call SWAPV (Dl,Dv)
+          y(1:nc)=x(1:nc)
         else
-c  assume nothing about densities on initial calls to TPRHO
-          kguess=0
+          call SATEST (kph2,T,P,z,x,y,ierr,herr)           !Use Raoult's law as initial guesses.
+          kgues1=0           !For first calls to TPRHO.
+          kgues2=0
         endif
-
-        rhol=rholi
-        rhov=rhovi
-        if (hpsk(icomp).ne.' ' .and. hpsk(icomp).ne.'NBS') then
-          call PSATK (icomp,t,p,ierr,herr)
-        endif
-        if (hplk(icomp).ne.' ' .and. hplk(icomp).ne.'NBS'
-     &                         .and. kph.eq.1) then
-          call PLSATK (icomp,t,p,ierr,herr)!Get liquid pressure for mixtures
-        endif
-        if (hdlk(icomp).ne.' ' .and. hdlk(icomp).ne.'NBS') then
-          call DLSATK (icomp,t,rhol,ierr,herr)
-          if (ierr.gt.0) rhol=rholi
-          if (ierr.le.0) kguess=1
-        endif
-        if (hdvk(icomp).ne.' ' .and. hdvk(icomp).ne.'NBS') then
-          call DVSATK (icomp,t,rhov,ierr,herr)
-          if (ierr.gt.0) rhov=rhovi
-          if (ierr.le.0) kguess=1
-        endif
-        if (ianc(icomp).eq.1 .and. kph.eq.2) then
-          call TPRHO (t,p,x,2,kguess,rhov,ierr,herr) !find vapor density
-          rhol=rhov   !Don't return liquid density for equilibrium phase
-          goto 900    !For pseudo-pure fluid, stop here
-        elseif (ianc(icomp).eq.1) then
-          call TPRHO (t,p,x,1,kguess,rhol,ierr,herr)!find liquid density
-          rhov=rhol   !Don't return vapor density for equilibrium phase
-          goto 900    !For pseudo-pure fluid, stop here
-        endif
-
-c  call new Maxwell routine of Matthias Kunick
-c       call MAXWELL (icomp,t,p,rhol,rhov,ierr,herr)
-c       if (ierr.eq.0) return
-
-        do 200 it=1,itmax
-c       write (*,*) 'SATT--t,p input to TPRHO: ',t,p
-        call TPRHO (t,p,x,1,kguess,rhol,ierr,herr2) !find liquid density
-        if (ierr.ne.0 .or. rhol.le.0.d0) then
-          kguess=0
-          p=p*1.005d0
-          goto 200
-        end if
-        call TPRHO (t,p,x,2,kguess,rhov,ierr,herr2) !find vapor density
-        if (ierr.ne.0 .or. rhov.le.0.d0) then
-          p=p*0.95d0
-          goto 200
-        end if
-c  use previous densities as initial guesses for calls to TPRHO after
-c  first iteration
-        kguess=1
-c
-        call AG (t,rhol,x,Aliq,Gliq)
-        call AG (t,rhov,x,Avap,Gvap)
-        ZG=Gliq-Gvap
-c       write (*,1014) it,t,rhol,rhov,p,Gliq,Gvap,ZG
-c1014   format (1x,'SATT:  it,t,rhol,rhov,p,Gliq,Gvap,ZG: ',
-c    &              i4,f8.3,2f12.8,e14.6,2f12.4,e14.6)
-c
-c  check convergence
-c
-c  check that liquid and vapor densities are different
-        if (ABS(rhol-rhov).lt.1.0d-8 .or.
-     &     (ABS(1.d0/rhol-1.d0/rhov).lt.0.1d0 .and. t.lt.tc-1.d0)) then
-          ierr=124
-          herr='[SATT error 124] density roots equal'
-          call ERRMSG (ierr,herr)
-          goto 300
-        end if
-        delpp=ZG/(1.d0/rhol-1.d0/rhov)
-c  the delp-delp2 check is only important for very low pressures on the
-c  liquid surface (propane or R124).  See comments in TPRHO.
-        if (abs(delpp/p).lt.tolr .or.
-     &       abs((delpp-delp2)/delp2).lt.1.d-11) then
-          p=p-delpp
-          call TPRHO (t,p,x,2,kguess,rhov,ierr,herr2) !find vap density
-          if (ierr.ne.0 .or. p.gt.pc .or. rhov.gt.rhoc) then
-            ierr=123
-            write (herr,1123) it,herr2(1:147),hnull
- 1123       format ('[SATT error 123] vapor density iteration in ',
-     &            'saturation routine did not converge for pressure ',
-     &            'iteration',i3,'; ',a147,a1)
-            call ERRMSG (ierr,herr)
-c  return critical parameters if not converged and very close to Tc
-            goto 300
-          end if
-          call TPRHO (t,p,x,1,kguess,rhol,ierr,herr2) !find liq density
-c  call THERM again to get exact p at T and rhol.  This is only important
-c  for very low pressures.
-c...(12-13-06 EWL)  Call THERM with RHOV if p < 1 kPa.  This was put in place
-c                   because some of the pressures were coming back erratic
-c                   from the PR model (for example, butane at T<160 K)
-          if (p.gt.1.d0) then
-            call THERM (t,rhol,x,p,e,h,s,cv,cp,w,hjt)
-          else
-            call THERM (t,rhov,x,p,e,h,s,cv,cp,w,hjt)
-          endif
-          if (ierr.ne.0 .or. p.gt.pc .or. rhol.lt.rhoc) then
-            ierr=122
-            write (herr,1122) it,herr2(1:146),hnull
- 1122       format ('[SATT error 122] liquid density iteration in ',
-     &            'saturation routine did not converge for pressure ',
-     &            'iteration',i3,'; ',a146,a1)
-c  return critical parameters if not converged and very close to Tc
-            goto 300
-          end if
-c  !debug--next six lines for debug only
-c         call GIBBS (t,rhol,x,Aliq,Gliq)
-c         call GIBBS (t,rhov,x,Avap,Gvap)
-c         ZG=Gliq-Gvap
-c         write (*,1015) it,t,rhol,rhov,p,Gliq,Gvap,ZG
-c1015   format (1x,'SATT:  it,t,rhol,rhov,p,Gliq,Gvap,ZG: ',
-c    &              i4,f8.3,2f12.8,e14.6,2f12.4,e14.6)
-          ierr=0
-          herr=' '
-          goto 900         !normal termination for pure fluid
-        end if
-        delp2=delpp
-c
-c  continue iteration, define next guess (check that delp
-c  will not result in negative [or very small] pressure)
-c  02-09-98 MM:  limit step size
-        if (ABS(delpp).gt.0.4d0*p) then
-          do jj=1,10
-c           write (*,1198) p,delp
-c1198       format(1x,'% SATT advisory; delp gives p<0; p,delp:',2e12.4)
-            delpp=0.5*delpp
-            if (ABS(delpp).lt.0.4d0*p) goto 110
-          enddo
-        end if
- 110    continue
-        p=p-delpp
-        if (p.gt.1.d5) goto 210   !prevent overflow
-c
- 200    continue
-c  iteration has not converged
- 210    continue
-        ierr=124
-        write (herr,1124) t,hnull
- 1124   format ('[SATT error 124] ',
-     &          'iteration for saturation state did not converge; ',
-     &          'T =',g12.5,' K.',a1)
-        call ERRMSG (ierr,herr)
-c  return critical parameters if not converged and very close to Tc
-        if (t.gt.0.999975*tc) then
-          p=pc
-          rhol=rhoc
-          rhov=rhoc
-        end if
-c
-c  Alternative method for finding saturation boundaries.  The routines works
-c  best near critical by finding the spinodal points on the vapor and liquid
-c  sides, and uses these points to bound the iteration.
- 300    continue
-        if (rholi.gt.0.d0 .and. rhovi.gt.0.d0) then
-          call LIQSPNDL (t,x,rholi,ierr,herr)
-          call VAPSPNDL (t,x,rhovi,ierr,herr)
-          if (ierr.gt.0) goto 390
-c
-c  Get the pressures at the spinodals and find the densities in the opposite
-c  phase at the spinodal pressures.  The liquid pressure could be negative.
-c  These new densities will then bound the iteration, i.e., the liquid density
-c  will be between rholi and rholj, and likewise for the vapor density.
-          call PRESS (t,rholi,x,pl)
-          call PRESS (t,rhovi,x,pv)
-          CALL TPRHOB (t,pv,rholi,rholi*2.d0,x,rholj,ierr,herr)
-          if (pl.le.0.d0) then
-            rhovj=0.d0
-          else
-            CALL TPRHOB (t,pl,0.d0,rhovi,x,rhovj,ierr,herr)
-          endif
-
-c  Find the saturation condition.  Use the midpoint of the spinodal pressures
-c  for the initial guess.  Call TPRHOB to get both densities, and call AG to
-c  get Gibbs energy.  The difference in G is used to get the next pressure.
-          it=0
-          p=(pl+pv)/2.d0
-          if (p.lt.0.d0) p=pv/2.d0
- 370      continue
-          CALL TPRHOB (t,p,rhovi,rhovj,x,rhov,ierr,herr)
-          if (ierr.ne.0) then
-            p=p*1.001d0
-            goto 380
-          endif
-          CALL TPRHOB (t,p,rholi,rholj,x,rhol,ierr,herr)
-          if (ierr.ne.0) then
-            p=p*0.999d0
-            goto 380
-          endif
-          call AG (t,rhol,x,Aliq,Gliq)
-          call AG (t,rhov,x,Avap,Gvap)
-          ZG=Gliq-Gvap
-          delpp=ZG/(1.d0/rhol-1.d0/rhov)
-          if (p-delpp.lt.0.d0) then
-            p=p/2.d0
-          else
-            p=p-delpp
-          endif
-          if (abs(delpp/p)*100.lt.tolr) goto 900   !Exit when solved
- 380      continue
-          it=it+1
-          if (it.lt.20) goto 370
- 390      continue
-          ierr=124
-          write (herr,1124) t,hnull
-          call ERRMSG (ierr,herr)
-          p=pc
-          rhol=rhoc
-          rhov=rhoc
-        endif
-c
-c  end of pure fluid iteration
-c
+        if (P.gt.0.99d0*Pc) P=0.99d0*Pc
+      endif
+      if (kph2.eq.1) then
+        kph2=2               !kph2 specifies whether the incipient phase (y) is liquid (1) or vapor (2).
+        prtio1=1.05d0        !pratio is the multiplier for pressure to use when TPRHO does not converge
+        prtio2=1.02d0        ! such that new guesses for pressure are further into the single-phase region.
       else
-c
-c  begin mixture iteration
-c
-c  Iterate for the pressure and the composition of the incipient phase
-c  (vapor phase for a bubble point calculation, liquid for dew point)
-c  given temperature and the composition of the parent phase.  Iteration
-c  is generally based on the algorithm given by Smith & Van Ness (Intro
-c  to Chem Engr Thermo, McGraw-Hill, 1975); convergence criteria is the
-c  equality of fugacity for each component in both phases.
-c
-        x2sum=0.d0
-        tolr=1.d-8
-        call SATTEST (t,x,kph,psum,x2,ierr,herr)
-        if (psum.gt.pc) psum=0.99d0*pc  !helps critical region conv.
-c
-c  variable kph2 specifies the state of the incipient phase (x2):
-c     1 = liq,  2 = vap
-c  it is used in calls to TPRHO
-c  pratio is multiplier for pressure to use when TPRHO does not converge
-c  different values for liquid and vapor phases, such that new guess for
-c  pressure is further into corresponding single-phase region
-        if (kph.eq.1) then
-          kph2=2
-          prtio1=1.05d0          !Choose different pratio for the dew
-          prtio2=1.02d0          !and bubble sides to avoid loops
-          if (initflg.ne.0) then
-            do i=1,nc
-              x2(i)=xvap(i)
-            enddo
-            psum=p
-          endif
-        else
-          kph2=1
-          prtio1=0.95d0
-          prtio2=0.98d0
-          if (initflg.ne.0) then
-            do i=1,nc
-              x2(i)=xliq(i)
-            enddo
-            psum=p
-          endif
-        end if
-c
-c  begin main mixture iteration--outer loop for pressure,
-c  using Raoult's Law result from above as first guess
-c
-        p=psum
-        do i=1,nc
-          if (kph.eq.1) then
-            xvap(i)=x2(i)
-          else
-            xliq(i)=x2(i)
-          endif
-        enddo
-c
-        kgues1=0              !for first calls to TPRHO
-        kgues2=0              !kguess flags for parent & incipient phase
-        lppos=.false.         !flags for reguli-falsi iteration
-        lpneg=.false.
-        pneg=0.0d0
-        ppos=0.0d0
-        fpneg=0.0d0
-        fppos=0.0d0
-        if (initflg.eq.0) then
-          rho1=0.0d0
-          rho2=0.0d0
-        else
-          kgues1=1
-          kgues2=1
-          if (kph.eq.1) then
-            rho1=rhol
-            rho2=rhov
-          else
-            rho1=rhov
-            rho2=rhol
-          endif
-        endif
-        tbad2=0.0d0
-        ibad1=0
-        ibad2=0
-        j=1
-        do ii=1,nc
-          x2org(ii)=x2(ii)
-        enddo
-        pit(1)=psum           !first guess for pressure = sum (x1*Pi)
-c
-c
-c
-c       write (*,*) ' SATT--begin outer iteration loop for pressure'
-        do 400 itpp=1,itmax
-c  increase tolerance to account for errors in numerical derivatives in FGCTY2
-        if (itpp.eq.8) tolr=tolr*10
-        if (itpp.eq.12) tolr=tolr*10
-        if (itpp.eq.15) tolr=tolr*10
-        p=pit(j)
-c       write (*,*) ' SATT--pressure iteration',itpp,' w/ p =',pit(j)
-        lx2con=.false.        !flag for convergence of inner loop
-c  compute density and fugacities for parent phase
-        i=iprnterr
-        iprnterr=0
-        call TPRHO (t,p,x,-kph,kgues1,rho1,ierr,herr2)   !parent phase
-        iprnterr=i
+        kph2=1
+        prtio1=0.95d0        !Choose different pratio for the dew and bubble sides to avoid loops.
+        prtio2=0.98d0
+        call SWAPV (Dl,Dv)
+        call SWAPA (x,y)     !y is the incipient phase, not the vapor phase.
+      endif
+      tolr=1d-8
+      yOrg(1:nc)=y(1:nc)
+      v(2)=P
+      jr=1
+      ibad1=0
+      ibad2=0
+      tbad2=0d0
+
+c  Begin main mixture iteration--Start outer loop for pressure with Raoult's Law results as first guess.
+      do it=1,itmax
+        call TOLRNC (tolr,it,8,12,15,0,0)        !Loosen tolerance if not converging.
+        jkph=ABS(kph)
+        if (jkph.le.2) jkph=-kph
+        call TPRHO (T,P,z,jkph,kgues1,Dl,ierr,herr)        !Compute density and fugacities for parent phase.
         kgues1=1
         if (kph.eq.1) then
-          if (rho1.lt.rhoc/2.d0) ierr=1
-          if (rho1.lt.rhoc*1.2d0 .and.itpp.eq.1 .and.initflg.eq.0)ierr=1
+          if (Dl.lt.Dc/2d0) ierr=999
+          if (Dl.lt.Dc*1.2d0 .and. it.eq.1 .and. InitFlg.eq.0) ierr=999
         endif
         if (ierr.gt.0) then
           ibad1=ibad1+1
-          if (ibad1.lt.6) then
-            if (kph.eq.1) then
-              call DLDV (t,p,rho1,rho2,x,x2,ierr,herr2)
-            else
-              call DLDV (t,p,rho2,rho1,x2,x,ierr,herr2)
-            endif
-            pit(j)=p
+          if(ibad1.lt.6.and.kph.eq.1)call DLDV(T,z,y,P,Dl,Dv,ierr,herr)
+          if(ibad1.lt.6.and.kph.eq.2)call DLDV(T,y,z,P,Dv,Dl,ierr,herr)
+          if (ierr.gt.0) then
+            v(2)=v(2)*prtio1           !Try another pressure and use up one loop
+            kgues1=0                   !Do not reuse faulty density as guess
+            goto 240
           endif
-          if (ierr.ne.0) then
-            ierr=-125
-            write (herr,1125) itpp,herr2(1:149),hnull
- 1125       format ('[SATT advisory -125] density iteration in ',
-     &              'saturation routine did not converge for pressure ',
-     &              'iteration',i3,'; ',a149,a1)
-            kgues1=0              !do not reuse faulty density as guess
-            pit(j)=pit(j)*prtio1 !try another pressure and use up one
-            goto 400              !iteration (to prevent infinite loop)
-          else
-            kgues2=1
-          endif
-        end if
-        call FGCTY2 (t,rho1,x,f1,ierr,herr)
-c       write (*,1082) itpp,t,p,rho1,(x(i),i=1,2),(f1(i),i=1,2)
-c1082   format (1x,' SATT--phase 1:  ',i3,f8.2,2e14.6,2e16.8,2e18.10)
-c
-c  begin inner iteration loop for composition of phase 2
-c
-c       write (*,*) 'SATT--begin inner loop for composition of phase 2'
-c
-        sumdl2=2.0d0
+          v(2)=P
+          kgues2=1
+        endif
+        sum1=2d0
+        iconvrg=0            !Flag for convergence of inner loop.
+        call FGCTY2 (T,Dl,z,f1,ierr,herr)
+
+c  Begin inner iteration loop for composition of phase 2.
         do itx=1,itmax*2
-        do i=1,nc
-        xs(i)=x2(i)
-        enddo
-c  compute density and fugacities for phase 2
-        i=iprnterr
-        iprnterr=0
-        call TPRHO (t,p,x2,-kph2,kgues2,rho2,ierr,herr2)!incipient phase
-        if (itx.ne.1) then
-          if (ABS(rho2-rhoc).lt.1 .and. ABS(rho1-rhoc).gt.10) then
-            rho2o=rho2
-c  jump away from critical point when a bad root was found
-            rho2=rho2*.5d0
-            ierr2=ierr
-            call TPRHO (t,p,x2,-kph2,kgues2,rho2,ierr,herr3)
-            if (ierr.ne.0 .or. ABS(rho1-rho2).lt.0.1d0) then
-              herr2=herr3
-              ierr=ierr2
-              rho2=rho2o
+          ys(1:nc)=y(1:nc)
+          call TPRHO (T,P,y,-kph2,kgues2,Dv,ierr,herr)     !Compute density of incipient phase.
+          if (itx.gt.1 .and. ABS(Dv-Dc).lt.1 .and. ABS(Dl-Dc).gt.10)then
+            Dv2=Dv/2d0       !Jump away from critical point when a bad root was found.
+            call TPRHO (T,P,y,-kph2,1,Dv2,ierr,herr)
+            if (ierr.le.0 .and. ABS(Dl-Dv).gt.0.1d0) Dv=Dv2
+          endif
+          kgues2=0
+          if (ierr.le.0) kgues2=1
+          itx1=0
+ 220      itx1=itx1+1
+          if (ierr.gt.0 .or. ABS(Dl-Dv).lt.0.1d0) then
+            ibad2=ibad2+1
+            if (ibad2.lt.15) then
+              if (ABS(Dl-Dv).lt.0.1d0 .and. iTcdiff.eq.1) then
+                y(1:nc)=(tbad2*z(1:nc)+yOrg(1:nc))/(1d0+tbad2)
+                tbad2=tbad2+0.2d0
+              endif
+              if (ABS(kph).eq.1) call DLDV (T,z,y,P,Dl,Dv,ierr,herr)
+              if (ABS(kph).eq.2) call DLDV (T,y,z,P,Dv,Dl,ierr,herr)
+              call FGCTY2 (T,Dl,z,f1,ierr,herr)
+              v(2)=P
+              if (ierr.gt.0) goto 124
+            endif
+            if (ierr.gt.0 .or. ABS(Dl-Dv).lt.0.1d0) then
+              y(1:nc)=yOrg(1:nc)
+              kgues2=0                 !Do not reuse faulty density as guess.
+              v(2)=v(2)/prtio2         !Try another pressure and use up one iteration (to prevent an infinite loop).
+              goto 240
             endif
           endif
-        endif
-        iprnterr=i
-        kgues2=1
-        itx1=0
- 420    continue
-        if (ierr.gt.0 .or. ABS(rho1-rho2).lt.0.1d0) then
-          ibad2=ibad2+1
-          if (ibad2.lt.15) then
-            if (ABS(rho1-rho2).lt.0.1d0 .and.
-     &      ABS(tcrit(1)-tcrit(izero0+2)).gt.100.d0) then  !Use izero0+2 to trick the compiler to ignore an error for element 2 when ncmax=1
-              do i=1,nc
-                x2(i)=(tbad2*x(i)+x2org(i))/(1.d0+tbad2)
-              enddo
-              tbad2=tbad2+0.2d0
-            endif
-            if (kph.eq.1) then
-              call DLDV (t,p,rho1,rho2,x,x2,ierr,herr2)
-            else
-              call DLDV (t,p,rho2,rho1,x2,x,ierr,herr2)
-            endif
-            call FGCTY2 (t,rho1,x,f1,ierr,herr)
-            pit(j)=p
-          endif
-          if (ABS(f1(1)).gt.1.d10) goto 810
-          if (ierr.ne.0 .or. ABS(rho1-rho2).lt.0.1d0) then
-            ierr=-126
-            write (herr,1126) itx,herr2(1:146),hnull
- 1126       format ('[SATT advisory -126] density iteration in ',
-     &            'saturation routine did not converge for composition',
-     &            ' iteration',i3,'; ',a146,a1)
-            do ii=1,nc
-              x2(ii)=x2org(ii)
-            enddo
-            kgues2=0              !do not reuse faulty density as guess
-            pit(j)=pit(j)/prtio2 !try another pressure and use up one
-            goto 400              !iteration (to prevent infinite loop)
-          endif
-        endif
-        call FGCTY2 (t,rho2,x2,f2,ierr,herr)
-c       write (*,1086) itx,rho2,(x2(i),i=1,2),(f2(i),i=1,2)
-c1086   format (1x,'       phase 2:  ',i3,22x,e14.6,2e16.8,2e18.10)
-c  calculate new x2's by ratio of fugacities; inner loop has converged
-c  when x2's change by less than a convergence tolerance
-        x2sum=0.0d0
-        do i=1,nc
-          if (f2(i).gt.1.0d-20 .and. f1(i).gt.0.0d0) then
-            x2new(i)=x2(i)*f1(i)/f2(i)
-          else
-c  in case fugacity is zero; e.g., if x(i)=0, then slightly modify x2(i)
-            if (x(i).gt.0.d0) then
-              rho2=rho1
-              itx1=itx1+1
-              if (itx1.lt.10) goto 420
-            endif
-            x2new(i)=0
-c           if (x2(i).gt.0) x2new(i)=x2(i)+0.01d0
-c           if (x2new(i).gt.1.0d0) x2new(i)=x2(i)-0.01d0
-          end if
-          x2sum=x2sum+x2new(i)
+          call FGCTY2 (T,Dv,y,f2,ierr,herr)
+          call XYFUG (y,f1,f2,tolr,sum1,sumx,iconvrg,ierr,herr)
+          if (iconvrg.gt.0) EXIT
+          if (INT(itx/10)*10.eq.itx) y(1:nc)=(y(1:nc)+ys(1:nc))/2d0            !Occasionally average out the compositions on two successive iterations to stop bouncing.
         enddo
-        if (x2sum.le.0.d0 .or. x2sum.gt.1.d6) goto 810
-c  normalize the x2 compositions; this yields next guess for x2 and
-c  ensures that the x2 always sum to one
-        sumdel=0.0d0
-        do i=1,nc
-          x2new(i)=x2new(i)/x2sum
-          sumdel=sumdel+abs(x2(i)-x2new(i))  !change in compositions
-          x2(i)=x2new(i)
-        enddo
-c       write (*,1560) (x2(i),i=1,nc)
-c1560   format (1x,'SATT:  new compositions in inner loop:  ',5f10.5)
-        if (sumdel.lt.tolr .or. abs(sumdel-sumdl2).lt.tolr*100.d0) then
-c  inner iteration loop has converged
-          lx2con=.true.
-          ierr=0
-          goto 700
-        end if
-        sumdl2=sumdel
-c  if not, continue inner iteration loop
-        if (int(itx/10)*10.eq.itx) then
-c  occasionally average out the compositions on two successive iterations.
-c  sometimes x2 bounces back and forth between two values.
-          do i=1,nc
-            x2(i)=(x2(i)+xs(i))/2.d0
-          enddo
-        endif
-        enddo
-c
-c  inner iteration loop has not converged
-        ierr=-127
-        write (herr,1127) t,sumdel,hnull
- 1127   format ('[SATT advisory -127] ',
-     &          'iteration for composition in saturation routine ',
-     &          'did not converge; T =',g12.5,
-     &          ' K; deltaX =',g12.5,' mol frac.',a1)
-        call ERRMSG (ierr,herr)
-c
-c  end of inner (x2) iteration loop
-c
- 700    continue
-        fpit(j)=1.0d0-x2sum
-c  outer (pressure) loop has converged when the x2's sum to one, i.e.,
-c  when the fugacities of each component in each phase are equal
-c       write (*,*) ' SATT--check conv, p, fp: ',pit(j),fpit(j)
-        call DPDT (t,rho2,x2,dpt2)
-        if (dpt2.le.0.d0) goto 810  !dp/dT should never be negative
-        if (ABS(fpit(j)).lt.tolr .and. lx2con) then
-          ierr=0
-          herr=' '
-          goto 850
-        else
-c  provided that the inner loop has converged, update positive and
-c  negative bounds on pressure for possible use in reguli-falsi iteration
-          if (lx2con) then
-            if (fpit(j).lt.0.0d0) then
-              lpneg=.true.
-              pneg=pit(j)
-              fpneg=fpit(j)
-            else
-              lppos=.true.
-              ppos=pit(j)
-              fppos=fpit(j)
-            end if
-          end if
-        end if
-c
-c  compute new guess for saturation pressure
-c
-        if (j.eq.1) then
-c  for first iteration, new pressure is ratio of old
-          if (x2sum.gt.5) x2sum=5
-          j=2
-          if (kph.eq.1) then
-c  bubble point
-            pit(2)=pit(1)*x2sum
-          else
-c  dew point
-            pit(2)=pit(1)/x2sum
-          end if
-        else
-c  subsequent iterations--use secant method
-          if (ABS(fpit(2)-fpit(1)).gt.1.0d-12)
-     &    pit(3)=pit(2)-fpit(2)*(pit(2)-pit(1))/(fpit(2)-fpit(1))
-c  check that new pressure is not outside bounds, if so use reguli-falsi
-          if (lpneg .and. lppos .and. (pit(3).gt.1.001d0*MAX(ppos,pneg)
-     &        .or. pit(3).lt.0.990d0*MIN(ppos,pneg))) then
-            pit(3)=ppos-fppos*(ppos-pneg)/(fppos-fpneg)
-          end if
-c  discard oldest iteration
-          pit(1)=pit(2)
-          pit(2)=pit(3)
-          fpit(1)=fpit(2)
-        end if
-c       write (*,1799) itpp,j,pit(1),pit(2),fpit(2)
-c1799   format (1x,' SATT--itpp,j,p1,p2,fp2:  ',2i4,3e14.6)
- 400    continue
-c  outer iteration loop has not converged
- 810    continue
-        ierr=128
-        write (herr,1128) t,hnull
- 1128   format ('[SATT error 128] ',
-     &          'iteration for saturation state did not converge; T =',
-     &          g12.5,' K.',a1)
-        call ERRMSG (ierr,herr)
-        p=pc
-        rho1=rhoc
-        rho2=rhoc
-c
-c  end of outer (pressure) iteration loop
-c
- 850    continue
-c
-c  assign final compositions and densities for parent and incipient
-c  phases (x and x2, rho1 and rho2, respectively) to outputs
-c
-        if (kph.eq.1) then
-c  bubble point
-          rhol=rho1
-          rhov=rho2
-          do i=1,nc
-            xliq(i)=x(i)
-            xvap(i)=x2(i)
-          enddo
-        else
-c  dew point
-          rhol=rho2
-          rhov=rho1
-          do i=1,nc
-            xliq(i)=x2(i)
-            xvap(i)=x(i)
-          enddo
-        end if
-c  call new routine SATTP if ierr>0 and attempt to get convergence
-c       if (ierr.gt.0 .and. icomp.eq.0 .and. iSatFlg.eq.0) then
-c         call SATTP(t,p,x,kph,0,d,rhol,rhov,xliq,xvap,q,ierr,herr)
-c       endif
-        if (rhov.gt.rhol*0.99d0) then
-          if (ABS(xliq(1)-xvap(1)).lt.0.1d0) then
-            p=pc
-            rhov=rhoc
-            rhol=rhoc
-            if (t.lt.tc) then
-              ierr=128
-              write (herr,1128) t,hnull
-              call ERRMSG (ierr,herr)
-            else
-              ierr=121
-              write (herr,1121) t,tc,hnull
-              call ERRMSG (ierr,herr)
-            endif
-          endif
-        endif
-c  end of mixture iteration
-      end if
-c
-c  save results
- 900  continue
-      if (ierr.eq.0) then
-        if (p.lt.0.00001d0 .and. icomp.ne.0) p=rhov*r*t
-        tsavt=t
-        psavt=p
-        icsavt=icomp
-        kphsvt=kph
-        dlsavt=rhol
-        dvsavt=rhov
-        if (icomp.eq.0) then
-          do i=1,nc
-            xsavt(i)=x(i)
-            xlsavt(i)=xliq(i)
-            xvsavt(i)=xvap(i)
-          enddo
-        else
-          do i=1,nc
-            xsavt(icomp)=0.d0
-            xlsavt(icomp)=0.d0
-            xvsavt(icomp)=0.d0
-          enddo
-          xsavt(icomp)=1.d0
-          xlsavt(icomp)=1.d0
-          xvsavt(icomp)=1.d0
-        endif
-        lsatt=.true.
-      endif
-      if (iaga.eq.1) then
-        heos='AGA'
-        if (ierr.eq.0) call TPRHO (t,p,xvap,2,1,rhov,ierr,herr)
-      endif
-      RETURN
-c
-      end                                               !subroutine SATT
-c
-c ======================================================================
-c
-      subroutine SATTEST (t,x,kph,p,x2,ierr,herr)
-c
-c  estimate initial values for saturation states given temperature
-c  and the composition of one phase
-c
-c  inputs:
-c        t--temperature [K]
-c        x--composition [array of mol frac] (phase specified by kph)
-c      kph--phase flag: 1 = input x is liquid composition (bubble point)
-c                       2 = input x is vapor composition (dew point)
-c  outputs:
-c        p--estimated pressure [kPa]
-c       x2--estimated composition of unknown phase [array of mol frac]
-c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
-c  08-06-09 EWL, original version, taken from code in SATT
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SATTEST
-c
-      include 'commons.for'
-      dimension x(ncmax),x2(ncmax),pcomp(ncmax)
-      character*255 herr
-c
-c  generate initial guesses for mixture pressure and compositions
-c  using Raoult's law
-c
-c  estimates for vapor pressures of pure components
-      ierr=0
-      herr=' '
-      do i=1,nc
-        pcomp(i)=pcrit(i)
-     &        *10.d0**(-2.333333d0*(1.d0+accen(i))*(tcrit(i)/t-1.d0))
+
+c  Outer loop has converged when the y's sum to one, i.e., when the fugacities of each component in each phase are equal.
+        f(2)=1d0-sumx
+        call DPDTX (T,Dv,y,dPdT)
+        if ((dPdT.le.0. .or. dPdT.gt.1d+10) .and. sumx.gt.20) goto 124         !dp/dT should never be negative
+        if (ABS(f(2)).lt.tolr .and. iconvrg.gt.0) goto 260           !Iteration has converged.
+        v3=v(2)*sumx                   !New guess for bubble-point pressure.
+        if (kph2.eq.2) v3=v(2)/sumx    !New guess for dew-point pressure.
+        call ROOTSEARCH (jr,0,0,v,f,v3,it,ib,lneg,lpos)
+        v(2)=v3
+        jr=1234
+ 240    P=v(2)
       enddo
-c
-      p=0.d0
-      if (kph.eq.1) then
-c  bubble point
-        do i=1,nc
-          p=p+x(i)*pcomp(i)
-        enddo
-        do i=1,nc
-          x2(i)=x(i)*pcomp(i)/p
-        enddo
-      else
-c  dew point
-        ysum=0.d0
-        do i=1,nc
-          ysum=ysum+x(i)/pcomp(i)
-        enddo
-        do i=1,nc
-          x2(i)=x(i)/pcomp(i)/ysum
-          p=p+x2(i)*pcomp(i)
-        enddo
-      end if
+      goto 124     !Outer iteration loop has not converged.
+
+c  Solution found, assign final compositions and densities for parent (z,Dl) and incipient (y,Dv) phases (Dl and Dv do not necessarily mean liquid and vapor here).
+ 260  ierr=0
+      x(1:nc)=z(1:nc)
+      if (kph.eq.2) call SWAPV (Dl,Dv)           !Dew point
+      if (kph.eq.2) call SWAPA (x,y)
+      if (Dv.gt.Dl*0.99d0 .and. ABS(x(1)-y(1)).lt.0.1d0) then
+        if (T.lt.Tc) goto 124
+        goto 121
+      endif
+
+c --------------------End of mixture iteration--------------------
+
+
+
+ 400  call SATSAVE (2,icomp,kph,T,P,D,Dl,Dv,q,x,y,z,ierr,iexit)      !Save the results if the calculation was successful.
+
+ 500  continue
+      if (lAGA8) then   !Save the state of the AGA-8 flag and then turn it off so that the saturation pressures will come from the FEQ models.
+        call SETEOSMX ('AGA')
+        if (ierr.le.0) call TPRHO (T,P,y,2,1,Dv,ierr,herr)  !Recall TPRHO to get the density from the AGA8 equation, not from the full Refprop equations.
+      endif
+      iErrNum=iErrNum-1
+      D=Dl
+      if (kph.eq.2 .or. kph.eq.4) D=Dv
+c  Check if limits have been exceeded, return that message if no other error has occurred.
+      if (kph.gt.0 .and. ikph.eq.0)
+     &    call CHECKLIMITS ('S1',T,D,P,z,ierr,herr)
+      if (iErrNum.le.0 .and. iexit.eq.0) call ERRMSG (ierr,herr)
+
       RETURN
-c
-      end                                            !subroutine SATTEST
+
+ 121  call ERRNUM (121,0,'SATT',' ',T,Tc,0d0,ierr,herr)
+      goto 199
+ 124  call ERRNUM (124,0,' ',' ',T,0d0,0d0,ierr,herr)
+      goto 199
+ 199  P=Pc
+      Dl=Dc
+      Dv=Dc
+      x(1:nc)=z(1:nc)
+      if (kph.eq.2) call SWAPV (Dl,Dv)           !Dew point
+      if (kph.eq.2) call SWAPA (x,y)
+      goto 500
+
+      end                                                subroutine SATT
 c
 c ======================================================================
 c
-      subroutine SATP (p,x,kph,t,rhol,rhov,xliq,xvap,ierr,herr)
+      subroutine SATP (P,z,kph,T,Dl,Dv,x,y,ierr,herr)
 c
-c  iterate for saturated liquid and vapor states given pressure
-c  and the composition of one phase
+c  Iterate for saturated liquid and vapor states given pressure
+c  and the composition of one phase.
 c
-c  inputs:
-c        p--pressure [kPa]
-c        x--composition [array of mol frac] (phase specified by kph)
-c      kph--phase flag:  1 = input x is liquid composition
-c                        2 = input x is vapor composition
-c                        3 = input x is liquid composition (freezing point)
-c                        4 = input x is vapor composition (sublimation point)
+c  Inputs:
+c        P--Pressure [kPa]
+c           If T is negative, all other variables are used as initial guesses at ABS(T).
+c        z--Composition (array of mole fractions) (phase specified by kph)
+c      kph--Phase flag:  1 - Input z is liquid composition (bubble point)
+c                        2 - Input z is vapor composition (dew point)
+c                        3 - Input z is liquid composition (freezing point)
+c                        4 - Input z is vapor composition (sublimation point)
 c
-c  outputs:
-c        t--temperature [K]
-c     rhol--molar density [mol/L] of saturated liquid
-c     rhov--molar density [mol/L] of saturated vapor
+c  Outputs:
+c        T--Temperature [K]
+c       Dl--Molar density of saturated liquid [mol/L]
+c       Dv--Molar density of saturated vapor [mol/L]
 c           For a pseudo pure fluid, the density of the equilibrium phase
 c           is not returned.  Call SATP twice, once with kph=1 to get
-c           tliq and rhol, and once with kph=2 to get tvap and rhov.
-c     xliq--liquid phase composition [array of mol frac]
-c     xvap--vapor phase composition [array of mol frac]
-c     ierr--error flag:  0 = successful
-c                        2 = P < Ptp
-c                        4 = P < 0
-c                        8 = x out of range
-c                       12 = P and x out of range
-c                      140 = CRITP did not converge
-c                      141 = P > Pcrit
-c                      142 = TPRHO-liquid did not converge (pure fluid)
-c                      143 = TPRHO-vapor did not converge (pure fluid)
-c                      144 = pure fluid iteration did not converge
-c           following 3 error codes are advisory--iteration will either
-c           converge on later guess or error out (ierr = 148)
-c                     -144 = Raoult's law (mixture initial guess) did
-c                            not converge
-c                     -145 = TPRHO did not converge for parent ph (mix)
-c                     -146 = TPRHO did not converge for incipient (mix)
-c                     -147 = composition iteration did not converge
-c                      148 = mixture iteration did not converge
-c     herr--error string if ierr<>0 (character*255)
+c           Tliq and Dl, and once with kph=2 to get Tvap and Dv.
+c        x--Liquid phase composition (array of mole fractions)
+c        y--Vapor phase composition  (array of mole fractions)
+c     ierr--Error flag:  0 - Successful
+c                      141 - P > Pcrit
+c                      144 - Pure fluid iteration did not converge
+c                      (See subroutine LIMITX for other possible error numbers.)
+c     herr--Error string (character*255)
 c
 c  written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
 c  07-13-95  MM, original version
-c  09-11-95  MM, add error string to argument list
-c  09-25-95  MM, rearrange argument list (outputs in order t, rho, x)
-c  10-11-95  MM, RETURN if any error detected
-c  11-29-95  MM, variable lower limit on coefficient/constant arrays
-c                to accommodate ECS reference fluid
-c  12-11-95  MM, Raoult's law as first guess for mixture
-c  12-18-95  MM, fill xliq, xvap with zeros for undefined components
-c  12-27-95  MM, add full mixture iteration using fugacity, based on SATT
-c  02-27-96  MM, parameter n0=-ncmax to accommodate ECS-thermo model
-c                add Zcrit to common /CCON/
-c  03-19-96  MM, add dipole moment to /CCON/
-c  04-05-96  MM, test for supercritical '.ge. pc' rather than '.gt. pc'
-c  11-14-96  MM, adjust initial guesses, tratio, etc to get closer to critical
-c  02-12-96 EWL, special initial guess for temperature near the critical point
-c  07-15-97  MM, add errors/warnings to parallel SATT
-c  10-01-97  MM, add compiler switch to allow access by DLL
-c  11-13-97 EWL, initialize ft(j); potential bomb if no value when writing error message
-c  12-05-97  MM, check that TPRHO gives density within bounds
-c                if Raoult's law iteration D.N.C., revert to initial guess
-c  02-10-98  MM, add reguli-falsi, quadratic interpolation and bisection
-c                to Raoult's law iteration
-c  04-06-98 EWL, call subroutine AG to get Gibbs energy
-c  07-30-98  MM, check for f1=0 in phase 2 iteration; separate kguess for each phase
-c  11-30-98 EWL, change kguess to kgues2 in call to TPRHO in vapor search.
-c  12-01-98 EWL, add Reos and triple point pressure and density to /CCON/
-c  12-01-98 EWL, add Reos and triple point pressure and density to /CCON/
-c  12-01-98 EWL, add Reos and triple point pressure and density to /CCON/
-c  12-22-98 EWL, zero out all elements of xliq and xvap
-c  12-22-98 EWL, use pure fluid algorithm when called with a mixture but x(i)=1
-c  12-23-98 EWL, modify step size for T when TPRHO fails
-c  12-23-98 EWL, replace rhov with rhoc/2 when TPRHO finds liquid root
-c  08-03-99 EWL, if TPRHO fails, set x2 to original values before restarting
-c  08-03-99 EWL, if dpdrho>1d6, then return an error message
-c  01-11-00 EWL, remove ierr from lines where 'i3' was not in format statement
-c  02-23-00 EWL, add kph=3,4 as inputs and call melting or sublimation lines
-c  12-17-01 EWL, call SATT if iteration fails
-c  05-28-02 EWL, check for bad root in two phase
-c  08-14-02 EWL, add logic if ammonia/water in use
-c  09-19-02 EWL, add checks for ancillary routines and exit for pseudo-pures
-c  03-24-05 EWL, add check for small rho in liquid phase. (for mixtures, inner loop)
-c  09-21-06 EWL, increase itmax, check for ierr=-147, add small value to keep x2sum<>1,
-c                add check for nh3+h2o, split tratio into trtio1 and trtio2
-c  03-07-07 EWL, add check for very low pcomp(i)
-c  02-18-08 EWL, add check for icomp<>old icomp (icsav)
-c  04-22-10 EWL, rename variables in PSTSAV
-c  11-29-12 EWL, in inner loop, if density from TPRHO is out range, exit after 10 iterations
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SATP
-c
-      include 'commons.for'
-      character*255 herr,herr2,herr3
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax),x2org(ncmax)
-      dimension x2(ncmax),f1(ncmax),f2(ncmax),x2new(ncmax)
-      dimension tk(4),ft(3)                  !used for T iteration
-c
-      iaga=0
-      call ISPURE (x,icomp)
-      ierr=0
-      rho1=0
-      rho2=0
+c  12-08-16 EWL, rewrite code for better efficiency and reading.
+
+      include 'COMMONS.INC'
+      character*255 herr,herr1
+      dimension x(ncmax),y(ncmax),z(ncmax),yOrg(ncmax),ys(ncmax)
+      dimension f1(ncmax),f2(ncmax),v(20),f(20)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SATP
+
+
+      if (iSatFlg1.gt.0) RETURN        !Don't do recursive calls.
+      iErrNum=iErrNum+1
+      iexit=0
+      ikph=0
+      v3=0d0
+      if (lAGA8) call SETEOSMX (heox)   !Save the state of the AGA-8 flag and then turn it off so that the saturation pressures will come from the FEQ models.
+
+c  Check if melting or sublimation line requested and call appropriate routines.
+      call ISPURE (z,icomp)
+      if (kph.eq.3) then               !Liquid/solid (melting line)
+        Dl=0d0
+        call MELTP (P,z,T,ierr,herr)
+        if (ierr.le.0) call TPRHO (T,P,z,1,1,Dl,ierr,herr)
+        if (ierr.gt.0) Dl=0d0
+        Dv=Dl
+        goto 500
+      elseif (kph.eq.4) then           !Vapor/solid (sublimation line)
+        Dv=0d0
+        call SUBLP (P,z,T,ierr,herr)
+        if (ierr.le.0) then
+          call TPRHO (T,P,z,2,0,Dv,ierr,herr)
+        else
+          if (icomp.ne.0)call SETPNTS(1,icomp,z,tt,pp,Dl,Dv,ierr1,herr1)       !If no sublimation line, get triple point vapor density.
+          ierr=-ierr
+          i=INDEX(herr,'.           ')
+          if (i.eq.0) i=INDEX(herr,'           ')
+          herr=herr(1:i-1)//'; triple-point vapor density returned.'
+        endif
+        if (ierr.le.0) ikph=1          !Sublimation calculation succeeded, do not do temperature checks.
+        Dl=Dv
+        goto 500
+      endif
+
+      call SATMAX (icomp,z,Tc,Pc,Dc,ierr,herr)                       !Get pure fluid critical point or mixture maximum P and T (but labeled here simply as Pc and Tc).
+      call LIMITS ('EOS',z,Tmin,Tmax,Dmax,Pmax)
+      if (icomp.ne.0 .or. MixTyp.le.1) then
+        if (P.gt.Pc+1d-4 .or. P.le.0.) goto 141            !P is above maxcondenbar for mixtures or above Pc for pure fluids.
+        if (P.gt.Pc-1d-4 .and. icomp.ne.0) goto 199        !Input pressure is nearly equal to Pc, return critical parameters for T and D.
+      endif
       herr=' '
-      herr2=hnull
-      if (lsatp) then
-        if (ABS(p-psavp).lt.1.d-9 .and. kph.eq.kphsvp
-     &          .and. p.gt.1.d-7) then
-          lsame=.true.
-          if (icomp.ne.icsavp) lsame=.false.
-          if (icomp.eq.0) then
-            do i=1,nc
-              if (ABS(x(i)-xsavp(i)).gt.1.0d-9) lsame=.false.
-            enddo
-          endif
-          if (lsame) then
-            t=tsavp
-            rhol=dlsavp
-            rhov=dvsavp
-            do i=1,nc
-              xliq(i)=xlsavp(i)
-              xvap(i)=xvsavp(i)
-            enddo
-            RETURN
-          endif
-        endif
-      endif
-c  set tolerance and maximum number of iterations
-      tolr=1.0d-6
-      itmax=100
-      ft(1)=0.0d0  !initialize to avoid potential problem
-      ft(2)=0.0d0  !when writing error message to GUI
-c
-c  initialize outputs in event of failure of routines
-      t=300.0d0
-      rhol=0.0d0
-      rhov=0.0d0
-      if (icomp.eq.0) then
-        do i=1,nc
-          xliq(i)=x(i)
-          xvap(i)=x(i)
-        enddo
+
+      ierr=0
+      call SATSAVE (1,icomp,kph+2,T,P,D,Dl,Dv,q,x,y,z,ierr,iexit)    !Check if this calculation has already been done for the input conditions.
+      if (iexit.eq.1) goto 500
+
+      tolr=1d-10
+      itmax=35
+      InitFlg=0
+      kguess=1
+      if (T.lt.0. .and. T.gt.-1d4) then          !To use the input parameters as initial guesses for mixtures, send a negative temperature to this routine.
+        InitFlg=1
+        T=ABS(T)
       else
-        do i=1,nc
-          xliq(i)=0.d0
-          xvap(i)=0.d0
-        enddo
-        xliq(icomp)=1.d0
-        xvap(icomp)=1.d0
+        call SATGUESS (kph,2,0,0,z,T,P,Dv,h,s,Dl,x,ierr,herr)        !Get initial estimates.
+        if (ierr.gt.0) kguess=0        !Use values from SATGUESS as initial guesses to TPRHO.
+        if (kph.eq.1) call SWAPV (Dl,Dv)
+        y(1:nc)=x(1:nc)
       endif
-c
-c  check if melting or sublimation line requested and call appropriate routines.
-      if (kph.eq.3) then      !liquid/solid
-        call MELTP (p,x,t,ierr2,herr2)
-        rhol=dtpn(1)
-        if (t.gt.0.d0) call TPRHO (t,p,x,1,1,rhol,ierr,herr)
-        if (ierr.eq.0) then
-          ierr=ierr2
-          herr=herr2
+      fd=1
+      if (P/Pc.lt.0.99d0) fd=1.1d0     !Very conservative estimates for the saturated density divided by the critical density (or vice versa).
+      if (P/Pc.lt.0.95d0) fd=1.3d0
+
+c  Check for mixture---------------------------------------
+      if (icomp.eq.0) goto 200
+
+c  Check for pseudo-pure fluid.
+      if (iAnc(icomp).ne.0) then
+        call TPRHO (T,P,z,kph,0,Dl,ierr,herr)
+        Dv=Dl                !Don't return equilibrium phase density for a pseudo-pure fluid.
+        goto 400
+      endif
+
+
+
+
+c --------------------Start pure fluid iteration--------------------
+c  Iterate for saturated liquid and vapor states given pressure with the use of a simple
+c   successive substitution method.  The independent variable in the iteration is the temperature.
+c   The convergence criteria is the equality of Gibbs free energy in both phases.
+      do it=1,itmax
+        call TPRHO (T,P,z,1,kguess,Dl,ierr,herr)           !Get liquid density.
+        if (ierr.gt.0 .or. Dl.le.Dc*fd) then     !Don't let the liquid density go more than Dc*fd into the 2-phase region.
+          kguess=0
+          T=T*0.995d0                  !Root not found, increase temperature at a continuing rate as the number of iterations continues.
+          if (it.gt.7)  T=T*0.99d0
+          if (it.gt.14) T=T*0.95d0
+        else
+          call TPRHO (T,P,z,2,kguess,Dv,ierr,herr)         !Get vapor density.
+          if (ierr.gt.0 .or. Dv.le.0. .or. Dv.gt.Dc/fd) then         !Don't let the vapor density go more than Dc/fd into the 2-phase region.
+            kguess=0
+            T=0.9*T+0.1*Tc
+            if (it.gt.7)  T=0.9*T+0.1*Tc
+            if (it.gt.14) T=0.9*T+0.1*Tc
+          else
+            kguess=1         !Use previous densities as initial guesses for calls to TPRHO after first iteration.
+            call THERM1 (T,Dl,z,pp,e,h,sliq,Gliq)
+            call THERM1 (T,Dv,z,pp,e,h,svap,Gvap)
+
+c  Check for convergence.
+            if (ABS(sliq-svap).lt.1d-8) EXIT               !Check that liquid and vapor entropies are different.
+            Tdel=(Gliq-Gvap)/(sliq-svap)
+            if (ABS(Tdel).gt.0.2d0*T) Tdel=SIGN(0.2d0*T,Tdel)        !Check that Tdel will not result in a nonsense number.
+            T=T+Tdel
+            call TOLRNC (tolr,it,15,20,0,0,0)              !Loosen tolerance if not converging.
+            if (ABS(Tdel/T).lt.tolr .and. T.le.Tc) then
+              call TPRHO (T,P,z,2,1,Dv,ierr,herr)          !Get vapor density.
+              if (ierr.gt.0 .or. Dv.gt.Dc) EXIT
+              call TPRHO (T,P,z,1,1,Dl,ierr,herr)          !Get liquid density.
+              if (ierr.gt.0 .or. Dl.lt.Dc) EXIT
+              goto 400       !Iteration is complete, exit routine.
+            endif
+         endif
         endif
-        goto 900
-      else if (kph.eq.4) then      !vapor/solid
-        call SUBLP (p,x,t,ierr2,herr2)
-        if (t.gt.0.d0) then
-          rhov=p/(R*t)
-          if (rhov.lt.1.d10) call TPRHO (t,p,x,2,1,rhov,ierr,herr)
-        endif
-        if (ierr.eq.0) then
-          ierr=ierr2
-          herr=herr2
-        endif
-        goto 900
-      end if
+        if (T.gt.1d5) EXIT
+        if (T.gt.Tc) T=Tc*0.95d0
+        if (T.lt.Ttpn(icomp) .and. P.gt.Ptpn(icomp))       !Do not perform check if user asked for P<Ptrp.
+     &      T=0.8d0*Ttpn(icomp)+0.2d0*Tc
+      enddo
+c  Iteration has not converged.
+
+c  In case of failure, try calling SATT iteratively to find the saturated
+c   temperature.  This takes advantage of the alternate method in SATT used
+c   at temperatures very close to the critical point.
+      T1=Tc*0.999d0
+      call SATT (T1,z,kph,P1,Dl,Dv,x,y,ierr,herr)
+      T=Tc*0.9995d0
+      T2=T
+      do it=1,20
+        call SATT (T,z,kph,P2,Dl,Dv,x,y,ierr,herr)
+        if (ABS(P2-P)/P.lt.tolr .and. ierr.eq.0) goto 400            !Converged
+        if (ABS(P2-P1).lt.1d-12) EXIT
+        T=T1-(P1-P)/(P2-P1)*(T2-T1)
+        if (T.gt.Tc .and. T2.gt.T1) T=(T2+Tc)/2d0
+        if (T.gt.Tc .and. T1.gt.T2) T=(T1+Tc)/2d0
+        P1=P2
+        T1=T2
+        T2=T
+      enddo
+      goto 144     !Iteration has not converged.
+
+c  End of pure fluid iteration.
+
+
+
+
+c --------------------Start mixture iteration--------------------
 c
-      call CRITP (x,tc,pc,rhoc,ierr,herr2)
-      if (ierr.gt.0) then
-c  error condition--set outputs, issue warning, and return
-        ierr=140
-        write (herr,1140) herr2(1:237),hnull
- 1140   format ('[SATP error 140] ',a237,a1)
-        call ERRMSG (ierr,herr2)
-        RETURN
-      end if
-c
-c  check that input conditions (in this case p and x) are within limits
-c
-      Ddum=0.0d0
-      tdum=0.8d0*tc
-      call LIMITX ('EOS',tdum,Ddum,p,x,tmin,tmax,rhomax,pmax,ierr,herr2)
-c     write (*,*) ' SATP--density limit:  ',rhomax
-      if (ierr.gt.1) then     !ignore ierr = 1 (t out of range)
-c  p and/or x are out of bounds, set error flag and return
-        t=0.8d0*tc
-        write (herr,1000) ierr,herr2(1:238),hnull
- 1000   format ('[SATP error',i3,'] ',a238,a1)
-        call ERRMSG (ierr,herr)
-        RETURN
-      end if
-c
-      if (icomp.ne.0) then
-        if (p.lt.ptpn(icomp)) then
-          call SUBLP (p,x,t,ierr,herr)        !vapor/solid
-          if (t.gt.0.d0) then
-            rhov=p/(R*t)
-            if (rhov.lt.1.d10) call TPRHO (t,p,x,2,1,rhov,ierr3,herr3)
-            goto 900
+c  Start by calling new routine that converges better.  If it fails, then
+c   revert back to original method further below.
+ 200  if (iSpline.ne.0) then
+        call MAXP (z,PmaxT,PmaxP,PmaxD,ierr,herr)
+        if (ierr.eq.0 .and. P.gt.PmaxP+10d0 .and. MixTyp.le.1) goto 141   !P is above maxcondenbar.
+      endif
+
+      if (icomp.eq.0 .and. iSatFlg.eq.0) then
+        iSatFlg1=iSatFlg1+1            !A value of 0 for iSatFlg1 means it is safe to call SATT or SATP non-recursively
+        call SATTP (T,P,z,kph+2,0,D,Dl,Dv,x,y,q,ierr,herr)
+        if (ierrPmx.gt.0.and.kph.eq.1.and.p.gt.5d4.and.ierr.ge.100) then
+          call SATTP (T,P,z,kph+3,0,D,Dl,Dv,x,y,q,ierr,herr)
+          if (ierr.ge.100) then
+            iSatFlg1=iSatFlg1-1
+            goto 500
           endif
-          ierr=2
-          t=ttpn(icomp)
-          write (herr,1149) p/1000.0d0,ptpn(icomp)/1000.0d0,hnull
-          call ERRMSG (ierr,herr)
- 1149     format ('[SATP error 2] ',
-     &            'pressure less than triple point pressure; P =',
-     &          g12.5,' MPa, Ptp =',g12.5,' MPa.',a1)
+        endif
+        iSatFlg1=iSatFlg1-1
+        if (ierr.le.0) goto 400
+      endif
+
+c  Iterate for the temperature and the composition of the incipient phase (vapor phase
+c   for a bubble point calculation, liquid for dew point) given pressure and the
+c   composition of the parent phase.  Iteration is generally based on the algorithm
+c   given by Smith and Van Ness (Intro to Chem. Engr. Thermo., McGraw-Hill, 1977);
+c   convergence criteria is the equality of fugacity for each component in both phases.
+      call ROOTSEARCH (0,0,0,v,f,v3,0,ib,lneg,lpos)        !Initialize root finding variables.
+      kgues1=1
+      kgues2=1
+      if (InitFlg.eq.0) then
+        if (iSpline.gt.0) then
+          call SATGUESS (kph,2,0,1,z,T,P,Dl,h,s,Dv,x,ierr,herr)
+          if (kph.eq.2) call SWAPV (Dl,Dv)
+          y(1:nc)=x(1:nc)
+        else
+          call SATEST (kph+2,T,P,z,x,y,ierr,herr)          !Use Raoult's law as initial guesses.
+          kgues1=0           !For first calls to TPRHO.
+          kgues2=0
+        endif
+        if (T.gt.0.99d0*Tc) T=0.99d0*Tc
+      endif
+      if (kph.eq.1) then
+        kph2=2               !kph2 specifies whether the incipient phase (y) is liquid (1) or vapor (2).
+        trtio1=0.995d0       !tratio is the multiplier for temperature to use when TPRHO does not converge
+        trtio2=0.988d0       ! such that new guesses for temperature are further into the single-phase region.
+      else
+        kph2=1
+        trtio1=1.005d0       !Choose different tratio for the dew and bubble sides to avoid loops.
+        trtio2=1.012d0
+        if (Dv.lt.Dl) then
+          call SWAPV (Dl,Dv)
+          call SWAPA (x,y)   !y is the incipient phase, not the vapor phase.
+        endif
+      endif
+      tolr=1d-8
+      yOrg(1:nc)=y(1:nc)
+      v(2)=T
+      jr=1
+
+c  Begin main mixture iteration--Start outer loop for temperature with Raoult's Law results as first guess.
+      do it=1,itmax
+        call TOLRNC (tolr,it,8,12,15,0,0)             !Loosen tolerance if not converging.
+        call TPRHO (T,P,z,-kph,kgues1,Dl,ierr,herr)   !Compute density and fugacities for parent phase.
+        kgues1=1
+        if (ABS(Dl-Dc).lt.1 .and. ABS(Dv-Dc).gt.4) then
+          Dl=Dl*1.5d0
+          call TPRHO (T,P,z,-kph,1,Dl,ierr,herr)
+        endif
+        if (kph.eq.1) then
+          if (Dl.lt.Dc/2d0) ierr=999
+          if (Dl.lt.Dc*1.2d0 .and. it.eq.1 .and. InitFlg.eq.0) ierr=999
+        endif
+        if (ierr.gt.0) then
+          v(2)=T*trtio1      !Try another temperature and use up one iteration (to prevent infinite loop)
+          kgues1=0           !Do not reuse faulty density as guess
+          goto 240
+        endif
+        sum1=2d0
+        iconvrg=0            !Flag for convergence of inner loop.
+        call FGCTY2 (T,Dl,z,f1,ierr,herr)
+
+c  Begin inner iteration loop for composition of phase 2.
+        do itx=1,itmax*2
+          ys(1:nc)=y(1:nc)
+          call TPRHO (T,P,y,-kph2,kgues2,Dv,ierr,herr)     !Compute density of incipient phase.
+          kgues2=1
+          if (ierr.gt.0 .or. ABS(Dl-Dv).lt.0.01d0 .or.
+     &       (Dv.lt.0.01d0 .and. kph2.eq.1)) then
+            y(1:nc)=yOrg(1:nc)
+            v(2)=T/trtio2    !Try another temperature and use up one iteration (to prevent infinite loop).
+            kgues2=0         !Do not reuse faulty density as guess.
+            goto 240
+          elseif (Dv.gt.1.2*Dmax) then
+            Dv=Dmax
+            call TPRHO (T,P,y,-kph2,1,Dv,ierr,herr)
+          endif
+          if (ierr.gt.0) kgues2=0
+          call FGCTY2 (T,Dv,y,f2,ierr,herr)
+          call XYFUG (y,f1,f2,tolr,sum1,sumx,iconvrg,ierr,herr)
+          if (iconvrg.gt.0) EXIT
+          if (INT(itx/10)*10.eq.itx) y(1:nc)=(y(1:nc)+ys(1:nc))/2d0  !Occasionally average out the compositions on two successive iterations to stop bouncing.
+        enddo
+
+c  Outer loop has converged when the y's sum to one, i.e., when the fugacities of each component in each phase are equal.
+        f(2)=1d0-sumx
+        call DPDTX (T,Dv,y,dPdT)
+        if (dPdT.le.0.) goto 144                                     !dp/dT should never be negative
+        if (ABS(f(2)).lt.tolr .and. iconvrg.gt.0) goto 260           !Iteration has converged.
+        v3=v(2)-Tc/100d0     !Next guess for first iteration.
+        call ROOTSEARCH (jr,0,0,v,f,v3,it,ib,lneg,lpos)
+        v(2)=v3
+        jr=1234
+ 240    T=v(2)
+      enddo
+      goto 144     !Outer iteration loop has not converged.
+
+c  Solution found, assign final compositions and densities for parent (z,Dl) and incipient (y,Dv) phases (Dl and Dv do not necessarily mean liquid and vapor here).
+ 260  ierr=0
+      x(1:nc)=z(1:nc)
+      if (kph.eq.2) call SWAPV (Dl,Dv)           !Dew point
+      if (kph.eq.2) call SWAPA (x,y)
+      if (Dv.gt.Dl*0.99d0 .and. ABS(x(1)-y(1)).lt.0.1d0) then
+        if (P.lt.Pc) goto 144
+        goto 141
+      endif
+
+c --------------------End of mixture iteration--------------------
+
+
+
+
+
+ 400  call SATSAVE (2,icomp,kph+2,T,P,D,Dl,Dv,q,x,y,z,ierr,iexit)    !Save the results if the calculation was successful.
+
+ 500  continue
+      if (lAGA8) then   !Save the state of the AGA-8 flag and then turn it off so that the saturation pressures will come from the FEQ models.
+        call SETEOSMX ('AGA')
+        if (ierr.le.0) call TPRHO (T,P,y,2,1,Dv,ierr,herr)  !Recall TPRHO to get the density from the AGA8 equation, not from the full Refprop equations.
+      endif
+      iErrNum=iErrNum-1
+      D=Dl
+      if (kph.eq.2 .or. kph.eq.4) D=Dv
+c  Check if limits have been exceeded, return that message if no other error has occurred.
+      if (kph.gt.0 .and. ikph.eq.0)
+     &    call CHECKLIMITS ('S1',T,D,P,z,ierr,herr)
+      if (iErrNum.le.0 .and. iexit.eq.0) call ERRMSG (ierr,herr)
+      RETURN
+
+ 141  call ERRNUM (141,0,'SATP',' ',P/1000d0,Pc/1000d0,0d0,ierr,herr)
+      goto 199
+ 144  call ERRNUM (144,0,' ',' ',P/1000d0,0d0,0d0,ierr,herr)         !Don't change error number, used elsewhere.
+      goto 199
+ 199  T=Tc
+      Dl=Dc
+      Dv=Dc
+      goto 500
+
+
+      end                                                subroutine SATP
+c
+c ======================================================================
+c
+      subroutine SATD (D,z,kph,kr,T,P,Dl,Dv,x,y,ierr,herr)
+c
+c  Iterate for temperature and pressure given density along the
+c  saturation boundary (including the sublimation and melting
+c  lines) and the composition.
+c
+c  Either (Dl,x) or (Dv,y) will correspond to the input state with
+c  the other pair corresponding to the other phase in equilibrium
+c  with the input state.
+c
+c  The flag kph is for use only with water at densities near the
+c  triple point (between 0 and 4 C).
+c
+c  Inputs:
+c        D--Molar density [mol/L]
+c        z--Composition (array of mole fractions)
+c      kph--Flag specifying desired root for multi-valued inputs (typically only water):
+c         0,1 - Return upper root
+c          -1 - Return middle root
+c           3 - Return melting line
+c
+c  Outputs:
+c        T--Temperature [K]
+c        P--Pressure [kPa]
+c       Dl--Molar density of saturated liquid [mol/L]
+c       Dv--Molar density of saturated vapor [mol/L]
+c        x--Liquid phase composition (array of mole fractions)
+c        y--Vapor phase composition  (array of mole fractions)
+c       kr--Phase flag:  1 - Input state is liquid in equilibrium with vapor.
+c                        2 - Input state is vapor in equilibrium with liquid.
+c                        3 - Input state is liquid in equilibrium with solid. (only for pure fluids)
+c                        4 - Input state is vapor in equilibrium with solid.  (only for pure fluids)
+c     ierr--Error flag:  0 - Successful
+c                        2 - D>Dtrp of the liquid
+c                        3 - D<Dtrp of the vapor
+c                      160 - SATD did not converge
+c                      (See subroutine LIMITX for other possible error numbers.)
+c     herr--Error string (character*255)
+c
+c  written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
+c  11-22-99  MM, original version
+c  12-04-16 EWL, rewrite code for better efficiency and reading.
+
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension x(ncmax),y(ncmax),z(ncmax),v(20),f(20)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SATD
+
+      call ISPURE (z,icomp)
+      if (iSpline.ne.0 .and. icomp.eq.0) then
+        call SATGV (T,P,z,0d0,D,1,6,1,Dl,Dv,x,y,ierr,herr)           !Call the more efficient SATGV if the splines have been calculated for a mixture.
+        if (ierr.le.100) then
+          if (Dv.gt.Dl) then
+            call SWAPV (Dl,Dv)
+            call SWAPA (x,y)
+          endif
           RETURN
         endif
       endif
-c
-      if (p/pc.ge.0.99999999d0 .and. icomp.ne.0) then
-c  input pressure is equal to or greater than critical point value,
-c  return critical parameters for output temperature and densities
-c  output compositions initialized above
-        t=tc
-        rhol=rhoc
-        rhov=rhoc
-        if (p/pc.gt.1.000001d0) then
-c  supercritical pressure as input, set error flag and return
-c  critical parameters for output pressure and densities
-          ierr=141
-          write (herr,1141) p/1000.0d0,pc/1000.0d0,hnull
-          call ERRMSG (ierr,herr)
- 1141     format ('[SATP error 141] ',
-     &            'pressure input to saturation routine is ',
-     &            'greater than critical pressure; P =',g12.5,
-     &            ' MPa, Pcrit =',g12.5,' MPa.',a1)
-        end if
-        RETURN
-      end if
-c
-      if (heos.eq.'AGA') then
-        heos='HMX'
-        iaga=1
-      endif
-C
-      if (icomp.eq.0 .and. iSatFlg.eq.0) then
-        iGue=0
-        call SATTP (t,p,x,kph+2,iGue,d,rhol,rhov,xliq,xvap,q,ierr,herr)
-        if (ierr.eq.0) goto 900
-      endif
-c
-      if (icomp.ne.0) then
-c
-c  pure fluid iteration
-        do i=1,nc
-          xliq(i)=0.d0
-          xvap(i)=0.d0
-        enddo
-        xliq(icomp)=1.d0
-        xvap(icomp)=1.d0
-c
-c  Iterate for saturated liquid and vapor states given pressure using
-c  a simple successive substitution method.  The independent variable
-c  in the iteration is the temperature.  The convergence criteria is
-c  equality of Gibbs free energy in both phases.
-c
-c  generate initial guess using acentric factor
-c
-        t=tc/(1.0-0.428571*log10(p/pc)/(1.0+accen(icomp)))
-c       write (*,*) 'SATP:  T(0): ',t
-c
-c  assume nothing about densities on initial calls to TPRHO
-        kguess=0
-        if (p.gt.0.98*pc) then
-c  for near-critical states, generate initial guesses for density;
-c  using correlation developed by E.W. Lemmon, NIST
-          theta=(1-p/pc)*(1.6d0-accen(icomp))
-          t=tc*(1.0d0-0.103947d0*theta-4.108265d-2*theta**2)
-          theta=(1-p/pc)**(1.0d0/3.0d0)*(3.0d0+accen(icomp))
-          rhov=rhoc*(1.0d0-0.290039d0*theta-7.120197d-3*theta**2)
-          rhol=rhoc*(1.0d0+0.298544d0*theta+1.870808d-2*theta**2)
-          kguess = 1
-        endif
-        if (hpsk(icomp).ne.' ' .and. hpsk(icomp).ne.'NBS') then
-          call TSATP (p,x,tt,ierr,herr)
-          if (tt.gt.0.) t=tt
-        endif
-        if (hplk(icomp).ne.' ' .and. hplk(icomp).ne.'NBS'
-     &                         .and. kph.eq.1) then
-          call TSATPL (p,x,tt,ierr,herr)!Get liquid pressure for mixtures
-          if (tt.gt.0.) t=tt
-        endif
-        if (hdlk(icomp).ne.' ' .and. hdlk(icomp).ne.'NBS') then
-          kguess=1
-          call DLSATK (icomp,t,rhol,ierr,herr)
-        endif
-        if (hdvk(icomp).ne.' ' .and. hdvk(icomp).ne.'NBS') then
-          kguess=1
-          call DVSATK (icomp,t,rhov,ierr,herr)
-        endif
-        stp=1.0002d0
-        if (ianc(icomp).eq.1 .and. kph.eq.2) then
-          call TPRHO (t,p,x,2,kguess,rhov,ierr,herr) !find vapor density
-          rhol=rhov   !Don't return liquid density for equilibrium phase
-          goto 900    !For pseudo-pure fluid, stop here
-        elseif (ianc(icomp).eq.1) then
-          call TPRHO (t,p,x,1,kguess,rhol,ierr,herr)!find liquid density
-          rhov=rhol   !Don't return vapor density for equilibrium phase
-          goto 900    !For pseudo-pure fluid, stop here
-        endif
-        do 200 it=1,itmax
-        call TPRHO (t,p,x,1,kguess,rhol,ierr,herr2) !find liquid density
-        if (ierr.ne.0 .or. rhol.lt.rhoc) then
-          t=t/stp
-          stp=1.0d0+(stp-1.0d0)/1.2d0
-          goto 200
-c         herr=' ERROR from SATP:  '//herr2
-c         call ERRMSG (ierr,herr)
-c         RETURN
-        end if
-        call TPRHO (t,p,x,2,kguess,rhov,ierr,herr2)  !find vapor density
-        if (ierr.ne.0 .or. rhov.gt.rhoc) then
-          t=t*1.001d0
-          if (t.gt.tc) t=t/1.001d0*1.00005d0
-          if (rhov.gt.rhoc) rhov=rhoc/2.0d0
-          goto 200
-c         herr=' ERROR from SATP:  '//herr2
-c         call ERRMSG (ierr,herr)
-c         RETURN
-        end if
-c  use previous densities as initial guesses for calls to TPRHO after
-c  first iteration
-        kguess=1
-c       call GIBBS (t,rhol,x,Aliq,Gliq)
-c       call GIBBS (t,rhov,x,Avap,Gvap)
-        call AG (t,rhol,x,Aliq,Gliq)
-        call AG (t,rhov,x,Avap,Gvap)
-        call ENTRO (t,rhol,x,sliq)
-        call ENTRO (t,rhov,x,svap)
-        ZG=Gliq-Gvap
-c       write (*,1014) it,p,rhol,rhov,t,Gliq,Gvap,ZG
-c1014   format (1x,'SATP:',i4,e14.6,2f12.8,f10.5,2f12.4,e14.6)
-c
-c  check convergence
-c
-        delt=ZG/(sliq-svap)
-        if (abs(delt).lt.tolr) then
-c  pure component iteration is done (make use of current delt)
-          t=t+delt
-          call TPRHO (t,p,x,1,kguess,rhol,ierr,herr2) !find liq density
-          if (ierr.ne.0 .or. t.gt.tc .or. rhol.lt.rhoc) then
-            ierr=142
-            write (herr,1142) it,herr2(1:142),hnull
- 1142       format ('[SATP error 142] liquid density iteration in ',
-     &            'saturation routine did not converge for temperature',
-     &            ' iteration',i3,'; ',a142,a1)
-            call ERRMSG (ierr,herr)
-c  return critical parameters if not converged and very close to Pc
-            if (p.gt.0.9999*pc) then
-              t=tc
-              rhol=rhoc
-              rhov=rhoc
-            end if
-            goto 300
-c           RETURN
-          end if
-          call TPRHO (t,p,x,2,kguess,rhov,ierr,herr2) !find vap density
-          if (ierr.ne.0 .or. p.gt.pc .or. rhov.gt.rhoc) then
-            ierr=143
-            write (herr,1143) it,herr2(1:143),hnull
- 1143       format ('[SATP error 143] vapor density iteration in ',
-     &            'saturation routine did not converge for temperature',
-     &            ' iteration',i3,'; ',a143,a1)
-            call ERRMSG (ierr,herr)
-c  return critical parameters if not converged and very close to Pc
-            if (p.gt.0.9999*pc) then
-              t=tc
-              rhol=rhoc
-              rhov=rhoc
-            end if
-            goto 300
-c           RETURN
-          end if
-c  !debug--next four lines for debug only
-c         call GIBBS (t,rhol,x,Aliq,Gliq)
-c         call GIBBS (t,rhov,x,Avap,Gvap)
-c         ZG=Gliq-Gvap
-c         write (*,1015) it,p,rhol,rhov,t,Gliq,Gvap,ZG
-c1015   format (1x,'SATP:',i4,e14.6,2f12.8,f10.5,2f12.4,e14.6)
-          ierr=0
-          herr=' '
-          goto 900         !normal termination for pure fluid
-        end if
-c
-c  continue iteration, define next guess (check that delt
-c  will not result in too large a change in temperature)
-        if (delt.gt.0.5*t) then
-          do j=1,100
-c           write (*,1198) t,delt
-c1198       format (1x,'% SATP advisory; delt > 0.5*t; t,delt:',2f12.6)
-            delt=0.25*delt
-            if (delt.lt.0.5*t) goto 110
-          enddo
-        end if
- 110    continue
-        t=t+delt
-c
- 200    continue
-c
-c  In case of failure, try calling SATT iteratively to find the saturated
-c  temperature.  This takes advantage of the alternate method in SATT used
-c  at temperatures very close to the critical point.
- 300    continue
-        i=0
-        t1=tc*.999d0
-        call SATT (t1,x,kph,p1,rhol,rhov,xliq,xvap,ierr,herr)
-        t2=tc*.9995d0
- 310    continue
-        call SATT (t2,x,kph,p2,rhol,rhov,xliq,xvap,ierr,herr)
-        t=t2
-        if (ABS(p2-p).lt.tolr .and. ierr.eq.0) goto 900  !Convergence
-        i=i+1
-        if (ABS(p2-p1).lt.1.d-12) goto 320
-        if (i.gt.20) goto 320
-        t=t1-(p1-p)/(p2-p1)*(t2-t1)
-        if (t.gt.tc .and. t2.gt.t1) t=(t2+tc)/2.d0
-        if (t.gt.tc .and. t1.gt.t2) t=(t1+tc)/2.d0
-        t1=t2
-        p1=p2
-        t2=t
-        goto 310
-c
-c  iteration has not converged
- 320    continue
-        ierr=144
-        write (herr,1144) p/1000.0d0,hnull
- 1144   format ('[SATP error 144] ',
-     &          'iteration for saturation state did not converge; ',
-     &          'P =',g12.5,' MPa.',a1)
-        call ERRMSG (ierr,herr)
-c  return critical parameters if not converged and very close to Tc
-        if (p.gt.0.9999*pc) then
-          t=tc
-          rhol=rhoc
-          rhov=rhoc
-        end if
-        goto 900
-c
-c  end of pure fluid iteration
-c
-      else
-c
-c  begin mixture iteration
-c
-c  Iterate for the temperature and the composition of the incipient
-c  phase (vapor phase for a bubble point calculation, liquid for dew
-c  point) given pressure and the composition of the parent phase.
-c  Iteration is generally based on the algorithm given by Van Ness
-c  & Abbott (Classical Thermodynamics of Nonelectrolyte Solutions with
-c  Applications to Phase Equilibria, McGraw-Hill, 1982); convergence
-c  criteria is the equality of fugacity for each component in both
-c  phases.
-c
-        call SATPEST (p,x,kph,t,x2,ierr,herr)
-        j=2
-        tk(j)=t
-        if (kph.eq.1) then
-c  bubble point
-c  variable kph2 specifies the state of the incipient phase (x2): 1=liq, 2=vap
-c  trtio is temperature multiplier to use when TPRHO does not converge;
-c  different values for liquid and vapor phases, such that new guess
-c  is further into corresponding single-phase region
-          kph2=2
-          trtio1=0.995d0
-          trtio2=0.998d0
-        else
-c  dew point
-          kph2=1
-          trtio1=1.005d0
-          trtio2=1.002d0
-        end if
-c
-c  initial temperature (satisfying Raoult's law) has been found,
-c  check that this temperature is not above critical
-        tmax=0.998d0*tc
-        if (tk(j).gt.tmax .or. tk(j).le.0) tk(j)=tmax
-c
-c  the following line adjusts the initial guess for ammonia/water mixtures
-c  allowing the saturation routines to work substantially better, especially in
-c  the critical region.  It may work for other mixtures as well.
-        if (iamwat.ne.0) tk(j)=tk(j)*1.05d0
-c
-c  generate initial guesses for densities & incipient phase composition;
-c  the do loop allows for the possibility that TPRHO does not converge,
-c  it should normally exit with just one pass
-c
-        do it=1,itmax
-          t=tk(j)
-c  first guess for densities (separate flags for each phase)
-          kgues1=0
-          kgues2=0
-          call TPRHO (t,p,x,kph,kgues1,rho1,ierr,herr2)     !parent phase
-          kgues1=1
-          if (ierr.gt.0) then
-            kgues1=0             !do not reuse faulty density as guess
-            ierr=-145
-            write (herr,1145) herr2(1:146),hnull
- 1145       format ('[SATP advisory -145] density iteration in ',
-     &            'saturation routine did not converge for the parent',
-     &            ' phase; ',a146,a1)
-            call ERRMSG (ierr,herr)
-            if (t.gt.0.8*tc .and. kph.eq.1) then
-c   non-convergence probably because too close to critical
-              tnew=0.995*t
-            else
-              tnew=1.005*t
-            end if
-            tk(j)=tnew
-          else
-            call TPRHO (t,p,x2,kph2,kgues2,rho2,ierr,herr2) !incipient ph
-            kgues2=1
-            if (ierr.gt.0) then
-              kgues2=0             !do not reuse faulty density as guess
-              ierr=-144
-              write (herr,1146) herr2(1:146),hnull
- 1146         format ('[SATP advisory -146] density iteration in ',
-     &              'saturation routine did not converge for the ',
-     &              'incipient phase; ',a146,a1)
-              call ERRMSG (ierr,herr)
-              if (t.gt.0.8*tc .and. kph2.eq.1) then
-c   non-convergence probably because too close to critical
-                tnew=0.995*t
-              else
-                tnew=1.005*t
-              end if
-              tk(j)=tnew
-            else
-              goto 550   !both parent and incipient phases have converged
-            end if
-          end if
-        enddo
-
-c
-c  main outer iteration loop for mixtures
-c  loop for temperature, using Raoult's Law result (above) as first guess
-c
- 550    continue
-c
-        t=tk(j)
-        do i=1,nc
-          if (kph.eq.1) then
-            xvap(i)=x2(i)
-          else
-            xliq(i)=x2(i)
-          endif
-        enddo
-c
-        x2sum=0.0d0
-        ltpos=.false.         !flags for reguli-falsi iteration
-        ltneg=.false.
-        tneg=0.0d0
-        tpos=0.0d0
-        ftneg=0.0d0
-        ftpos=0.0d0
-        do ii=1,nc
-          x2org(ii)=x2(ii)
-        enddo
-c       write (*,*) ' SATP--start main iteration; j,tk(j):  ',j,tk(j)
-        tk(1)=tk(j)           !first guess for temperature from above
-        j=1                   !reset iteration flag
-        kguess=0              !for first calls to TPRHO
-        do 400 itt=1,itmax
-        if (int(itt/10)*10.eq.itt .and. itt.gt.30) then
-          trtio1=trtio1**2
-          trtio2=trtio2**2
-        endif
-        t=tk(j)
-        lx2con=.false.        !flag for convergence of inner loop
-c  compute density and fugacities for parent phase
-c       write (*,*) ' SATP call TPRHO (parent) for it,T = ',itt,t
-        call TPRHO (t,p,x,kph,kguess,rho1,ierr,herr2)   !parent phase
-        if (itt.ne.1) then
-          if (ABS(rho1-rhoc).lt.1 .and. ABS(rho2-rhoc).gt.4) then
-c  jump away from critical point when a bad root was found
-            rho1=rho1*1.5d0
-            call TPRHO (t,p,x,kph,kguess,rho1,ierr,herr2)
-          endif
-        endif
-        kgues1=1
-        if (ierr.gt.0) then
-          kgues1=0             !do not reuse faulty density as guess
-          ierr=-145
-          write (herr,1245) itt,herr2(1:146),hnull
- 1245     format ('[SATP advisory -145] density iteration in ',
-     &            'saturation routine did not converge for temperature',
-     &            ' iteration',i3,'; ',a146,a1)
-          tk(j)=tk(j)*trtio1  !try another temperature and use up one
-          goto 400             !iteration (to prevent infinite loop)
-        else if (rho1.gt.1.1d0*rhomax) then
-c  density from TPRHO is out of range, reset
-          rho1=rhomax
-          ierr=-145
-          write (herr,1245) itt,herr2(1:146),hnull
-        end if
-        call FGCTY2 (t,rho1,x,f1,ierr,herr)
-c       write (*,1082) itt,t,p,rho1,(x(i),i=1,2),(f1(i),i=1,2)
-c1082   format (1x,' SATP--phase 1:  ',i3,f11.5,2e14.6,2e16.8,2e18.10)
-c
-c  begin inner iteration loop for composition of phase 2
-c
-        do itx=1,itmax*2
-c  compute density and fugacities for phase 2
-          call TPRHO (t,p,x2,kph2,kguess,rho2,ierr,herr2) !incipient phase
-          kgues2=1
-          if (ierr.gt.0 .or. ABS(rho2-rho1).lt.0.01d0 .or.
-     &       (rho2.lt..01d0 .and. kph2.eq.1)) then
-            kgues2=0             !do not reuse faulty density as guess
-            ierr=-146
-            write (herr,1246) itx,herr2(1:146),hnull
- 1246       format ('[SATP advisory -146] density iteration in ',
-     &            'saturation routine did not converge for composition',
-     &            ' iteration',i3,'; ',a146,a1)
-            do ii=1,nc
-              x2(ii)=x2org(ii)
-            enddo
-            kguess=0
-            tk(j)=tk(j)/trtio2   !try another pressure and use up one
-            goto 400             !iteration (to prevent infinite loop)
-          else if (rho2.gt.1.2*rhomax) then
-c  density from TPRHO is out of range, reset
-            rho2=rhomax
-            ierr=-146
-            write (herr,1246) itt,herr2(1:146),hnull
-            if (itx.gt.10) goto 700
-          end if
-          call FGCTY2 (t,rho2,x2,f2,ierr,herr)
-c       write (*,1086) itx,rho2,(x2(i),i=1,2),(f2(i),i=1,2)
-c1086   format (1x,'       phase 2:  ',i3,25x,e14.6,2e16.8,2e18.10)
-c  calculate new x2's by ratio of fugacities; inner loop has converged
-c  when x2's change by less than a convergence tolerance
-          x2sum=0.0d0
-          do i=1,nc
-            if (x2(i).gt.0.d0) then
-            if (f2(i).gt.1.0d-20 .and. f1(i).gt.0.0d0) then
-              x2new(i)=x2(i)*f1(i)/f2(i)
-            else
-c  in case fugacity is zero; e.g., if x(i)=0 x2(i) does not change
-              x2new(i)=x2(i)+0.0001d0 !add a little to keep x2sum<>1
-            end if
-            x2sum=x2sum+x2new(i)
-            endif
-          enddo
-c  normalize the x2 compositions; this yields next guess for x2 and
-c  ensures that the x2 always sum to one
-          sumdel=0.0d0
-          do i=1,nc
-            if (x2(i).gt.0.d0) then
-            x2new(i)=x2new(i)/x2sum
-            sumdel=sumdel+abs(x2(i)-x2new(i))  !change in compositions
-            x2(i)=x2new(i)
-            endif
-          enddo
-          if (sumdel.lt.tolr) then
-c  inner iteration loop has converged
-            lx2con=.true.
-            goto 700
-          end if
-c  if not, continue inner iteration loop
-        enddo
-c  inner iteration loop has not converged
-        ierr=-147
-        write (herr,1147) p/1000.0d0,sumdel,hnull
- 1147   format ('[SATP advisory -147] ',
-     &          'iteration for composition in saturation routine ',
-     &          'did not converge; P =',g12.5,
-     &          ' MPa; deltaX =',g12.5,' mol frac.',a1)
-        call ERRMSG (ierr,herr)
-c
-c  end of inner (x2) iteration loop
-c
- 700    continue
-        ft(j)=1.0d0-x2sum
-c  outer (temperature) loop has converged when the x2's sum to one, i.e.,
-c  when the fugacities of each component in each phase are equal
-        if (abs(ft(j)).lt.tolr .and. ierr.ne.-147) then
-          goto 850
-        else
-c  provided that the inner loop has converged, update positive and
-c  negative bounds on pressure for possible use in reguli-falsi iteration
-          if (lx2con) then
-            if (ft(j).lt.0.0d0) then
-              ltneg=.true.
-              tneg=tk(j)
-              ftneg=ft(j)
-            else
-              ltpos=.true.
-              tpos=tk(j)
-              ftpos=ft(j)
-            end if
-          end if
-        end if
-c
-c  compute new guess for saturation temperature
-c
-        if (j.eq.1) then
-c  for first iteration, new temperature is ratio of old
-          j=2
-          kguess=1    !use previous density as initial guess to TPRHO
-c  ratio for next guess of temperature; the 0.10d0 is adjustable
-          tnew=1.0d0+0.10d0*(x2sum-1.0d0)
-c         write (*,*) ' PSAT--x2sum,tnew:  ',x2sum,tnew
-          if (kph.eq.1) then
-c  bubble point
-            tk(2)=tk(1)/tnew
-          else
-c  dew point
-            tk(2)=tk(1)*tnew
-          end if
-        else
-c  subsequent iterations--use secant method, check for divide by zero
-          if (ABS(ft(2)-ft(1)).lt.1.0d-10) then
-            tk(3)=0.5*(tk(1)+tk(2))
-          else
-            tk(3)=tk(2)-ft(2)*(tk(2)-tk(1))/(ft(2)-ft(1))
-          end if
-c  check that new temperature is not outside bounds, if so use reguli-falsi
-          if (ltneg .and. ltpos .and. (tk(3).gt.MAX(tpos,tneg)
-     &        .or. tk(3).lt.MIN(tpos,tneg))) then
-            tk(3)=tpos-ftpos*(tpos-tneg)/(ftpos-ftneg)
-          end if
-          if (tk(3).lt.0) tk(3)=tk(2)*.95d0
-          if (tk(3).gt.tc*1.5d0) tk(3)=tk(2)*1.05d0
-c         write (*,1137) tk(1),tk(2),tk(3),yyyyy,ft(2)
-c1137     format (1x,' SATP--tguess_1,2,3; ft_1,2:  ',5e14.6)
-c  discard oldest iteration
-          tk(1)=tk(2)
-          tk(2)=tk(3)
-          ft(1)=ft(2)
-        end if
- 400    continue
-c  outer iteration loop has not converged
-        ierr=148
-        write (herr,1148) p/1000.0d0,hnull
- 1148   format ('[SATP error 148] ',
-     &          'iteration for saturation state did not converge; P =',
-     &          g12.5,' MPa.',a1)
-        call ERRMSG (ierr,herr)
-c
-c  end of outer (temperature) iteration loop
-c
- 850    continue
-c
-c  assign final compositions and densities for parent and incipient
-c  phases (x and x2, rho1 and rho2, respectively) to outputs
-c
-        t=tk(j)
-        if (kph.eq.1) then
-c  bubble point
-          rhol=rho1
-          rhov=rho2
-          do i=1,nc
-            xliq(i)=x(i)
-            xvap(i)=x2(i)
-          enddo
-        else
-c  dew point
-          rhol=rho2
-          rhov=rho1
-          do i=1,nc
-            xliq(i)=x2(i)
-            xvap(i)=x(i)
-          enddo
-        end if
-        call DPDD (t,rhol,xliq,dpdrh1)
-        call DPDD (t,rhov,xvap,dpdrh2)
-        if (dpdrh1.gt.1.0d6 .or. dpdrh2.gt.1.0d6) then
-          ierr=148
-          write (herr,1148) p/1000.d0,hnull
-          call ERRMSG (ierr,herr)
-        endif
-        if ((rhol.gt.rhoc .and. rhov.gt.rhoc) .or.
-     &      (rhol.lt.rhoc .and. rhov.lt.rhoc)) then
-c  for some mixtures, both rhol and rhov can be greater than rhoc, so
-c  check for p close to pc first before returning error
-          if (p.lt.0.95d0*pc .or. icomp.ne.0 .or. kph.eq.2) then
-            ierr=148
-            write (herr,1148) p/1000.d0,hnull
-            call ERRMSG (ierr,herr)
-          endif
-        endif
-c  call new routine SATTP if ierr>0 and attempt to get convergence
-c       if (ierr.gt.0 .and. icomp.eq.0 .and. iSatFlg.eq.0) then
-c         call SATTP(t,p,x,kph+2,0,d,rhol,rhov,xliq,xvap,q,ierr,herr)
-c       endif
-c
-c  end of mixture iteration
-      end if
-c
-c  save results
- 900  continue
-      if (ierr.eq.0) then
-        tsavp=t
-        psavp=p
-        icsavp=icomp
-        kphsvp=kph
-        dlsavp=rhol
-        dvsavp=rhov
-        if (icomp.eq.0) then
-          do i=1,nc
-            xsavp(i)=x(i)
-            xlsavp(i)=xliq(i)
-            xvsavp(i)=xvap(i)
-          enddo
-        else
-          do i=1,nc
-            xsavp(i)=0.d0
-            xlsavp(i)=0.d0
-            xvsavp(i)=0.d0
-          enddo
-          xsavp(icomp)=1.d0
-          xlsavp(icomp)=1.d0
-          xvsavp(icomp)=1.d0
-        endif
-        lsatp=.true.
-      endif
-      if (iaga.eq.1) then
-        heos='AGA'
-        if (ierr.eq.0) call TPRHO (t,p,xvap,2,1,rhov,ierr,herr)
-      endif
-      RETURN
-c
-      end                                               !subroutine SATP
-c
-c ======================================================================
-c
-      subroutine SATPEST (p,x,kph,t,x2,ierr,herr)
-c
-c  estimate initial values for saturation states given pressure
-c  and the composition of one phase
-c
-c  inputs:
-c        p--pressure [kPa]
-c        x--composition [array of mol frac] (phase specified by kph)
-c      kph--phase flag: 1 = input x is liquid composition (bubble point)
-c                       2 = input x is vapor composition (dew point)
-c  outputs:
-c        t--estimated temperature [K]
-c       x2--estimated composition of unknown phase [array of mol frac]
-c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
-c  08-06-09 EWL, original version, taken from code in SATP
-c  08-06-09 EWL, remove the check on pcomp(i)<10.  The impact of this may not be good for all situations.
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SATPEST
-c
-      include 'commons.for'
-      dimension x(ncmax),x2(ncmax),pcomp(ncmax)
-      dimension tk(4),ft(3)                  !used for T iteration
-      character*255 herr
-c
-      ltpos=.false. !flags for reguli-falsi iteration
-      ltneg=.false.
-      tneg=0.d0
-      tpos=0.d0
-      ftneg=0.d0
-      ftpos=0.d0
-      tolr=1.0d-6
-      itmax=100
-      j=1                     !flag for first iteration
-c
-c  generate initial guess using Raoult's law,
-c  first generate initial guess for temperature by simple ratio of
-c  pure component saturation temperatures
-      tk(1)=0.d0
-      acf=0.d0              !average acentric factor
-      do i=1,nc
-        ti=tcrit(i)/(1.0-0.428571*log10(p/pcrit(i))/(1.0+accen(i)))
-c         write (*,*) ' SATP:  tsat-guess for component ',i,ti
-        tk(1)=tk(1)+x(i)*ti
-        acf=acf+x(i)*accen(i)
-      enddo
-      tzero=tk(1)  !save in case Raoult iteration does not converge
-c
-c  secant method iteration to find t which satisfies Raoult's law
-c
-      do it=1,itmax
-c  approximate pure component vapor pressures with acentric factor
-      do i=1,nc
-        pxp=-2.333333*(1.0+accen(i))*(tcrit(i)/tk(j)-1.0)
-        if (ABS(pxp).lt.50) pcomp(i)=pcrit(i)*10.0**pxp
-c       if (pcomp(i).lt.10.) pcomp(i)=10.d0
-      enddo
-c
-      if (kph.eq.1) then
-c  bubble point
-        psum=0.d0
-        do i=1,nc
-          psum=psum+x(i)*pcomp(i)
-        enddo
-        ft(j)=1.d0-p/psum
-        if (abs(ft(j)).lt.tolr) goto 500  !iteration has converged
-c  update + & - bounds on temperature for possible use in reguli-falsi
-        if (ft(j).lt.0.d0) then
-          ltneg=.true.
-          tneg=tk(j)
-          ftneg=ft(j)
-        else
-          ltpos=.true.
-          tpos=tk(j)
-          ftpos=ft(j)
-        end if
-c  generate next guess
-        if (it.eq.1) then
-          tratio=1.d0-0.42857d0*log10(psum/p)/(1.d0+acf)
-          tk(2)=tk(1)*tratio
-          j=2
-        else if (it.ge.itmax/3 .and. ltpos .and. ltneg) then
-c  if iteration has not converged after many iterations, use bisection
-c  (provided that guesses bounding the root are available)
-          tk(2)=0.5d0*(tpos+tneg)
-          tk(1)=tk(2)
-          ft(1)=ft(j)
-          j=2
-        else
-c  use secant method
-          if (ABS(ft(2)-ft(1)).gt.1.0d-10) then
-            tk(3)=tk(2)-ft(2)*(tk(2)-tk(1))/(ft(2)-ft(1))
-          else
-            tk(3)=0.5d0*(tk(1)+tk(2))
-          end if
-c  check that new temperature is not outside bounds, if so use reguli-falsi
-          if (ltneg .and. ltpos .and. (tk(j+1).gt.MAX(tpos,tneg)
-     &        .or. tk(j+1).lt.MIN(tpos,tneg))) then
-            tk(j+1)=tpos-ftpos*(tpos-tneg)/(ftpos-ftneg)
-          end if
-          tk(1)=tk(2)
-          tk(2)=tk(3)
-          ft(1)=ft(2)
-        end if
-      else
-c  dew point
-        xdamp=1.d0     !damping ratio for secant method
-        ypsum=0.d0
-        do i=1,nc
-          ypsum=ypsum+x(i)*p/pcomp(i)
-          ft(j)=1.0-ypsum
-        enddo
-        if (ABS(ft(j)).lt.1.0d3*tolr) goto 500  !iteration has converged
-c  update + & - bounds on pressure for possible use in reguli-falsi
-        if (ft(j).lt.0.d0) then
-          ltneg=.true.
-          tneg=tk(j)
-          ftneg=ft(j)
-        else
-          ltpos=.true.
-          tpos=tk(j)
-          ftpos=ft(j)
-        end if
-        if (it.eq.1) then
-          tratio=1.d0/(1.0-0.42857*log10(ypsum)/(1.d0+acf))
-          tk(2)=tk(1)*tratio
-          j=2
-        else if (it.eq.2) then
-c  secant method for 2nd guess
-            if (ABS(ft(2)-ft(1)).gt.1.0d-10) then
-              tk(3)=tk(2)-xdamp*ft(2)*(tk(2)-tk(1))/(ft(2)-ft(1))
-            else
-              tk(3)=0.5d0*(tk(1)+tk(2))
-            end if
-c  check that new temperature is not outside bounds, if so use reguli-falsi
-            if (ltneg .and. ltpos .and. (tk(j+1).gt.MAX(tpos,tneg)
-     &          .or. tk(j+1).lt.MIN(tpos,tneg))) then
-              tk(j+1)=tpos-ftpos*(tpos-tneg)/(ftpos-ftneg)
-            end if
-            j=3
-        else if (it.le.itmax/3 .or. .not.(ltpos.and.ltneg)) then
-c  2nd order secant (inverse quadratic interpolation) for subsequent guesses
-c  see Numerical Recipes, p 252
-          rr=ft(3)/ft(2)  !these are the R,S,T used in Num. Rec.
-          rs=ft(3)/ft(1)
-          rt=ft(1)/ft(2)
-          rrst=(rt-1.d0)*(rr-1.d0)*(rs-1.d0)
-          if (abs(rrst).gt.1.d-20) then
-            tk(4)=tk(3)
-     &       +rs*(rt*(rr-rt)*(tk(2)-tk(3))-(1.d0-rr)*(tk(3)-tk(1)))/rrst
-          else
-            tk(j+1)=-1.d0    !Fix so that reguli-falsi will kick in
-          endif
-c  check that new temperature is not outside bounds, if so use reguli-falsi
-          if (ltneg .and. ltpos .and. (tk(j+1).gt.MAX(tpos,tneg)
-     &        .or. tk(j+1).lt.MIN(tpos,tneg))) then
-            tk(j+1)=tpos-ftpos*(tpos-tneg)/(ftpos-ftneg)
-          end if
-c  discard oldest iteration
-          tk(1)=tk(2)
-          tk(2)=tk(3)
-          tk(3)=tk(4)
-          ft(1)=ft(2)
-          ft(2)=ft(3)
-        else
-c  if iteration has not converged by now, use bisection
-          tk(2)=0.5d0*(tpos+tneg)
-          tk(1)=tk(2)
-          ft(1)=ft(j)
-          j=2
-        end if
-      end if
-c       write (*,1006) it,j,tk(j-1),tk(j),ft(j-1)
-c1006   format (1x,' SATP Raoult''s: it,j,t1,t2,ft:',2i4,2f12.4,e16.7)
-      enddo                                     !next trial for t
-c
-c  iteration has not converged, issue warning and proceed
-      ierr=-144
-      herr='[SATP advisory -144] Raoult''s law iteration (to '//
-     &     'generate mixture initial guess) has not converged.'//
-     &     hnull
-      call ERRMSG (ierr,herr)
-      if (ABS(ft(j)).lt.1.0d4*tolr .or. ABS(tk(j)-tk(j-1)).lt.1.d0) then
-      else
-c  if current guess is not even close go back to initial guess
-        tk(j)=tzero
-      end if
-c
- 500  continue
-
-      psum=0.d0
-      if (kph.eq.1) then
-c  bubble point
-        do i=1,nc
-          psum=psum+x(i)*pcomp(i)
-        enddo
-        do i=1,nc
-          x2(i)=x(i)*pcomp(i)/psum
-        enddo
-      else
-c  dew point
-        ysum=0.d0
-        do i=1,nc
-          ysum=ysum+x(i)/pcomp(i)
-        enddo
-        do i=1,nc
-          x2(i)=x(i)/pcomp(i)/ysum
-          psum=psum+x2(i)*pcomp(i)
-        enddo
-      end if
-      t=tk(j)
-      RETURN
-c
-      end                                            !subroutine SATPEST
-c
-c ======================================================================
-c
-      subroutine SATD (rho,x,kph,kr,t,p,rhol,rhov,xliq,xvap,ierr,herr)
-c
-c  iterate for temperature and pressure given a density along the
-c  saturation boundary and the composition
-c
-c  inputs:
-c      rho--molar density [mol/L]
-c        x--composition [array of mol frac]
-c      kph--flag specifying desired root for multi-valued inputs
-c           has meaning only for water at temperatures close to its triple point
-c          -1 = return middle root (between 0 and 4 C)
-c           1 = return highest temperature root (above 4 C)
-c           3 = return lowest temperature root (along freezing line)
-c  outputs:
-c        t--temperature [K]
-c        p--pressure [kPa]
-c     rhol--molar density [mol/L] of saturated liquid
-c     rhov--molar density [mol/L] of saturated vapor
-c     xliq--liquid phase composition [array of mol frac]
-c     xvap--vapor phase composition [array of mol frac]
-c       kr--phase flag: 1 = input state is liquid
-c                       2 = input state is vapor in equilibrium with liq
-c                       3 = input state is liquid in equilibrium with solid
-c                       4 = input state is vapor in equilibrium with solid
-c     ierr--error flag:   0 = successful
-c                         2 = D > Dmax
-c                         8 = x out of range
-c                        10 = D and x out of range
-c                       160 = CRITP did not converge
-c                       161 = SATD did not converge
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  N.B. kr = 3,4 presently working only for pure components
-c
-c  either (rhol,xliq) or (rhov,xvap) will correspond to the input state
-c  with the other pair corresponding to the other phase in equilibrium
-c  with the input state
-c
-c  written by M. McLinden, NIST Phys & Chem Properties Div, Boulder, CO
-c  11-22-99  MM, original version
-c  02-08-00 EWL, add pure fluid version using Maxwell criteria
-c  02-28-00 EWL, add checks for water
-c  08-13-02 EWL, add check for ierr<>0 in mixture routine
-c  07-28-11 EWL, calculate rhov at Tc in vapor phase for mixtures to get ft(1)
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SATD
-c
-      include 'commons.for'
-      character*255 herr,herr1
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax)
-      dimension tt(3),ft(2)
-c
-      iaga=0
-      call ISPURE (x,icomp)
-      ierr=0
-      herr=' '
-      t0=300.0d0
-      p0=100.0d0
-      call LIMITX ('EOS',t0,rho,p0,x,tmin,tmax,Dmax,pmax,ierr,herr1)
-c  [don't care if t0 or p0 are out of bounds, only rho and x]
-      if (ierr.ge.8 .or. rho.gt.Dmax .or. rho.le.0.0d0) then
-        write (herr,1001) ierr,herr1(1:235),hnull
- 1001   format ('[SATD error',i3,'] ',a235,a1)
-        call ERRMSG (ierr,herr)
-        RETURN
-      end if
-      call CRITP (x,tc,pc,rhoc,ierr,herr1)
-      t=tc
-      p=pc
-      rhol=rhoc
-      rhov=rhoc
-      if (ierr.gt.0) then
-c  error condition--set outputs, issue warning, and return
-        ierr=160
-        write (herr,1160) herr1(1:237),hnull
- 1160   format ('[SATD error 160] ',a237,a1)
-        call ERRMSG (ierr,herr1)
-        RETURN
-      end if
-      if (ABS(rhoc-rho).lt.0.001d0 .and. icomp.ne.0) then
-        kr=1
-        RETURN
-      endif
-c  calculate density at triple point if not set
-      if (icomp.ne.0 .and. dtpv(icomp).lt.1.d-15) THEN
-        call SATT (ttpn(icomp),x,2,p1,rhol,rhov,xliq,xvap,ierr,herr)
-        if (ierr.gt.0 .and. ttpn(icomp).lt.10.d0) then
-          ierr=0   !Ignore for eos testing (ttp<10 K)
-          rhov=1.d-10
-        endif
-        dtpv(icomp)=rhov
-      endif
-c  check if pure water
+      D2=0
       iw=0
-      rhow=55.504316185d0  !maximum liquid density from Pruss Eq.
-      if (hcas(icomp).eq.'7732-18-5' .and. icomp.ne.0) then
-        iw=1
-        if (rho.lt.dtpn(icomp) .and. (kph.eq.-1 .or. kph.eq.3)) goto 210
-        if (rho.gt.rhow .and. (kph.eq.-1 .or. kph.eq.1)) goto 210
-      endif
-c  determine region
-      if (rho.lt.dtpv(icomp) .and. icomp.ne.0) then
-        kr=4                         !vapor/solid
-      elseif (rho.lt.rhoc) then
-        kr=2                         !vapor
-      elseif (iw.eq.1 .and. rho.lt.rhow .and. kph.ne.3) then   !water
-        kr=1
-      elseif (rho.gt.dtpn(icomp) .and. abs(dtpn(icomp)).gt.1.d-20
-     &       .and. icomp.ne.0) then
-        kr=3                         !liquid/solid
-      else
-        kr=1                         !liquid
-      end if
-c     write (*,*) 'SATD--initial phase:  ',kr
-c
-      if (heos.eq.'AGA') then
-        heos='HMX'
-        iaga=1
-      endif
-c
-c  pure fluid VLE iteration
-      if (icomp.ne.0 .and. kr.le.2 .and. kph.ne.-1
-     &               .and. ianc(icomp).eq.0) then
-        tol=1.0d-6
-        itmax=20
-c  estimate liquid density for any fluid
-        if (d72l.lt.1.d-8) then
-          t=0.72d0*tc
-          call SATT (t,x,1,p,rhol,rhov,xliq,xvap,ierr,herr)
-          d72l=rhol
-          if (ianc(icomp).eq.1)
-     &      call SATT (t,x,2,p,rhol,rhov,xliq,xvap,ierr,herr)
-          d72v=rhov
-        endif
-        if (kr.eq.1) then
-          d=rho/rhoc+(1.2d0-d72l/rhoc)*(rho-rhoc)/(d72l-rhoc)-1.d0
-          t=9.272d0*LOG(d+1.0d0)-5.195d0*d
-          t=tc*(1.0d0-t**(1.d0/0.337d0))
-        elseif (kr.eq.2) then
-          t=tc
-          if (d72v.gt.0) then
-            dx=LOG(d72v/rhoc)
-            del=LOG(rho/rhoc)
-            d=(3.5d0+dx)*(del/dx)**1.3d0-del
-            t=0.5d0*LOG(d+1.0d0)-0.026d0*d**0.5D0
-          endif
-          if (t.lt.0) t=0
-          t=tc/(1.d0+t**(1.d0/0.37d0))
-        endif
-c
-        d1=0.001d0
-        t2=t+0.00001d0
-        stp1=1.00001d0
-        stp2=1.00001d0
-        do it=1,itmax
-c  calculate pressure, if less than zero, increase t and try again
-          call PRESS (t,rho,x,p)
-          if (p.lt.0) then
-            t=t*stp1
-            stp1=1.0d0+(stp1-1.0d0)*1.5d0
-            goto 140
-          endif
-          iii=iprnterr
-          iprnterr=0
-          call TPRHO (t,p,x,3-kr,0,rho2,ierr,herr)
-          iprnterr=iii
-c  calculate pressure, if error, decrease t and try again
-          if (ierr.ne.0) then
-            t=t/stp2
-            stp2=1.0d0+(stp2-1.0d0)*2d0
-            goto 140
-          endif
-          stp1=1.00001d0
-          stp2=1.00001d0
-c  use Maxwell criterion to generate next guess for t
-          if (ABS(rho-rho2).gt.1d-11) then
-            if (kr.eq.1) then
-              rhol=rho
-              rhov=rho2
-            else
-              rhol=rho2
-              rhov=rho
-            endif
-            call AG (t,rho,x,a,g1)
-            call AG (t,rho2,x,a,g2)
-            call ENTRO (t,rho,x,s1)
-            call ENTRO (t,rho2,x,s2)
-            d2=d1
-            if (ABS(s1-s2).gt.1d-11) d1=(g1-g2)/(s1-s2)
-            if (ABS(d1-d2).gt.1d-11) f=-(t2-t)/(d2-d1)
-            t2=t
-            if (ABS(d1).le.tol) goto 900
-            if (t+f*d1.le.0) then
-              t=t*0.95d0
-            else
-              t=t+f*d1
-            endif
-          else
-            t=t/stp1
-          endif
-        enddo
- 140    continue
-c  method failed (generally at very low temperatures in the liquid), try
-c  alternate method:
-c       write (*,*) 'Maxwell solution failed'
-      endif
-c
-c  iterate for temperature using a combination of Newton's method
-c  and reguli-falsi
-c
-      if (icomp.ne.0) then
-        if (hmeltk(icomp).eq.'NBS' .and. rho.gt.dtpn(icomp)) then !no melt line
-          ierr=2
-          write (herr,1002) ierr,rho,dtpn(icomp),hnull
- 1002     format('[SATD error',i3,'] density above triple-point density'
-     &          ,'; D =',g12.5,' mol/L; Dtp =',g12.5,' mol/L',a1)
-          call ERRMSG (ierr,herr)
-          goto 900
-        endif
-        if (hsublk(icomp).eq.'NBS' .and. rho.lt.dtpv(icomp)) then !no subl line
-          ierr=2
-          write (herr,1003) ierr,rho,dtpv(icomp),hnull
- 1003     format('[SATD error',i3,'] density below triple-point density'
-     &          ,'; D =',g12.5,' mol/L; Dtp =',g12.5,' mol/L',a1)
-          call ERRMSG (ierr,herr)
-          goto 900
-        endif
-      end if
-c
-      tol=1.0d-7
-      itmax=20
-      rhowm=rhol
-      if (kr.eq.3) then
-        tt(1)=ttpn(icomp)
-        rhol=dtpn(icomp)
-        if (iw.eq.1) then !check for water
-c  calculate p and d at slightly higher than the lowest possible temperature
-          tt(1)=251.1650000001d0
-          call MLTH2O (tt(1),p,p2)
-        else
-c  Call melting routine in case dtpn(1) is not exactly eq. to rho(ttrp)
-          call MELTT (tt(1),x,p,ierr,herr)
-        endif
-        call TPRHO (tt(1),p,x,1,1,rhol,ierr,herr)
-        ft(1)=log(rho/rhol)
-      elseif (kr.eq.4) then
-        tt(1)=ttpn(icomp)
-        ft(1)=log(rho/dtpv(icomp))
-      else
-        tt(1)=tc
-        ft(1)=log(rho/rhoc)
-        if (kr.eq.2 .and. nc.gt.1) then  !For mixtures at Tc in the vapor phase, the value of rhoc is not correct
-          call SATT (tc,x,kr,p,rhol,rhov,xliq,xvap,ierr,herr)
-          if (ierr.eq.0 .and. rhov.gt.0) ft(1)=log(rho/rhov)
-        endif
-        if (iw.eq.1) then
-          if (rho.ge.dtpn(icomp) .and. kph.eq.-1) then
-            tt(1)=ttpn(icomp)
-            ft(1)=log(dtpn(icomp)/rhoc)
-          endif
-        endif
-      endif
-c
-c  generate second guess for temperature
-c
-      if (kr.eq.1) then
-        tt(2)=0.85*tc
-        if (iw.eq.1 .and. kph.eq.-1 .and. rho.ge.dtpn(icomp)) tt(2)=275
-      else if (kr.eq.2) then
-        tt(2)=0.75*tc
-      else if (kr.eq.3) then
-        tt(2)=0.85*tc
-        if (iw.eq.1) tt(2)=273.16d0
-      else if (kr.eq.4) then
-        tt(2)=0.95*ttpn(icomp)
-      end if
-c
-c  initialize iteration flags
-c
-      lneg=.false.
-      lpos=.false.
-      ltp=.false.      !flag indicating if SATT called at triple point
-      tneg=0.0d0
-      tpos=0.0d0
-c  store variables for reguli-falsi
-      if (ft(1).lt.0.0) then
-        lneg=.true.
-        tneg=tt(1)
-      else
-        lpos=.true.
-        tpos=tt(1)
-      end if
-      jt=2
-c
-      do 200 it=1,itmax
       ierr=0
-      if (kr.eq.1) then           !liquid
-        call SATT (tt(jt),x,1,p,rhol,rhov,xliq,xvap,ierr,herr)
-        if (rhol.gt.0.0d0) ft(jt)=log(rho/rhol)
-      else if (kr.eq.2 .or. kr.eq.4) then      !vapor
-        call SATT (tt(jt),x,kr,p,rhol,rhov,xliq,xvap,ierr,herr)
-        if (rhov.gt.0) ft(jt)=log(rho/rhov)
-      else if (kr.eq.3) then      !liquid/solid
-        if (iw.eq.1) then !check for water
-          call MLTH2O (tt(jt),p,p2)
-          if (rho.lt.rhowm) p=p2
-        else
-          call MELTT (tt(jt),x,p,ierr,herr)
+      icnt=0
+      iSatFlg=0
+      tolr=1d-6
+      v3=0
+c     Dwatermax=55.504316178d0
+      iErrNum=iErrNum+1
+      call SATMAX (icomp,z,Tc,Pc,Dc,ierr,herr)   !Get pure fluid critical point or mixture maximum T and P (but labeled here simply as Tc and Pc).
+      call LIMITS  ('EOS',z,Tmin,Tmax,Dmax,Pmax)
+      if (icomp.ne.0) call SETPNTS (0,icomp,z,T,P,Dl,Dv,ierr,herr)
+      if (lAGA8) call SETEOSMX (heox)   !Save the state of the AGA-8 flag and then turn it off so that the saturation pressures will come from the FEQ models.
+
+c  Determine region.
+      ki=0
+      kr=2                                                           !Vapor
+      if (D.ge.Dc) kr=1                                              !Liquid
+      if (icomp.ne.0) then
+        if (D.lt.Dtpv(icomp)) kr=4                                   !Vapor/Solid
+        if (D.gt.Dtpn(icomp) .and. Dtpn(icomp).gt.Dc) kr=3           !Liquid/Solid
+        if (iFluidID(icomp).eq.1 .or. iFluidID(icomp).eq.3) then               !Check if pure water.
+          iw=iFluidID(icomp)
+          Dm=DmaxWater
+          if (iFluidID(icomp).eq.3) Dm=DmaxD2O
+          if (kph.ne. 3 .and. D.gt.Dc          .and. D.le.Dm) kr=1   !Upper temperature root for liquid water.
+          if (kph.eq.-1 .and. D.gt.Dtpn(icomp) .and. D.le.Dm) ki=1   !Lower temperature root between 0 and 4 K.
         endif
-        kguess=1
-        rhol=dtpn(icomp)
-        call TPRHO (tt(jt),p,x,1,kguess,rhol,ierr,herr)
-        if (rhol.gt.0) ft(jt)=log(rho/rhol)
-      end if
-      if (ierr.ne.0) then
-        tt(jt)=0.999d0*tt(jt)
-        goto 200
+        if (ABS(Dc-D).lt.1d-3) goto 199          !Nearly the same as the critical density for a pure fluid, just exit.
       endif
-c     write (*,1999) it,jt,tt(jt),ft(jt)
-c1999 format (1x,'% it,jt,t,ft: ',2i4,f9.4,f16.10)
-c  check for convergence
-      t=tt(jt)
-      if (abs(ft(jt)).lt.tol) goto 900
-c  store variables for reguli-falsi
-      if (ft(jt).lt.0.0) then
-        lneg=.true.
-        tneg=tt(jt)
-      else
-        lpos=.true.
-        tpos=tt(jt)
-      end if
-c  compute next guess for temperature
-      if (jt.le.1) then
-        jt=2
-      else
-        if (abs(ft(2)-ft(1)).gt.1.d-20)
-     &  tt(3)=tt(2)-ft(2)*(tt(2)-tt(1))/(ft(2)-ft(1))
-c  check if new guess is outside of bounds of previous guesses,
-c  if so (and if upper and lower bounds are available) use
-c  reguli-falsi
-        if (lpos .and. lneg .and.
-     &     (tt(3).gt.max(tpos,tneg) .or. tt(3).lt.min(tpos,tneg)))then
-           tt(3)=0.5*(tpos+tneg)
-c  check against triple point
-        elseif (tt(3).lt.ttpn(icomp).and.icomp.ne.0 .and. iw.eq.0) then
-          if (.not.ltp) then
-            ltp=.true.
-            tt(3)=ttpn(icomp)
-          else if (tt(3).le.0.0d0) then
-            tt(3)=0.5d0*tt(2)
-          end if
-        end if
-        tt(1)=tt(2)
-        tt(2)=tt(3)
-        ft(1)=ft(2)
-      end if
- 200  continue
- 210  continue
-      p=pc
-      t=tc
-      rhol=rhoc
-      rhov=rhoc
-      ierr=161
-      write (herr,1161) rho,hnull
- 1161 format ('[SATD error 161] ',
-     &        'iteration for saturation state given density did not ',
-     &        'converge for D =',g12.5,' mol/L',a1)
-      call ERRMSG (ierr,herr)
- 900  continue
-      if (iaga.eq.1) then
-        heos='AGA'
-        if (ierr.eq.0) call TPRHO (t,p,xvap,2,1,rhov,ierr,herr)
+      if (D.le.0.) goto 103            !Returns with kr=2 (or kr=4 if a sublimation line is available).
+
+c  Get a guess for T at the input D.
+      call SATGUESS (kr,3,0,0,z,T,P,D,h,s,Dy,y,ierr,herr)
+      if (T.gt.Tc*1.5d0 .and. P.gt.Pc*10d0) icnt=1         !For Type III mixtures, add up number of errors
+      if(ierr.gt.0.and.(ABS(T).gt.Tc.or.ABS(T).lt.Tmin))T=(Tmin+Tc)/2d0
+      if (ABS(T).lt.Tmin) T=(ABS(T)+Tmin)/2d0
+      if (ki.eq.1) T=Ttpn(icomp)+2d0   !Find root between 0 and 4 K.
+
+      if (icomp.eq.0.or.kr.gt.2.or.ki.eq.1.or.iAnc(icomp).ne.0) goto 200       !Use alternate method for mixtures or states not vapor or liquid.
+
+c  Begin VLE iteration for pure fluids.
+      d1=0.001d0
+      T2=0d0
+      stp1=1.0001d0
+      stp2=1.0001d0
+      tolr=1d-8
+      do it=1,40
+        call PRESS (T,D,z,P)           !Calculate pressure, if less than zero, increase T and try again.
+        if (P.gt.1.d15) goto 160
+        ierr=0
+        if (it.lt.5) call CHECKSTATE (0,0,T,D,z,Err,ierr,herr)       !Check the state of the inputs for the first 4 iterations.
+        if (P.lt.0 .or. ierr.gt.0) then
+          T=T*stp1
+          if (T.gt.Tc) then
+            stp1=SQRT(stp1)
+            T=T/SQRT(stp1)
+          else
+            stp1=1d0+(stp1-1d0)*1.5d0
+          endif
+        else
+          call TPRHO (T,P,z,3-kr,0,D2,ierr,herr)           !Calculate density, if error, decrease T and try again.
+          if (ABS(D-D2).lt.1d-7 .and. icomp.ne.0) then
+            if (T.gt.Tc) T=Tc-ABS(Tc-T)
+            if (D.gt.Dc) call DVSATK (icomp,T,D2,ierr,herr)
+            if (D.le.Dc) call DLSATK (icomp,T,D2,ierr,herr)
+          endif
+          if (ierr.ne.0) then
+            T=T/stp2
+            stp2=1d0+(stp2-1d0)*2d0
+          else
+            if (ABS(D-D2).lt.1d-7) then
+              stp1=SQRT(stp1)          !Back up if state was found in wrong phase.
+              T=T/stp1
+            else
+              stp1=1.0001d0
+              stp2=1.0001d0
+              Dl=D
+              Dv=D2
+              if (kr.ne.1) call SWAPV (Dl,Dv)
+              call THERM1 (T,D ,z,pp,e,h,s1,g1)            !Use Maxwell criterion to generate next guess for T.
+              call THERM1 (T,D2,z,pp,e,h,s2,g2)
+              if (T2.le.0.) T2=T+0.00001d0
+              dd=d1
+              ff=1d0
+              if (ABS(s1-s2).gt.1d-11) d1=(g1-g2)/(s1-s2)
+              if (ABS(d1-dd).gt.1d-11) ff=-(T2-T)/(dd-d1)
+              T2=T
+              T=T+ff*d1
+              if (T.le.0.) T=T2*0.95d0
+              if (ABS(d1).le.tolr .and. T.lt.Tc) goto 500            !Iteration has converged.
+            endif
+          endif
+        endif
+      enddo
+      call SATGUESS (kr,3,0,0,z,T,P,D,h,s,Dy,y,ierr,herr)  !Recalculate initial guesses.
+c  Method failed (generally at very low temperatures in the liquid), try alternate method.
+
+
+
+c  Iterate for temperature with a combination of Newton's method and Reguli-falsi.
+ 200  ierr=0
+      if (icomp.ne.0 .and. ignbnd.eq.0 .and. ignbnd2.eq.0) then
+        if (hmeltk(icomp).eq.'NBS' .and. D.gt.Dtpn(icomp)) goto 102  !No melting line.
+        if (hsublk(icomp).eq.'NBS' .and. D.lt.Dtpv(icomp)) goto 103  !No sublimation line.
       endif
+      call ROOTSEARCH (0,0,0,v,f,v3,0,ib,lneg,lpos)        !Initialize root finding variables.
+      tolr=1d-7
+
+c  Get initial point.
+      if (kr.eq.3) then
+        T=Ttpn(icomp)
+        D1=Dtpn(icomp)
+        if (iw.ge.1) T=Tmin+1d-10      !Calculate P and D at slightly higher than the lowest possible temperature for water.
+        call MELTT (T,z,P,ierr,herr)                       !Call melting routine in case Dtpn(2) is not exactly eq. to D(Ttrp).
+        call TPRHO (T,P,z,1,1,D1,ierr,herr)
+      elseif (kr.eq.4) then
+        T=Ttpn(icomp)
+        D1=Dtpv(icomp)
+      else
+        do i=1,5
+          call SATT (T,z,kr,P,Dl,D1,x,y,ierr,herr)         !For mixtures at Tc in the vapor phase, the value of Dc is not correct.
+          if (icnt.gt.0 .and. ierr.ge.100) icnt=icnt+1
+          if (ierr.lt.100) EXIT
+          T=T*0.999d0
+        enddo
+        if (kr.eq.1) D1=Dl
+      endif
+      v(2)=T
+      f(2)=XLOG(XDIV(D,D1))
+      call ROOTSEARCH (1,0,0,v,f,v3,0,ib,lneg,lpos)
+
+c  Generate second guess for temperature.
+      if (kr.eq.1 .or. kr.eq.2) then
+        if (icomp.eq.0) T=T*0.95d0
+        if (icomp.ne.0) T=T-(Tc-T)/10d0
+        if (icomp.ne.0 .and. T.lt.Tmin) T=Tmin*1.1d0
+      endif
+      if (kr.eq.3) T=Ttpn(icomp)*1.05d0
+      if (kr.eq.4) T=Ttpn(icomp)*0.95d0
+      if (iw.ge.1 .and. kr.eq.3) T=Ttpn(icomp)*0.99d0
+      v(2)=T
+
+c  Main loop.
+      Told=0d0
+      Pold=0d0
+      do it=1,25
+        call TOLRNC (tolr,it,10,15,20,0,0)                 !Loosen tolerance if not converging.
+        if (kr.eq.3) then                                  !Melting line.
+          call MELTT (T,z,P,ierr,herr)
+          if (iw.eq.1 .and. D.lt.D1) call MLTH2O (T,pp,P)  !Check for water.
+          if (iw.eq.3 .and. D.lt.D1) call MLTD2O (T,pp,P)  !Check for heavy water.
+          if (P.le.0.) then
+            ierr=999
+          else
+            dd=Dtpn(icomp)
+            if (iw.ge.1 .and. D.gt.D1) dd=D1+5d0
+            call TPRHO (T,P,z,1,1,dd,ierr,herr)            !Get density on melting line.
+            Dl=dd
+            Dv=dd
+          endif
+        else
+          call SATT (T,z,kr,P,Dl,Dv,x,y,ierr,herr)
+          if (icnt.gt.0 .and. ierr.ge.100) icnt=icnt+1
+          if (icnt*nc.gt.100) goto 160           !Exit if too many errors occur, taking into account the number of components (more components means less allowable errors).
+          dd=Dv
+          if (kr.eq.1) dd=Dl
+          if (ierr.eq.0) then
+            dpdt=ABS(XDIV(p-pold,T-Told))        !Get dP/dT along the saturation line.  If very high, and not converging, search as a function of P instead of T (in the code below this section starting with the number 250).
+            Told=T
+            pold=p
+            if(dpdt.gt.1000 .and. it.gt.10 .and. f(2).gt.0.01d0)goto 250
+          endif
+        endif
+        if (ierr.ne.0 .or. dd.le.0.) then
+          T=0.8d0*v(1)+0.2d0*v(2)      !Calculation failed, try point that is 80% of the good value and 20% of the bad one.
+        else
+          f(2)=XLOG(D/dd)
+          call ROOTSEARCH (1234,0,0,v,f,T,it,ib,lneg,lpos)           !Get next guess.
+          if (ABS(f(2)).lt.tolr) goto 500                  !Check for convergence.
+          if (T.le.0.) T=Tmin
+        endif
+        v(2)=T
+      enddo
+c     goto 160     !Iteration failed.
+
+c  Iterate for pressure with a combination of Newton's method and Reguli-falsi.
+ 250  continue
+      call ROOTSEARCH (0,0,0,v,f,v3,0,ib,lneg,lpos)        !Initialize root finding variables.
+      tolr=1d-7
+
+c  Get initial point.
+      P=Pc/5d0
+      do i=1,5
+        call SATP (P,z,kr,T,Dl,D1,x,y,ierr,herr)
+        if (ierr.lt.100) EXIT
+        P=P*1.5d0
+      enddo
+      if (kr.eq.1) D1=Dl
+      v(2)=P
+      f(2)=XLOG(XDIV(D,D1))
+      call ROOTSEARCH (1,0,0,v,f,v3,0,ib,lneg,lpos)
+
+c  Generate second guess for temperature.
+      P=P-(Pc-P)/10d0
+      v(2)=P
+
+c  Main loop.
+      do it=1,25
+        call TOLRNC (tolr,it,10,15,20,0,0)       !Loosen tolerance if not converging.
+        call SATP (P,z,kr,T,Dl,Dv,x,y,ierr,herr)
+        if (icnt.gt.0 .and. ierr.ge.100) icnt=icnt+1
+        if (icnt*nc.gt.100) goto 160
+        dd=Dv
+        if (kr.eq.1) dd=Dl
+        if (ierr.gt.100 .or. dd.le.0.) then
+          P=0.8d0*v(1)+0.2d0*v(2)      !Calculation failed, try point that is 80% of the good value and 20% of the bad one.
+        else
+          f(2)=XLOG(D/dd)
+          call ROOTSEARCH (1234,0,0,v,f,P,it,ib,lneg,lpos)           !Get next guess.
+          if (ABS(f(2)).lt.tolr) goto 500                  !Check for convergence.
+        endif
+        v(2)=P
+      enddo
+      goto 160     !Iteration failed.
+
+ 102  call ERRNUM (2,4,'SATD',' ',D,Dtpn(icomp),0d0,ierr,herr)
+      goto 199
+ 103  call ERRNUM (2,2,'SATD',' ',D,Dtpv(icomp),0d0,ierr,herr)
+      goto 199
+ 160  call ERRNUM (160,0,' ',' ',D,0d0,0d0,ierr,herr)
+      goto 199
+ 199  T=Tc
+      P=Pc
+      Dl=Dc
+      Dv=Dc
+      if (kr.eq.3) then
+        T=Ttpn(icomp)
+        P=Ptpn(icomp)
+        Dl=Dtpn(icomp)
+        Dv=Dtpv(icomp)
+      endif
+
+ 500  continue
+      if (lAGA8) then   !Save the state of the AGA-8 flag and then turn it off so that the saturation pressures will come from the FEQ models.
+        call SETEOSMX ('AGA')
+        if (ierr.le.0) call TPRHO (T,P,y,2,1,Dv,ierr,herr)  !Recall TPRHO to get the density from the AGA8 equation, not from the full Refprop equations.
+      endif
+      iErrNum=iErrNum-1
+      if (iErrNum.le.0) call CHECKLIMITS ('S3',T,D,P,z,ierr,herr)
       RETURN
-c
-      end                                               !subroutine SATD
+
+      end                                                subroutine SATD
 c
 c ======================================================================
 c
-      subroutine SATH (h,x,kph,nroot,k1,t1,p1,d1,k2,t2,p2,d2,ierr,herr)
+      subroutine SATH (h,z,kph,nroot,k1,T1,P1,D1,k2,T2,P2,D2,ierr,herr)
 c
-c  iterate for temperature, pressure, and density given enthalpy along
-c  the saturation boundary and the composition
-c
-c  inputs:
-c        h--molar enthalpy [J/mol]
-c        x--composition [array of mol frac]
-c      kph--flag specifying desired root
-c           0 = return all roots along the liquid-vapor line
-c           1 = return only liquid VLE root
-c           2 = return only vapor VLE roots
-c           3 = return liquid SLE root (melting line)
-c           4 = return vapor SVE root (sublimation line)
-c  outputs:
-c    nroot--number of roots.  Value is set to one for kph=1,3,4 if ierr=0
-c       k1--phase of first root (1-liquid, 2-vapor, 3-melt, 4-subl)
-c       t1--temperature of first root [K]
-c       p1--pressure of first root [kPa]
-c       d1--molar density of first root [mol/L]
-c       k2--phase of second root (1-liquid, 2-vapor, 3-melt, 4-subl)
-c       t2--temperature of second root [K]
-c       p2--pressure of second root [kPa]
-c       d2--molar density of second root [mol/L]
-c     ierr--error flag:   0 = successful
-c                         2 = h < hmin
-c                         4 = h > hmax
-c                         8 = h > htrp (for subl input)
-c                       160 = CRITP did not converge
-c                       161 = SATH did not converge for one root
-c                       162 = SATH did not converge for both roots
-c     herr--error string (character*255 variable if ierr<>0)
+c  Iterate for temperature, pressure, and density given enthalpy along
+c  the saturation boundary and the composition.
 c
 c  The second root is always set as the root in the vapor at temperatures
 c  below the maximum enthalpy on the vapor saturation line.  If kph is
 c  set to 2, and only one root is found in the vapor (this occurs when h<hcrit)
-c  the state point will be placed in k2,t2,p2,d2.  If kph=0 and this situation
-c  occurred, the first root (k1,t1,p1,d1) would be in the liquid (k1=1, k2=2).
+c  the state point will be placed in k2,T2,P2,D2.  If kph=0 and this situation
+c  occurred, the first root (k1,T1,P1,d1) would be in the liquid (k1=1, k2=2).
 c
-c  N.B. kph = 3,4 presently working only for pure components
+c  Inputs:
+c        h--Molar enthalpy [J/mol]
+c        z--Composition (array of mole fractions)
+c      kph--Flag specifying desired root:
+c           0 - Return all roots along the liquid-vapor line
+c           1 - Return only liquid VLE root
+c           2 - Return only vapor VLE roots
+c           3 - Return liquid SLE root (melting line)
+c           4 - Return vapor SVE root (sublimation line)
+c           kph = 3,4 presently working only for pure components
 c
-c  written by E.W. Lemmon, NIST Phys & Chem Properties Div, Boulder, CO
+c  Outputs:
+c    nroot--Number of roots.  Value is set to one for kph=1,3,4 if ierr=0
+c       k1--Phase of first root (1-liquid, 2-vapor, 3-melt, 4-subl)
+c       T1--Temperature of first root [K]
+c       P1--Pressure of first root [kPa]
+c       d1--Molar density of first root [mol/L]
+c       k2--Phase of second root (1-liquid, 2-vapor, 3-melt, 4-subl)
+c       T2--Temperature of second root [K]
+c       P2--Pressure of second root [kPa]
+c       D2--Molar density of second root [mol/L]
+c     ierr--Error flag:  0 - Successful
+c                      181 - SATH did not converge for one of the roots
+c                       54 - h < hmin
+c                       55 - h > hmax
+c                       56 - h > htrp (for sublimation inputs)
+c                      (See subroutine LIMITX for other possible error numbers.)
+c     herr--Error string (character*255)
+c
+c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
 c  02-22-00 EWL, original version
-c  05-08-08 EWL, add iteration count to avoid endless loop
-c  09-04-08 EWL, add check for water and adjust tmin to 273.16 K
-c  01-04-11 EWL, add txmax=thmax to set txmax if hmax has already been found
-c  03-07-11 EWL, increase tol when not converging (such as CO2 very near critical)
-c  03-15-11 EWL, add check for h1>h2>h3 when determining hmax
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SATH
-c
-      include 'commons.for'
-      character*255 herr,herr1
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax)
-      dimension tt(3),ft(2)
-c
-      call ISPURE (x,icomp)
+c  12-11-16 EWL, rewrite code for better efficiency and reading.
+
+      include 'COMMONS.INC'
+      character herr*255
+      dimension x(ncmax),y(ncmax),z(ncmax),v(20),f(20)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SATH
+
+
+      T=300d0
+      ibt=iLetterH
+      if (ieflg.eq.1) ibt=iLetterE
+      iErrNum=iErrNum+1
+      call ISPURE (z,icomp)
+      call SATMAX (icomp,z,Tc,Pc,Dc,ierr,herr)                       !Get pure fluid critical point or mixture maximum T and P (but labeled here simply as Tc and Pc).
+      call LIMITS ('EOS',z,Tmin,Tmax,Dmax,Pmax)
+      if (icomp.ne.0) call SETPNTS (1,icomp,z,T,P,Dl,Dv,ierr,herr)
+      if (iFluidID(icomp).eq.1.or.iFluidID(icomp).eq.3) Tmin=Ttpn(icomp)       !Resets Tmin from 251 to 273 K for water.
+      tolr=1d-6
+      itmax=20
+      if (icomp.ne.0) itmax=30
+      iSatFlg=0
+      nroot=0
+      T1=0d0
+      P1=0d0
+      D1=0d0
+      T2=0d0
+      P2=0d0
+      D2=0d0
+      k1=0
+      k2=0
       ierr=0
       ierr1=0
-      iflag=0
-      herr=' '
-      k1=0
-      t1=0
-      p1=0
-      d1=0
-      k2=0
-      t2=0
-      p2=0
-      d2=0
-      nroot=0
-      call MAXT (x,tmaxt,tmaxp,tmaxd,ierr,herr1)
-      call CRITP (x,tc,pc,rhoc,ierr,herr1)
-      if (ierr.gt.0) then
-c  error condition--set outputs, issue warning, and return
-        ierr=160
-        write (herr,1160) herr1(1:237),hnull
- 1160   format ('[SATH error 160] ',a237,a1)
-        call ERRMSG (ierr,herr1)
-        RETURN
-      end if
-c
-c  calculate enthalpy at triple point if not set
-      call LIMITS ('EOS',x,tmin,tmax,Dmax,pmax)
-      if (ABS(htpl).lt.1.d-15) THEN
-c  check for water
-        if (hcas(icomp).eq.'7732-18-5' .and. icomp.ne.0) tmin=273.16d0
-        t=tmin
-        call SATT (t,x,1,p,rhol,rhov,xliq,xvap,ierr,herr)
-        call ENTHAL (t,rhol,x,htpl)
-        call ENERGY (t,rhol,x,etpl)
-        if (icomp.eq.0 .or. ianc(icomp).eq.1) then
- 100      continue
-          call SATT (t,x,2,p,rhol,rhov,xliq,xvap,ierr,herr)
-          if (ierr.gt.0 .and. t.lt.tc) then
-            t=t+5
-            goto 100
-          endif
-        endif
-        call ENTHAL (t,rhov,x,htpv)
-        call ENERGY (t,rhov,x,etpv)
+
+c  Determine region.
+      kphs=1       !Liquid or vapor with a density higher than that at the maximum enthalpy.
+      if (kph.gt.2 .and. icomp.eq.0) goto 500              !Mixture, melting line not available.
+      if (kph.gt.2 .and. icomp.ne.0) kphs=kph              !Liquid/solid or Vapor/solid for a pure fluid
+
+c  Get maximum enthalpy (or energy) along the saturated vapor dome.
+      call HEMAXX(z,ieflg,xmax,Themax,Dhemax,ierr,herr)
+      if (ierr.ge.100) goto 500
+      if (h.gt.xmax .and. kphs.ne.3) goto 55    !Exit if there is no solution (h>hmax).
+
+c  Calculate enthalpy at Tmin.
+      Tl=Tmin
+      Tv=Tmin
+      Dliq=0d0
+      Dvap=0d0
+      dd=0d0
+      if (icomp.ne.0 .and. iAnc(icomp).eq.0) then
+        Dliq=Dtpn(icomp)
+        Dvap=Dtpv(icomp)
+      else                   !Check for mixture or pseudo-pure fluid.
+        ierrl=999
+        ierrv=999
+        it=0
+        do while ((ierrl.gt.0.or.ierrv.gt.0).and.Tl.lt.Tc.and.Tv.lt.Tc)
+         it=it+1
+         if(ierrl.gt.0)call SATTP(Tl,P,z,1,0,D,Dliq,dd,x,y,q,ierrl,herr)
+         if(ierrv.gt.0)call SATTP(Tv,P,z,2,0,D,dd,Dvap,x,y,q,ierrv,herr)
+         if(ierrl.gt.0)Tl=Tl+(Tc-Tl)/20d0
+         if(ierrv.gt.0)Tv=Tv+(Tc-Tv)/10d0
+         if (it.gt.10) EXIT
+        enddo
       endif
-      xtpl=htpl
-      xtpv=htpv
-      call ENTHAL (tc,rhoc,x,xc)
-      if (ieflg.eq.1) then
-        xtpl=etpl
-        xtpv=etpv
-        call ENERGY (tc,rhoc,x,xc)
-      endif
-c
-c  find maximum enthalpy (or energy) along the saturated vapor dome
-      xmax=hmax
-      if (ieflg.eq.1) xmax=emax
-      if (ABS(xmax).lt.1.d-15) THEN
-        call EHMAXX (x,ieflg,xmax,tmax,ierr,herr)
-      endif
-      txmax=thmax
-      if (ieflg.eq.1) txmax=temax
-c
-c  determine region
-      if (kph.eq.3 .and. icomp.ne.0) then
-        kphs=3                         !liquid/solid
-      else if (kph.eq.4 .and. icomp.ne.0) then
-        kphs=4                         !vapor/solid
+      call HESCALC (ibt,Tl,Dliq,z,hliq)
+      call HESCALC (ibt,Tv,Dvap,z,hvap)
+      ierr1=0
+
+c  Check for inputs that are out of bounds.
+      if (h.gt.hvap .and. kphs.eq.4) goto 56
+      if (h.lt.hliq .and. kphs.ne.4) goto 54
+
+c  Store density and enthalpy for root bounding during iteration.
+ 200  call ROOTSEARCH (0,0,0,v,f,T,0,ib,lneg,lpos)         !Initialize root finding variables.
+      if (kphs.eq.1 .or. kphs.eq.3) then
+        v(2)=Dliq
+        f(2)=hliq-h
       else
-        if (h.lt.xc) then
-          kphs=1                         !liquid
-        else
-          kphs=2                         !vapor
-        end if
+        v(2)=Dvap
+        f(2)=hvap-h
       endif
-c     write (*,*) 'SATH--initial phase:  ',kphs
-c
-      if (h.gt.xtpv .and. kphs.eq.4) then
-        ierr=8
-        write (herr,1008) ierr,h,xtpv,hnull
- 1008   format('[SATH error',i3,'] enthalpy greater than triple point'
-     &     ,' value; h =',g12.5,' J/mol, max =',g12.5,' J/mol',a1)
-        call ERRMSG (ierr,herr)
-        RETURN
+      call ROOTSEARCH (1,0,0,v,f,T,0,ib,lneg,lpos)
+      if (kphs.ne.3 .and. kphs.ne.4) then                  !Store second bound at hmax when iterating for liquid or vapor.
+        v(2)=Dhemax
+        f(2)=xmax-h
+        call ROOTSEARCH (1,0,0,v,f,T,0,ib,lneg,lpos)
       endif
-      if (h.lt.xtpl .and. kphs.ne.4) then
-        ierr=2
-        write (herr,1002) ierr,h,xtpl,hnull
- 1002   format('[SATH error',i3,'] enthalpy below triple-point '
-     &      ,'value; h =',g12.5,' J/mol, min =',g12.5,' J/mol',a1)
-        call ERRMSG (ierr,herr)
-        RETURN
-      endif
-      if (h.gt.xmax .and. kphs.ne.3) then
-        ierr=4
-        write (herr,1004) ierr,h,xmax,hnull
- 1004   format('[SATH error',i3,'] enthalpy greater than maximum '
-     &      ,'value; h =',g12.5,' J/mol, max =',g12.5,' J/mol',a1)
-        call ERRMSG (ierr,herr)
-        RETURN
-      endif
-c
-c  iterate for temperature using a combination of Newton's method
-c  and reguli-falsi
-c
-      tol=1.0d-6
-      itmax=20
-      if (kphs.eq.3) then
-        tt(1)=tmin
-        ft(1)=xtpl-h
-      elseif (kphs.eq.4) then
-        tt(1)=tmin
-        ft(1)=xtpv-h
-      else
-        tt(1)=tc
-        ft(1)=xc-h
-c  Use values from Splines if set up by call to SATSPLN, should return the root with the higher temperature
-        if (iSpline.ne.0 .and. ieflg.eq.0) then
-          d=rhoc
-          call SPLNROOT (nc+4,0,h,d,ierr,herr)
-          call SPLNVAL (nc+1,0,d,t,ierr,herr)
-          iflsh=1
-          if (d.lt.rhoc) iflsh=2
-          if (d.lt.rhoc .and. d.gt.tmaxd .and. tmaxd.ne.0) iflsh=-2
-          call SATTP (t,p,x,iflsh,0,d,rhol,rhov,xliq,xvap,q,ierr,herr)
-          call ENTHAL (t,d,x,hc)
-          tt(1)=t
-          ft(1)=hc-h
-          if (iflsh.lt.0) kphs=iflsh
-        endif
-      endif
-c
-c  initialize iteration flags
-c
- 130  continue
-      lneg=.false.
-      lpos=.false.
-      tpos=0
-      tneg=0
-c  store variables for reguli-falsi
-      if (ft(1).lt.0.0) then
-        lneg=.true.
-        tneg=tt(1)
-        if (abs(kphs).eq.2) then
-          lpos=.true.
-          tpos=txmax
-        endif
-      else
-        lpos=.true.
-        tpos=tt(1)
-        if (abs(kphs).eq.2) then
-          lneg=.true.
-          tneg=txmax
-        endif
-      end if
-c
-c  generate second guess for temperature
-c
-      if (iSpline.ne.0) then
-        tt(2)=tt(1)-0.1d0
-      elseif (kphs.eq.1) then
-        tt(2)=0.95*tc
-      else if (abs(kphs).eq.2) then
-        tt(2)=(tneg+tpos)/2.0d0
-      else if (kphs.eq.3) then
-        tt(2)=0.85*tc
-      else if (kphs.eq.4) then
-        tt(2)=0.95*tmin
-      end if
-      jt=2
-c
+
+c  Generate next guess for density.
+      D=Dhemax/2d0
+      if (kphs.eq.1) D=(Dc+Dliq)/2d0
+      if (kphs.eq.3) D=Dtpn(icomp)*1.1d0
+      if (kphs.eq.4) D=Dtpv(icomp)*0.8d0
+
+c  ---Main iterative loop to find root---
       do it=1,itmax
-      call SATT (tt(jt),x,kphs,p,rho,rhov,xliq,xvap,ierr,herr)
-      if (abs(kphs).eq.2 .or. kphs.eq.4) rho=rhov
-      call ENTHAL (tt(jt),rho,x,h1)
-      if (ieflg.eq.1) call ENERGY (tt(jt),rho,x,h1)
-      ft(jt)=h1-h
-c     write (*,1999) it,jt,tt(jt),ft(jt)
-c1999 format (1x,'% it,jt,t,ft: ',2i4,f9.4,f16.10)
-c  check for convergence
-      if (it.eq.10) tol=tol*10
-      if (it.eq.15) tol=tol*10
-      if (it.eq.18) tol=tol*10
-      if (abs(ft(jt)).lt.tol) goto 160
-c  store variables for reguli-falsi
-      if (ft(jt).lt.0.0) then
-        lneg=.true.
-        tneg=tt(jt)
-      else
-        lpos=.true.
-        tpos=tt(jt)
-      end if
-c  compute next guess for temperature
-      if (abs(ft(2)-ft(1)).gt.1.d-20)
-     &  tt(3)=tt(2)-ft(2)*(tt(2)-tt(1))/(ft(2)-ft(1))
-c  check if new guess is outside of bounds of previous guesses,
-c  if so (and if upper and lower bounds are available) use
-c  reguli-falsi
-      if (lpos .and. lneg .and.
-     &  (tt(3).gt.max(tpos,tneg) .or. tt(3).lt.min(tpos,tneg))) then
-        tt(3)=0.5*(tpos+tneg)
-      elseif (tt(3).lt.tmin .and. kphs.ne.4) then
-        tt(3)=tmin
-      elseif (tt(3).le.tmin/10.0d0 .and. icomp.ne.0) then !subl check
-        if (it.eq.1 .and. kphs.eq.4) then
-          tt(3)=0.d0
+        call TOLRNC (tolr,it,10,15,18,0,0)       !Loosen tolerance if not converging.
+        if (iSpline.ne.0 .and. ieflg.eq.0) then
+          call SATGV (T,P,z,0d0,D,1,6,1,Dl,Dv,x,y,ierr,herr)
         else
-          goto 150
+          call SATD (D,z,kphs,kr,T,P,Dl,Dv,x,y,ierr,herr)
         endif
-      endif
-      tt(1)=tt(2)
-      tt(2)=tt(3)
-      ft(1)=ft(2)
+        if (ierr.lt.100) ierr=0        !Ignore boundary errors.
+        if (ierr.le.0) then
+          call HESCALC (ibt,T,D,z,h1)
+          f(2)=h1-h
+          v(2)=D
+          call ROOTSEARCH (1234,0,0,v,f,D,it,ib,lneg,lpos)           !Compute next guess for temperature.
+          if (ABS(f(2)).lt.tolr) goto 300        !Check for convergence.
+          if (icomp.ne.0 .and. it.gt.10) then
+            if (ABS(T-Tc).lt.1d-6 .and. ABS(D-Dc).lt.01d0) goto 300            !Routine is bouncing around very close to the critical point, so just exit.
+          endif
+        else
+          D=D*0.9d0
+        endif
       enddo
- 150  continue
-      if (ierr1.ne.161) then
-        ierr=161
-        ierr1=161
-        write (herr,1161) h,nroot+1,hnull
- 1161   format ('[SATH error 161] ',
-     &         'iteration for saturation state did not ',
-     &         'converge for h =',g12.5,' J/mol; root = ',i1,a1)
-        herr1=herr
-      else
-        ierr=162
-        write (herr,1162) h,hnull
- 1162   format ('[SATH error 162] ',
-     &         'iteration for saturation state did not ',
-     &         'converge for both roots; h =',g12.5,' J/mol',a1)
-      endif
-      call ERRMSG (ierr,herr)
-      tt(jt)=0
-      p=0
-      rho=0
- 160  continue
-      t=tt(jt)
-      if (abs(kphs).eq.kph .or. kph.eq.0) then
-        nroot=nroot+1
-        if (iflag.eq.0) then
-c  first root found, save values
-          t1=t
-          p1=p
-          d1=rho
-          k1=abs(kphs)
-        else
-c  second root found, save values
-          t2=t
-          p2=p
-          d2=rho
-          k2=abs(kphs)
-          if (ierr.eq.0 .and. ierr1.ne.0) then
-            ierr=ierr1
-            herr=herr1
-          endif
-        endif
-      endif
-c  check if second root might exist
-      if (h.gt.xtpv .and. h.lt.xmax .and. iflag.eq.0) then
-c  only calculate second root if requested
-        if (kph.eq.0 .or. kph.eq.2) then
-          tt(1)=tmin
-          ft(1)=xtpv-h
-          kphs=2
-          iflag=1
-          if (iSpline.ne.0 .and. ieflg.eq.0) then
-            d=0.01d0
-            call SPLNROOT (nc+4,0,h,d,ierr,herr)
-            call SPLNVAL (nc+1,0,d,t,ierr,herr)
-            t=t+0.05d0  !Decrease slightly to bound root
-            call SATTP (t,p,x,kphs,0,d,rhol,rhov,xliq,xvap,q,ierr,herr)
-            call ENTHAL (t,d,x,hc)
-            if (ieflg.eq.1) call ENERGY (t,d,x,hc)
-            tt(1)=t
-            ft(1)=hc-h
-          endif
-          goto 130
-        endif
-      endif
-      RETURN
-c
-      end                                               !subroutine SATH
-c
-c ======================================================================
-c
-      subroutine MAXWELL (icomp,ts,ps,dl,dv,ierr,herr)
-c
-c  iterate for saturated liquid and vapor states of a pure fluid given temperature
-c
-c  inputs:
-c    icomp--number of component
-c       ts--temperature [K]
-c       dl--initial guess for molar density [mol/L] of saturated liquid
-c       dv--initial guess molar density [mol/L] of saturated vapor
-c
-c  outputs:
-c       ps--saturation pressure [kPa]
-c       dl--molar density [mol/L] of saturated liquid
-c       dv--molar density [mol/L] of saturated vapor
-c
-c     ierr--error flag:   0 = successful
-c                         1 = no convergence after kmax iterations
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by Matthias Kunick, NIST Thermophysics Division, Boulder, Colorado
-c  09-15-11  MK, original version
-c
-      include 'commons.for'
-      dimension x(ncmax)
-      character herr*255
-      parameter (eps=1.d-4)
-      parameter (kmax=50)
-c
+
+c Iteration failed.
       ierr=0
-      herr=' '
-      dlsp=-1.d0
-      dvsp=-1.d0
-c
-      if (tminfeq(icomp).lt.ttpn(icomp)) then
-        tt=ttpn(icomp)
-      else
-        tt=tminfeq(icomp)
+      if (icomp.ne.0) then
+        if (ABS(v(4)-v(5)).lt.0.1d0 .and. ABS(T-Tc).lt.0.01d0) goto 300        !Check for close answer very near the critical point.
       endif
-      tc  =tcfeq(icomp)
-      rhoc=rhocfeq(icomp)
-      qt=(ts-tt)/(tc-tt)
-      vc=1.d0/rhoc
-      dtl=dtpn(icomp)
-      dtg=ptpn(icomp)/r/ttpn(icomp)
-      vtl=1.d0/dtl*0.95d0   !<= vtr'
-      vtg=1.d0/dtg*1.2d0    !>= vtr"
-c
-c --- start values for v1 and v2 -------------------------------------------
-      v1=1.d0/dl
-      v2=1.d0/dv
-      v1ini=v1
-      v2ini=v2
-      if (v1ini.lt.vtl) vtl=v1ini*0.95D0
-      if (v2ini.gt.vtg) vtg=v2ini*1.05D0
-      k=0
-c
-c *** iteration algorithm ******************************************************
-      do
-        k=k+1
-        dl=1.d0/v1
-        dv=1.d0/v2
-        call PRESS (ts,dl,x,p1)
-        call AG    (ts,dl,x,a1,g)
-        call DPDD  (ts,dl,x,alpha1)
-        call PRESS (ts,dv,x,p2)
-        call AG    (ts,dv,x,a2,g)
-        call DPDD  (ts,dv,x,alpha2)
-        alpha1=-alpha1*dl*dl
-        alpha2=-alpha2*dv*dv
-c
-        is=0
-        ierr1=0
-        if (alpha1.gt.0.d0 .and. dlsp.lt.0.d0)
-     &     call LIQSPNDL (t,x,dlsp,ierr1,herr)
-        do while (alpha1.gt.0.d0) !Maxwell loop (liquid)
-          is=is+1
-          if (is.gt.10) goto 999
-          if (ierr1.eq.0) then
-            v1=1.d0/dlsp*0.995d0
-          else
-            v1=(vtl+v1)*0.5d0
-          endif
-          dl=1.d0/v1
-          call DPDD (ts,dl,x,alpha1)
-          alpha1=-alpha1*dl*dl
-          if (alpha1.lt.0.d0) then
-            call PRESS (ts,dl,x,p1)
-            call AG (ts,dl,x,a1,g)
-          end if
-        end do
-        is=0
-        if (alpha2.gt.0.d0 .and. dvsp.lt.0.d0)
-     &     call VAPSPNDL (t,x,dvsp,ierr1,herr)
-        do while (alpha2.gt.0.d0) !Maxwell loop (vapor)
-          is=is+1
-          if (ierr1.eq.0) then
-            v2=1.d0/dvsp*1.005d0
-          else
-            if (qt.gt.0.9d0) then
-              v2=v2*1.005d0
-              if (v2.gt.v2ini) v2=v2ini
-            else
-              v2=v2*1.2d0
-            endif
-            if (is.gt.10) v2=v2ini
-          endif
-          if (is.gt.20) goto 999
-          dv=1.d0/v2
-          call DPDD (ts,dv,x,alpha2)
-          alpha2=-alpha2*dv*dv
-          if (alpha2.lt.0.d0) then
-            call PRESS (ts,dv,x,p2)
-            call AG (ts,dv,x,a2,g)
-          end if
-        end do
-c
-        vdif=v2-v1
-        pm=(a1-a2)/vdif
-        if (dabs(vdif).lt.1.d-12 .or. k.gt.kmax) goto 999
-        if (dabs(p1-p2)/p2.lt.eps) goto 998
-c
-        a=0.5d0*alpha1*(alpha1-alpha2)
-        b=alpha1*(p1-p2-alpha2*(v1-v2))
-        c=alpha2*(v1-v2)*(pm-p1)+0.5d0*(p1-p2)*(p1-p2)
-        e=0.25d0*b*b/(a*a)-c/a
-        if (e.le.1.d-10) then
-          es=e*1.d12
-          delv1=-0.5d0*b/a+
-     &           dsign(1.d-6*dsqrt(dabs(es)),(alpha1-alpha2)/alpha2)
+      ierr1=181
+      ierr=ierr1
+
+c Iteration converged.
+ 300  if (ierr.le.0 .or. (kphs.ge.3 .and. ierr.lt.100)) then
+        nroot=nroot+1
+        if (nroot.eq.1) then
+          T1=T               !First root found.
+          P1=P
+          D1=D
+          k1=kphs
+          if (kphs.lt.3) k1=1
+          if (kphs.lt.3 .and. D.lt.Dc) k1=2
         else
-          delv1=-0.5d0*b/a+dsign(dsqrt(dabs(e)),(alpha1-alpha2)/alpha2)
-        end if
-        delv2=(p1-p2+alpha1*delv1)/alpha2
-c
-c --- calculate new values for v1 and v2 -----------------------------------
-        v1=v1+delv1
-        v2=v2+delv2
-        if (v1.gt.vc)  v1=0.9999d0*vc
-        if (v1.lt.vtl) v1=vtl
-        if (v2.lt.vc)  v2=1.0001d0*vc
-        if (v2.ge.vtg) v2=vtg
-        if (qt.lt.0.9d0 .and. v1.gt.v1ini*1.2d0) v1=(vtl+v1ini)*0.5d0
-      end do
+          T2=T               !Second root found.
+          P2=P
+          D2=D
+          k2=kphs
+        endif
+      endif
 
- 998  ps=pm
+c  Check if second root exists.
+      if (kphs.eq.1 .and. h.gt.hvap) then
+        kphs=2
+        goto 200
+      endif
+
+ 500  if (ierr1.ne.0) ierr=ierr1
+      if (ierr1.eq.181) call ERRNUM(181,0,' ',' ',h,0d0,0d0,ierr,herr)
+
+c  Check if limits have been exceeded, return that message if no other error has occurred.
+      iErrNum=iErrNum-1
+      if (iErrNum.le.0) call CHECKLIMITS ('S4',T,D,P,z,ierr,herr)
       RETURN
 
- 999  continue
-      ps=-1.d0
-      dl=-1.d0
-      dv=-1.d0
-      ierr=1
-      write (herr,1)
-    1 format('[MAXWELL error] no convergence')
-c
-      end                                            !subroutine MAXWELL
+ 54   call ERRNUM (54,0,' ',' ',h,hliq,0d0,ierr,herr)
+      goto 500
+ 55   call ERRNUM (55,0,' ',' ',h,xmax,0d0,ierr,herr)
+      goto 500
+ 56   call ERRNUM (56,0,' ',' ',h,hvap,0d0,ierr,herr)
+      goto 500
+
+      end                                                subroutine SATH
 c
 c ======================================================================
 c
-      subroutine EHMAXX (x,ieflag,ehmax,tehmax,ierr,herr)
+      subroutine SATS (s,z,kph,nroot,k1,T1,P1,D1,k2,T2,P2,D2,
+     &                 k3,T3,P3,D3,ierr,herr)
 c
-c  find maximum enthalpy or energy on saturated vapor line.
-c
-c  inputs:
-c        x--composition [array of mol frac]
-c    ieflag--set to 0 for enthalpy, 1 for energy
-c  outputs:
-c    ehmax--maximum enthalpy or energy [J/mol]
-c   tehmax--temperature at maximum enthalpy or energy [K]
-c     ierr--error flag:   0 = successful
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by E.W. Lemmon, NIST Phys & Chem Properties Div, Boulder, CO
-c  06-15-11 EWL, original version, remove piece from SATH and place here
-c  11-27-12 EWL, use values from Splines if available
-c
-      include 'commons.for'
-      character*255 herr,herr1
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax)
-      call MAXT (x,tmaxt,tmaxp,tmaxd,ierr,herr1)
-      call CRITP (x,tc,pc,rhoc,ierr,herr1)
-      call LIMITS ('EOS',x,tmin,tmax,Dmax,pmax)
-
-c  Use values from Splines if set up by call to SATSPLN
-      tinc=tc/10.d0
-      if (iSpline.ne.0) then
-        d=rhoc
-        call SPLNROOT (nc+4,1,0.d0,d,ierr,herr)
-        call SPLNVAL (nc+1,0,d,tt1,ierr,herr)
-        tinc=1.d0
-        tt1=tt1+tinc
-      else
-        tt1=tc-tinc
-      endif
-      ifirst=1
-  10  continue
-c  set up initial three points
-      call SATT (tt1,x,2,p,rhol,rhov,xliq,xvap,ierr,herr)
-      call ENTHAL (tt1,rhov,x,h1)
-      if (ieflag.eq.1) call ENERGY (tt1,rhov,x,h1)
-      tt2=tt1-tinc
-      call SATT (tt2,x,2,p,rhol,rhov,xliq,xvap,ierr,herr)
-      call ENTHAL (tt2,rhov,x,h2)
-      if (ieflag.eq.1) call ENERGY (tt2,rhov,x,h2)
-      tt3=tt2-tinc
-      call SATT (tt3,x,2,p,rhol,rhov,xliq,xvap,ierr,herr)
-      call ENTHAL (tt3,rhov,x,h3)
-      if (ieflag.eq.1) call ENERGY (tt3,rhov,x,h3)
-      it=0
-      if (h1.gt.h2 .and. h2.gt.h3 .and. ifirst.eq.1) then
-        tt1=tc-tc/100.d0
-        ifirst=2
-        goto 10
-      endif
-c  use quadratic solution to find next guess for Tmax
- 140  continue
-      it=it+1
-      b1=(h2-h1)/(tt2-tt1)
-      b2=((h3-h2)/(tt3-tt2)-(h2-h1)/(tt2-tt1))/(tt3-tt1)
-      b3=b1-b2*tt1-b2*tt2
-      tehmax=-b3/2.0d0/b2
-      if (nc.eq.1 .or. tmaxd.eq.0.d0) then
-        if (tehmax.gt.tc) tehmax=(tc+tt1)/2.0d0
-      else
-        if (tehmax.gt.tmaxt) tehmax=(tmaxt+tt1)/2.0d0
-      endif
-      if (tehmax.lt.tmin) tehmax=(tmin+tt1)/2.0d0
-      call SATT (tehmax,x,2,p,rhol,rhov,xliq,xvap,ierr,herr)
-      if (ieflag.ne.1) then
-        call ENTHAL (tehmax,rhov,x,ehmax)
-        thmax=tehmax
-        hmax=ehmax
-      else
-        call ENERGY (tehmax,rhov,x,ehmax)
-        temax=tehmax
-        emax=ehmax
-      endif
-c  discard a point and load in the new one
-      if (tehmax.lt.tt3) then
-        tt1=tt2
-        tt2=tt3
-        tt3=tehmax
-        h1=h2
-        h2=h3
-        h3=ehmax
-      elseif (tehmax.gt.tt1) then
-        tt3=tt2
-        tt2=tt1
-        tt1=tehmax
-        h3=h2
-        h2=h1
-        h1=ehmax
-      elseif (tehmax.gt.tt2) then
-        tt1=tehmax
-        h1=ehmax
-      else
-        tt3=tehmax
-        h3=ehmax
-      endif
-      hdiff=hold-ehmax
-      hold=ehmax
-      if (ABS(hdiff).gt.1.d-9 .and. it.lt.50) goto 140  !check for convergence
-      RETURN
-      end                                               !subroutine HMAX
-c
-c ======================================================================
-c
-      subroutine SATE (e,x,kph,nroot,k1,t1,p1,d1,k2,t2,p2,d2,ierr,herr)
-c
-c  iterate for temperature, pressure, and density given energy along
-c  the saturation boundary and the composition
-c
-c  inputs:
-c        e--molar energy [J/mol]
-c        x--composition [array of mol frac]
-c      kph--flag specifying desired root
-c           0 = return all roots along the liquid-vapor line
-c           1 = return only liquid VLE root
-c           2 = return only vapor VLE roots
-c           3 = return liquid SLE root (melting line)
-c           4 = return vapor SVE root (sublimation line)
-c  outputs:
-c    see SATH for description of outputs
-c
-c  written by E.W. Lemmon, NIST Phys & Chem Properties Div, Boulder, CO
-c  05-16-05 EWL, original version
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SATE
-c
-      include 'commons.for'
-      character*255 herr
-      dimension x(ncmax)
-c
-      ieflg=1
-      call SATH (e,x,kph,nroot,k1,t1,p1,d1,k2,t2,p2,d2,ierr,herr)
-      ieflg=0
-      if (ierr.ne.0) then
-        i=index(herr,'SATH')
-        if (i.gt.0) herr=herr(1:i+2)//'E'//herr(i+4:255)
-        i=index(herr,'h =')
-        if (i.gt.0) herr=herr(1:i-1)//'e'//herr(i+1:255)
-        i=index(herr,'enthalpy')
-        if (i.gt.0) herr=herr(1:i-1)//'energy'//herr(i+8:255)
-      endif
-      RETURN
-c
-      end                                               !subroutine SATE
-c
-c ======================================================================
-c
-      subroutine SATS (s,x,kph,nroot,k1,t1,p1,d1,k2,t2,p2,d2,
-     &                 k3,t3,p3,d3,ierr,herr)
-c
-c  iterate for temperature, pressure, and density given an entropy along
-c  the saturation boundary and the composition
-c
-c  inputs:
-c        s--molar entropy [J/mol-K]
-c        x--composition [array of mol frac]
-c      kph--flag specifying desired root
-c           0 = return all roots along the liquid-vapor line
-c           1 = return only liquid VLE root
-c           2 = return only vapor VLE roots
-c           3 = return liquid SLE root (melting line)
-c           4 = return vapor SVE root (sublimation line)
-c  outputs:
-c    nroot--number of roots.  Set to one for kph=1,3,4 if ierr=0
-c       k1--phase of first root (1-liquid, 2-vapor, 3-melt, 4-subl)
-c       t1--temperature of first root [K]
-c       p1--pressure of first root [kPa]
-c       dl--molar density of first root [mol/L]
-c       k2--phase of second root (1-liquid, 2-vapor, 3-melt, 4-subl)
-c       t2--temperature of second root [K]
-c       p2--pressure of second root [kPa]
-c       d2--molar density of second root [mol/L]
-c       k3--phase of third root (1-liquid, 2-vapor, 3-melt, 4-subl)
-c       t3--temperature of third root [K]
-c       p3--pressure of third root [kPa]
-c       d3--molar density of third root [mol/L]
-c     ierr--error flag:   0 = successful
-c                         1 = no roots found for specified input phase
-c                         2 = s < smin
-c                         4 = s > smax
-c                         8 = s > strp (for subl input)
-c                       160 = CRITP did not converge
-c                       161 = SATS did not converge for one root
-c                       162 = SATS did not converge for two roots
-c                       163 = SATS did not converge for all roots
-c     herr--error string (character*255 variable if ierr<>0)
+c  Iterate for temperature, pressure, and density given entropy along
+c  the saturation boundary and the composition.
 c
 c  The second root is always set as the root in the vapor at temperatures
 c  below the maximum entropy on the vapor saturation line.  If kph is
 c  set to 2, and only one root is found in the vapor (this occurs when s<scrit)
-c  the state point will be placed in k2,t2,p2,d2.  If kph=0 and this situation
-c  occurred, the first root (k1,t1,p1,d1) would be in the liquid (k1=1, k2=2).
+c  the state point will be placed in k2,T2,P2,D2.  If kph=0 and this situation
+c  occurred, the first root (k1,T1,P1,D1) would be in the liquid (k1=1, k2=2).
 c
 c  The third root is the root with the lowest temperature.  For fluids
-c  with multiple roots:  When only one root is found in the vapor phase
+c  with multiple roots, when only one root is found in the vapor phase
 c  (this happens only at very low temperatures past the region where three
 c  roots are located), the value of the root is still placed in
-c  k3,t3,p3,d3.  For fluids that never have more than one root (when there
+c  k3,T3,P3,D3.  For fluids that never have more than one root (when there
 c  is no maximum entropy along the saturated vapor line), the value of the
-c  root is always placed in k1,t1,p1,d1.
+c  root is always placed in k1,T1,P1,D1.
 c
-c  N.B. kph = 3,4 presently working only for pure components
+c  Inputs:
+c        s--Molar entropy [J/mol-K]
+c        z--Composition (array of mole fractions)
+c      kph--Flag specifying desired root:
+c           0 - Return all roots along the liquid-vapor line
+c           1 - Return only liquid VLE root
+c           2 - Return only vapor VLE roots
+c           3 - Return liquid SLE root (melting line)
+c           4 - Return vapor SVE root (sublimation line)
+c           kph = 3,4 presently working only for pure components
 c
-c  written by E.W. Lemmon, NIST Phys & Chem Properties Div, Boulder, CO
+c  Outputs:
+c    nroot--Number of roots.  Set to one for kph=1,3,4 if ierr=0
+c       k1--Phase of first root (1-liquid, 2-vapor, 3-melt, 4-subl)
+c       T1--Temperature of first root [K]
+c       P1--Pressure of first root [kPa]
+c       D1--Molar density of first root [mol/L]
+c       k2--Phase of second root (1-liquid, 2-vapor, 3-melt, 4-subl)
+c       T2--Temperature of second root [K]
+c       P2--Pressure of second root [kPa]
+c       D2--Molar density of second root [mol/L]
+c       k3--Phase of third root (1-liquid, 2-vapor, 3-melt, 4-subl)
+c       T3--Temperature of third root [K]
+c       P3--Pressure of third root [kPa]
+c       D3--Molar density of third root [mol/L]
+c     ierr--Error flag:  0 - Successful
+c                      192 - SATS did not converge for one or more roots
+c                       66 - s < smin
+c                       67 - s > smax
+c                       68 - s > strp (for sublimation inputs)
+c                      (See subroutine LIMITX for other possible error numbers.)
+c     herr--Error string (character*255)
+c
+c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
 c  02-24-00 EWL, original version
-c  04-18-07 EWL, add check for SATT failure on the vapor side when finding stpv
-c  03-04-10 EWL, add error message 1001 for root not found in specified phase
-c  03-04-10 EWL, check for cases where melting line is not available
-c  03-31-11 EWL, add check for p>pmax along melting line
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SATS
-c
-      include 'commons.for'
-      character*255 herr,herr1
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax)
-      dimension tt(3),ft(2)
-c
-      call ISPURE (x,icomp)
-      herr=' '
-      ierr=0
-      ierr1=0
-      iflag=0
-      nroot=0
-      k1=0
-      t1=0.d0
-      p1=0.d0
-      d1=0.d0
-      k2=0
-      t2=0.d0
-      p2=0.d0
-      d2=0.d0
-      k3=0
-      t3=0.d0
-      p3=0.d0
-      d3=0.d0
-      call MAXT (x,tmaxt,tmaxp,tmaxd,ierr,herr1)
-      call CRITP (x,tc,pc,rhoc,ierr,herr1)
-      call ENTRO (tc,rhoc,x,sc)      !entropy at critical point
-      if (ierr.gt.0) then
-c  error condition--set outputs, issue warning, and return
-        ierr=160
-        write (herr,1160) herr1(1:237),hnull
- 1160   format ('[SATS error 160] ',a237,a1)
-        call ERRMSG (ierr,herr1)
-        RETURN
-      end if
-c
-c  calculate entropy at triple point if not set
-      call LIMITS ('EOS',x,tmin,tmax,Dmax,pmax)
-      if (ABS(stpl).lt.1.d-15) THEN
-        if (icomp.ne.0) then
-          call INFO (icomp,wmm,ttrp,tnbpt,tq,pq,Dq,Zc,ac1,dip,Rg1)
-          if (tmin.lt.ttrp) tmin=ttrp  !Check for water
-        endif
-        t=tmin
-        call SATT (t,x,1,p,rhol,rhov,xliq,xvap,ierr,herr)
-        call ENTRO (t,rhol,x,stpl)
-        if (icomp.eq.0 .or. ianc(icomp).eq.1) then
- 100      continue
-          call SATT (t,x,2,p,rhol,rhov,xliq,xvap,ierr,herr)
-          if (ierr.gt.0 .and. t.lt.tc) then
-            t=t+5
-            goto 100
-          endif
-        endif
-        call ENTRO (t,rhov,x,stpv)
-      endif
-c
-c  find maximum and minimum entropy along the saturated vapor dome, and
-c  the minimum entropy along the melting line
-      if (ABS(tsmax).lt.1.d-15) THEN
-        call SMAXX (x,smax,tsmax,smin,tsmin,sminm,tsminm,ierr,herr)
-      endif
-c
-c  determine region
-      if (kph.eq.3 .and. icomp.ne.0) then
-        kphs=3                         !liquid/solid
-      else if (kph.eq.4 .and. icomp.ne.0) then
-        kphs=4                         !vapor/solid
-      else
-        if (s.lt.sc) then
-          kphs=1                         !liquid
-        else
-          kphs=2                         !vapor
-        end if
-      endif
-c     write (*,*) 'SATS--initial phase:  ',kphs
-c
-      if (s.lt.stpv .and. kphs.eq.4) then
-        ierr=8
-        write (herr,1008) ierr,s,stpv,hnull
- 1008   format('[SATS error',i3,'] entropy less than triple point'
-     &    ,' entropy; s =',g12.5,' J/mol-K, smin =',g12.5,' J/mol-K',a1)
-        call ERRMSG (ierr,herr)
-        RETURN
-      endif
-      if (s.lt.stpl .and. (s.lt.sminm .or. kphs.ne.3)) then
-        ierr=2
-        smx=stpl
-        if (sminm.lt.stpl .and. kphs.eq.3) smx=sminm
-        write (herr,1002) ierr,s,smx,hnull
- 1002   format('[SATS error',i3,'] entropy below minimum '
-     &     ,'entropy; s =',g12.5,' J/mol-K, smin =',g12.5,' J/mol-K',a1)
-        call ERRMSG (ierr,herr)
-        RETURN
-      endif
-      if (s.gt.smax .and. s.gt.stpv .and. kphs.le.2) then
-        ierr=4
-        smx=smax
-        if (stpv.gt.smax) smx=stpv
-        write (herr,1004) ierr,s,smx,hnull
- 1004   format('[SATS error',i3,'] entropy greater than maximum '
-     &     ,'entropy; s =',g12.5,' J/mol-K, smax =',g12.5,' J/mol-K',a1)
-        call ERRMSG (ierr,herr)
-        RETURN
-      endif
-c
-c  iterate for temperature using a combination of Newton's method
-c  and reguli-falsi
-c
-      tol=1.0d-6
+c  12-12-16 EWL, rewrite code for better efficiency and reading.
+
+      include 'COMMONS.INC'
+      character herr*255
+      dimension x(ncmax),y(ncmax),z(ncmax),v(20),f(20)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SATS
+
+
+      ibt=iLetterS
+      call ISPURE (z,icomp)
+      call SATMAX (icomp,z,Tc,Pc,Dc,ierr,herr)             !Get pure fluid critical point or mixture maximum T and P (but labeled here simply as Tc and Pc).
+      call LIMITS ('EOS',z,Tmin,Tmax,Dmax,Pmax)
+      call SETPNTS (1,icomp,z,T,P,Dl,Dv,ierr,herr)
+      iw=0
+      if (iFluidID(icomp).eq.1) iw=1
+      if (iFluidID(icomp).eq.3) iw=3
+      if (iw.ge.1) Tmin=Ttpn(icomp)    !Resets Tmin from 251 to 273 K for water or heavy water.
+      call ENTRO (Tc,Dc,z,sc)
+
+      tolr=1d-6
       itmax=20
-      if (kphs.eq.3) then
-        tt(1)=tmin
-        ft(1)=stpl-s
-        if (tsminm.gt.0) then
-          tt(1)=tsminm
-          ft(1)=sminm-s
+      if (icomp.ne.0) itmax=30
+      iErrNum=iErrNum+1
+      iSatFlg=0
+      ierr1=0
+      nroot=0
+      T1=0d0
+      P1=0d0
+      D1=0d0
+      T2=0d0
+      P2=0d0
+      D2=0d0
+      T3=0d0
+      P3=0d0
+      D3=0d0
+      k1=0
+      k2=0
+      k3=0
+      kr=0
+
+c  Get maximum and minimum entropy along the saturated vapor dome, and
+c   the minimum entropy along the melting line.
+      call SMAXX (z,ierr,herr)
+
+c  Calculate entropy at Tmin.
+      Tl=Tmin
+      Tv=Tmin
+      dd=0d0
+      Dliq=0d0
+      Dvap=0d0
+      if (icomp.ne.0 .and. iAnc(icomp).eq.0) then
+        Dliq=Dtpn(icomp)
+        Dvap=Dtpv(icomp)
+        if (iw.eq.1) Dliq=DmaxWater
+        if (iw.eq.3) Dliq=DmaxD2O
+      else                   !Check for mixture or pseudo-pure fluid.
+        ierrl=999
+        ierrv=999
+        do while ((ierrl.gt.0.or.ierrv.gt.0).and.Tl.lt.Tc.and.Tv.lt.Tc)
+         if(ierrl.gt.0)call SATTP(Tl,P,z,1,0,D,Dliq,dd,x,y,q,ierrl,herr)
+         if(ierrv.gt.0)call SATTP(Tv,P,z,2,0,D,dd,Dvap,x,y,q,ierrv,herr)
+         if(ierrl.gt.0)Tl=Tl+5d0
+         if(ierrv.gt.0)Tv=Tv+5d0
+        enddo
+      endif
+      call HESCALC (ibt,Tl,Dliq,z,sliq)
+      call HESCALC (ibt,Tv,Dvap,z,svap)
+
+c  Determine region.
+                                        kphs= 1            !Liquid or vapor for densities higher than that at the maximum entropy.
+      if (Tsmax.le.0.)                  kphs=-1            !No maximum entropy in the vapor phase.
+      if (Tsmax.gt.0 .and. s.gt.Ssmax)  kphs=-2            !Only one vapor root available, which is above the maximum entropy.
+      if (s.lt.sc .and. kph.eq.1)       kphs= 1
+      if (s.lt.sc .and. kphs.eq.-1)     kphs= 1
+
+      if (kph .ge.3 .and. icomp.ne.0)   kphs=kph           !Liquid/solid or Vapor/solid.
+      if (kphs.eq.3 .and. Tsmin2.gt.0.) then
+        if (s.lt.sliq) kphs=-3         !Two melting line roots exist.
+        if (s.ge.sliq) Dliq=Dsmin2     !The system has two roots, but only one available at the input entropy.
+        if (s.ge.sliq) sliq=Ssmin2
+      endif
+
+c  Check for inputs that are out of bounds.
+      if (s.lt.svap   .and. ABS(kphs).eq.4) goto 68       !Sublimation line check.
+      if (s.lt.sliq   .and. kphs.eq. 3)     goto 66        !Melting line check.
+      if (s.lt.Ssmin2 .and. kphs.eq.-3)     goto 66        !Check if melting line is double valued.
+      if (s.gt.Ssmax  .and. s.gt.svap .and. ABS(kphs).le.2) goto 67
+
+c  Store density and entropy for root bounding during iteration.
+ 200  call ROOTSEARCH (0,0,0,v,f,T,0,ib,lneg,lpos)         !Initialize root finding variables.
+      v(2)=Dliq
+      f(2)=sliq-s
+      if (kphs.eq.2) then
+        v(2)=Dsmin
+        f(2)=Ssmin-s
+      elseif (kphs.eq.-2.or.kphs.eq.4.or.(kphs.eq.-1.and.s.gt.sc)) then
+        v(2)=Dvap
+        f(2)=svap-s
+      endif
+      call ROOTSEARCH (1,0,0,v,f,T,0,ib,lneg,lpos)
+
+c  Store second bound.
+      v(2)=0d0
+      if (kphs.eq.1 .or. kphs.eq.2) then
+        if (.not.lEq0(Dsmax)) then
+          v(2)=Dsmax
+          f(2)=Ssmax-s
         endif
-      elseif (kphs.eq.4) then
-        tt(1)=tmin
-        ft(1)=stpv-s
-      else
-        tt(1)=tc
-        ft(1)=sc-s
-c  Check for situations where three roots exists in the vapor, but the current
-c  input is beyond the three root region, and only one root exists.
-        if (s.gt.smax .and. tsmax.gt.0) then
-          tt(1)=tmin
-          ft(1)=stpv-s
-          iflag=2
-          kphs=2
-        endif
-c  Use values from Splines if set up by call to SATSPLN, should return the root with the lowest entropy
+      elseif (kphs.eq.-1) then
+        v(2)=Dc
+        f(2)=sc-s
+      elseif (kphs.eq.-2 .and. s.gt.Ssmax) then
+        v(2)=Dsmin
+        f(2)=Ssmin-s
+      elseif (kphs.eq.-3) then
+        v(2)=Dsmin2
+        f(2)=Ssmin2-s
+      endif
+      if (v(2).ne.0.) call ROOTSEARCH (1,0,0,v,f,T,0,ib,lneg,lpos)
+
+c  Generate next guess for density.
+      D=Dc
+      if (kphs.eq. 1) D=(Dc+Dliq)/2d0
+      if (kphs.eq.-1) D=(Dc+Dvap)/2d0
+      if (kphs.eq. 2) D=(Dsmin+Dsmax)/2d0
+      if (kphs.eq.-2) D=(Dsmin+Dvap)/2d0
+      if (kphs.eq. 3) D=Dliq*1.01d0
+      if (kphs.eq.-3) D=Dliq*1.01d0
+      if (kphs.eq. 4) D=Dvap*0.8d0
+
+c  ---Main iterative loop to find root---
+      it=0
+      kphd=0
+      if (kphs.eq.3) kphd=3
+      do
+        it=it+1
+        if (it.gt.itmax) EXIT
+        call TOLRNC (tolr,it,10,15,18,0,0)       !Loosen tolerance if not converging.
         if (iSpline.ne.0) then
-          d=rhoc
-          if (tsmax.gt.0 .and. s.gt.smax) d=0.01d0
-          call SPLNROOT (nc+5,0,s,d,ierr,herr)
-          call SPLNVAL (nc+1,0,d,t,ierr,herr)
-          iflsh=1
-          if (d.lt.rhoc) iflsh=2
-          if (d.lt.rhoc .and. d.gt.tmaxd .and. tmaxd.ne.0) iflsh=-2
-          call SATTP (t,p,x,iflsh,0,d,rhol,rhov,xliq,xvap,q,ierr,herr)
-          call ENTRO (t,d,x,sc)
-          tt(1)=t
-          ft(1)=sc-s
-          if (iflsh.lt.0) kphs=iflsh
-        endif
-      endif
-c
-c  initialize iteration flags
-c
- 130  continue
-      lneg=.false.
-      lpos=.false.
-      tpos=0
-      tneg=0
-c  store variables for reguli-falsi
-      if (ft(1).lt.0.0) then
-        lneg=.true.
-        tneg=tt(1)
-        if (abs(kphs).eq.2 .and. tsmax.gt.0) then
-          lpos=.true.
-          tpos=tsmax
-          if (iflag.eq.2) tpos=tsmin
-        endif
-        if (kphs.eq.3 .and. iflag.eq.1) then
-          lpos=.true.
-          tpos=tsminm
-        endif
-      else
-        lpos=.true.
-        tpos=tt(1)
-        if (abs(kphs).eq.2 .and. tsmax.gt.0) then
-          lneg=.true.
-          tneg=tsmax
-          if (iflag.eq.2) tneg=tsmin
-        endif
-        if (kphs.eq.3 .and. iflag.eq.1) then
-          lneg=.true.
-          tneg=tsminm
-        endif
-      end if
-c
-c  generate second guess for temperature
-c
-      if (iSpline.ne.0) then
-        tt(2)=tt(1)-0.1d0
-      elseif (kphs.eq.1) then
-        tt(2)=0.95*tc
-      else if (abs(kphs).eq.2 .and. tneg.gt.0 .and. tpos.gt.0) then
-        tt(2)=(tneg+tpos)/2.0d0
-      else if (abs(kphs).eq.2) then
-        tt(2)=0.85*tc
-      else if (kphs.eq.3 .and. tneg.gt.0 .and. tpos.gt.0) then
-        tt(2)=(tneg+tpos)/2.0d0
-      else if (kphs.eq.3 .and. tsminm.gt.0) then
-        tt(2)=1.05*tsminm
-      else if (kphs.eq.3) then
-        tt(2)=1.05*tmin
-      else if (kphs.eq.4) then
-        tt(2)=0.95*tmin
-      end if
-      jt=2
-c
-      do it=1,itmax
-      if (it.eq.10) tol=tol*10.d0
-      if (kphs.gt.0) then
-        call SATT (tt(jt),x,kphs,p,rho,rhov,xliq,xvap,ierr,herr)
-      else
-        call SATTP (tt(jt),p,x,kphs,0,d,rho,rhov,xliq,xvap,q,ierr,herr)
-      endif
-      if (p.le.0.d0 .and. ierr.eq.0) goto 200
-      if (abs(kphs).eq.2 .or. kphs.eq.4) rho=rhov
-      call ENTRO (tt(jt),rho,x,s1)
-      ft(jt)=s1-s
-c     write (*,1999) it,jt,tt(jt),ft(jt)
-c1999 format (1x,'% it,jt,t,ft: ',2i4,f9.4,f16.10)
-c  check for convergence
-      if (abs(ft(jt)).lt.tol) goto 160
-c  store variables for reguli-falsi
-      if (ft(jt).lt.0.0) then
-        lneg=.true.
-        tneg=tt(jt)
-      else
-        lpos=.true.
-        tpos=tt(jt)
-      end if
-c  compute next guess for temperature
-      if (abs(ft(2)-ft(1)).gt.1.d-20)
-     &  tt(3)=tt(2)-ft(2)*(tt(2)-tt(1))/(ft(2)-ft(1))
-c  check if new guess is outside of bounds of previous guesses,
-c  if so (and if upper and lower bounds are available) use
-c  reguli-falsi
-
-      if (lpos .and. lneg .and. abs(ft(2)).gt.tol*1.d4 .and.
-     &  (tt(3).gt.max(tpos,tneg) .or. tt(3).lt.min(tpos,tneg))) then
-        tt(3)=0.5*(tpos+tneg)
-      elseif (tt(3).lt.tmin .and. kphs.ne.4) then
-        tt(3)=tmin
-      else if (tt(3).le.tmin/10.0d0 .and. icomp.ne.0) then !subl check
-        goto 150
-      endif
-      tt(1)=tt(2)
-      tt(2)=tt(3)
-      ft(1)=ft(2)
-      enddo
- 150  continue
-      if (ierr1.ne.161 .and. ierr1.ne.162) then
-        ierr=161
-        ierr1=161
-        write (herr,1161) s,nroot+1,hnull
- 1161   format ('[SATS error 161] ',
-     &         'iteration for saturation state given entropy did not ',
-     &         'converge for s =',g12.5,' J/mol-K; root = ',i1,a1)
-        herr1=herr
-      elseif (ierr1.ne.162) then
-        ierr=162
-        write (herr,1162) s,hnull
- 1162   format ('[SATS error 162] ',
-     &         'iteration for saturation state given entropy did not ',
-     &         'converge for two of the roots; s =',g12.5,' J/mol-K',a1)
-      else
-        ierr=163
-        write (herr,1163) s,hnull
- 1163   format ('[SATS error 163] ',
-     &         'iteration for saturation state given entropy did not ',
-     &         'converge for all roots; s =',g12.5,' J/mol-K',a1)
-      endif
-      call ERRMSG (ierr,herr)
-      tt(jt)=0
-      p=0
-      rho=0
- 160  continue
-      t=tt(jt)
-      if (abs(kphs).eq.kph .or. kph.eq.0) then
-        nroot=nroot+1
-        if (iflag.eq.0) then
-c  first root found, save values
-          t1=t
-          p1=p
-          d1=rho
-          k1=abs(kphs)
-        elseif (iflag.eq.1) then
-c  second root found, save values
-          t2=t
-          p2=p
-          d2=rho
-          k2=abs(kphs)
-        elseif (iflag.eq.2) then
-c  third root found, save values
-          t3=t
-          p3=p
-          d3=rho
-          k3=abs(kphs)
-        endif
-        if (ierr.eq.0 .and. ierr1.ne.0) then
-          ierr=ierr1
-          herr=herr1
-        endif
-      endif
-c  check if second root might exist
-c  only calculate second root if requested
-      if ((kph.eq.0 .or. kph.eq.2) .and. tsmax.gt.0) then
-        if (s.gt.smin .and. s.lt.smax .and. iflag.eq.0) then
-          kphs=2
-          iflag=iflag+1
-          tt(1)=tsmin
-          ft(1)=smin-s
-          goto 130
-        elseif (s.gt.smin .and. s.lt.smax .and. s.lt.stpv
-     &         .and. iflag.eq.1) then
-          kphs=2
-          iflag=iflag+1
-          tt(1)=tmin
-          ft(1)=stpv-s
-          goto 130
-        endif
-      endif
-      if (kph.eq.3 .and. tsminm.gt.0) then
-        if (s.gt.sminm .and. s.lt.stpl .and. iflag.eq.0) then
-          iflag=iflag+1
-          tt(1)=tmin
-          ft(1)=smin-s
-          goto 130
-        endif
-      endif
- 200  if (k1.eq.0 .and. k2.eq.0 .and. k3.eq.0 .and. ierr.eq.0) then
-        ierr=1
-        write (herr,1001) ierr,s,hnull
- 1001   format('[SATS error',i3,'] no roots found for specified phase;'
-     &    ,' s =',g12.5,' J/mol-K', a1)
-        call ERRMSG (ierr,herr)
-      endif
-c  check for p>pmax along the melting line
-      if (kph.eq.3 .and. nroot.eq.1 .and. ierr.eq.0) then
-        call LIMITX ('EOS',t1,d1,p1,x,tmin,tmax,rhomax,pmax,ierr,herr)
-      endif
-      RETURN
-c
-      end                                               !subroutine SATS
-c
-c ======================================================================
-c
-      subroutine SMAXX (x,smx,tsmx,smn,tsmn,smmin,tsmmin,ierr,herr)
-c
-c  find maximum and minimum entropy along the saturated vapor dome, and
-c  the minimum entropy along the melting line
-c
-c  inputs:
-c        x--composition [array of mol frac]
-c  outputs:
-c      smx--maximum entropy [J/mol-K]
-c     tsmx--temperature at maximum entropy [K]
-c      smn--minimim entropy [J/mol-K]
-c     tsmn--temperature at minimum entropy [K]
-c    smmin--minimim entropy along melting line [J/mol-K]
-c   tsmmin--temperature at minimum entropy along melting line [K]
-c     ierr--error flag:   0 = successful
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by E.W. Lemmon, NIST Phys & Chem Properties Div, Boulder, CO
-c  06-15-11 EWL, original version, remove piece from SATS and place here
-c
-c
-      include 'commons.for'
-      character*255 herr,herr1
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax)
-      call CRITP (x,tc,pc,rhoc,ierr,herr1)
-      call LIMITS ('EOS',x,tmin,tmax,Dmax,pmax)
-      call ENTRO (tc,rhoc,x,sc)      !entropy at critical point
-      sold=0.d0
-      istart=1
-      tsmmin=-1
-      smmin=stpl
-      tsmn=-1
-      smn=sc
-      if (stpv.lt.sc) smn=stpv
-      tsmx=-1
-      smx=stpv
-c  check first to see if melting line is double valued
-      p=0.d0
-      call SATT (tmin,x,3,p,rhol,rhov,xliq,xvap,ierr,herr)
-      if (ABS(p).gt.1.d-15) then
-        call ENTRO (tmin,rhol,x,s1)
-        call SATT (tmin+1.0d0,x,3,p,rhol,rhov,xliq,xvap,ierr,herr)
-        call ENTRO (tmin+1.0d0,rhol,x,s2)
-        if (s2.lt.s1) istart=0      !melting line is doubled valued if s2<s1
-      endif
-c  set up initial three points
-      j=0
-      do i=istart,2
-        if (i.eq.1) then
-          tt1=tc-tc/20.d0
-          tt2=tt1-tc/20.d0
-          tt3=tt2-tc/20.d0
+          call SATGV (T,P,z,0d0,D,1,6,1,Dl,Dv,x,y,ierr,herr)
         else
-          tt3=tmin+tmin/20.d0
-          tt2=tt3+tmin/20.d0
-          tt1=tt2+tmin/20.d0
-        endif
-        k=2
-        if (i.eq.0) k=3
-        call SATT (tt1,x,k,p,rhol,rho,xliq,xvap,ierr,herr)
-        if (i.eq.0) rho=rhol
-        call ENTRO (tt1,rho,x,s1)
-        call SATT (tt2,x,k,p,rhol,rho,xliq,xvap,ierr,herr)
-        if (i.eq.0) rho=rhol
-        call ENTRO (tt2,rho,x,s2)
-        call SATT (tt3,x,k,p,rhol,rho,xliq,xvap,ierr,herr)
-        if (i.eq.0) rho=rhol
-        call ENTRO (tt3,rho,x,s3)
-c  use quadratic solution to find next guess for Tsm
- 140    continue
-        b1=(s2-s1)/(tt2-tt1)
-        b2=((s3-s2)/(tt3-tt2)-(s2-s1)/(tt2-tt1))/(tt3-tt1)
-        b3=b1-b2*tt1-b2*tt2
-        tsm=-b3/2.0d0/b2
-        j=j+1
-        if (tsm.lt.tmin .or. j.gt.100) then
-          if (i.eq.0) goto 110
-          RETURN           !no solution (VLE line is not double valued)
-        endif
-        if (tsm.gt.tc) tsm=(tc+tt1)/2.0d0
-        call SATT (tsm,x,k,p,rhol,rho,xliq,xvap,ierr,herr)
-        if (i.eq.0) rho=rhol
-        call ENTRO (tsm,rho,x,sm)
-c  discard a point and load in the new one
-        if (tsm.lt.tt3) then
-          tt1=tt2
-          tt2=tt3
-          tt3=tsm
-          s1=s2
-          s2=s3
-          s3=sm
-        elseif (tsm.gt.tt1) then
-          tt3=tt2
-          tt2=tt1
-          tt1=tsm
-          s3=s2
-          s2=s1
-          s1=sm
-        elseif (tsm.gt.tt2) then
-          tt1=tsm
-          s1=sm
-        else
-          tt3=tsm
-          s3=sm
-        endif
-        sdiff=sold-sm
-        sold=sm
-        if (ABS(sdiff).gt.1.d-9) goto 140  !check for convergence
-c  load appropriate fixed points with the max/min value.
-        if (i.eq.1) then
-          smx=sm
-          tsmx=tsm
-        elseif (i.eq.2) then
-          smn=sm
-          tsmn=tsm
-        elseif (i.eq.0) then
-          smmin=sm
-          tsmmin=tsm
-        endif
- 110    continue
-      enddo
-      RETURN
-      end                                               !subroutine SMAX
-c
-c ======================================================================
-c
-      subroutine CSATK (icomp,t,kph,p,rho,csat,ierr,herr)
-c
-c  compute the heat capacity along the saturation line as a function of
-c  temperature for a given component
-c
-c  csat can be calculated two different ways:
-c     Csat = Cp - T(DvDT)(DPDTsat)
-c     Csat = Cp - beta/rho*hvap/(vliq - vvap)
-c     where beta is the volume expansivity
-c
-c  inputs:
-c    icomp--component number in mixture (1..nc); 1 for pure fluid
-c        t--temperature [K]
-c      kph--phase flag: 1 = liquid calculation
-c                       2 = vapor calculation
-c  outputs:
-c        p--saturation pressure [kPa]
-c      rho--saturation molar density [mol/L]
-c     csat--saturation heat capacity [J/mol-K]
-c
-c  written by E.W. Lemmon, NIST Physical & Chem Properties Div, Boulder, CO
-c  09-30-98 EWL, original version
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: CSATK
-c
-      include 'commons.for'
-      character*255 herr
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax)
-c
-      ic2=icnc
-      icnc=icomp
-      csat=0.d0
-      call SATT (t,x,kph,p,rhol,rhov,xliq,xvap,ierr,herr)
-      if (ierr.gt.0 .or. rhol.le.0.d0) then
-        icnc=ic2
-        if (ierr.eq.0) ierr=1
-        p=0.d0
-        rho=0.d0
-        RETURN
-      end if
-      rho=rhol
-      if (kph.eq.2) rho=rhov
-      call DPDT (t,rho,x,dpt)
-      call DPDD (t,rho,x,dpdrho)
-      call CVCPK (icomp,t,rho,cv,cp)
-      call ENTHAL (t,rhol,x,hl)
-      call ENTHAL (t,rhov,x,hv)
-      beta=dpt/dpdrho/rho
-      csat=cp-beta/rho*(hl-hv)/(1.d0/rhol-1.d0/rhov)
-      icnc=ic2
-c
-      RETURN
-      end                                              !subroutine CSATK
-c
-c ======================================================================
-c
-      subroutine DPTSATK (icomp,t,kph,p,rho,csat,dpt,ierr,herr)
-c
-c  compute the heat capacity and dP/dT along the saturation line as a
-c  function of temperature for a given component.  See also subroutine CSATK.
-c
-c  inputs:
-c    icomp--component number in mixture (1..nc); 1 for pure fluid
-c        t--temperature [K]
-c      kph--phase flag: 1 = liquid calculation
-c                       2 = vapor calculation
-c  outputs:
-c        p--saturation pressure [kPa]
-c      rho--saturation molar density [mol/L]
-c     csat--saturation heat capacity [J/mol-K] (same as that called from CSATK)
-c      dpt--dP/dT along the saturation line [kPa/K]
-c           (this is not dP/dT "at" the saturation line for the single phase
-c            state, but the change in saturated vapor pressure as the
-c            saturation temperature changes.)
-c
-c  written by E.W. Lemmon, NIST Physical & Chem Properties Div, Boulder, CO
-c  09-25-06 EWL, original version
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: DPTSATK
-c
-      include 'commons.for'
-      character*255 herr
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax)
-c
-      ic2=icnc
-      icnc=icomp
-      csat=0.d0
-      dpt=0.d0
-      call SATT (t,x,kph,p,rhol,rhov,xliq,xvap,ierr,herr)
-      if (ierr.gt.0 .or. rhol.le.0.d0) then
-        icnc=ic2
-        if (ierr.eq.0) ierr=1
-        p=0.d0
-        rho=0.d0
-        RETURN
-      end if
-      rho=rhol
-      if (kph.eq.2) rho=rhov
-      call DPDT (t,rho,x,dpt)
-      call DPDD (t,rho,x,dpdrho)
-      call CVCPK (icomp,t,rho,cv,cp)
-      call ENTHAL (t,rhol,x,hl)
-      call ENTHAL (t,rhov,x,hv)
-      beta=dpt/dpdrho/rho
-      csat=cp-beta/rho*(hl-hv)/(1.d0/rhol-1.d0/rhov)
-      dpt=             (hl-hv)/(1.d0/rhol-1.d0/rhov)/T
-      icnc=ic2
-c
-      RETURN
-      end                                            !subroutine DPTSATK
-c
-c ======================================================================
-c
-      subroutine CV2PK (icomp,t,rho,cv2p,csat,ierr,herr)
-c
-c  compute the isochoric heat capacity in the two phase (liquid+vapor)
-c  region
-c
-c  inputs:
-c    icomp--component number in mixture (1..nc); 1 for pure fluid
-c        t--temperature [K]
-c      rho--density [mol/l] if known
-c           If rho=0, then a saturated liquid state is assumed.
-c
-c  outputs:
-c     cv2p--isochoric two-phase heat capacity [J/mol-K]
-c     csat--saturation heat capacity [J/mol-K]
-c           (Although there is already a csat routine in REFPROP,
-c            it is also returned here.  However, the calculation
-c            speed is slower than csat.)
-c
-c  written by E.W. Lemmon, NIST Physical & Chem Properties Div, Boulder, CO
-c  03-30-05 EWL, original version
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: CV2PK
-c
-      include 'commons.for'
-      character*255 herr,herr1,herr2
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax)
-c
-      ierr=0
-      herr=' '
-      ic2=icnc
-      icnc=icomp
-      cv2p=0.d0
-      dt=0.01d0
-      i=1
-      t1=t+dt
-      t2=t-dt
-      call SATT (t ,x,i,p ,dl ,dv ,xliq,xvap,ierr ,herr)
-      call SATT (t1,x,i,p1,dl1,dv1,xliq,xvap,ierr1,herr1)
-      call SATT (t2,x,i,p2,dl2,dv2,xliq,xvap,ierr2,herr2)
-      if (rho.le.0.d0) rho=dl
-      if (ierr.gt.0 .or. ierr1.gt.0 .or. ierr2.gt.0 .or. dl.le.0.d0)then
-        if (ierr.eq.0 .and. ierr1.ne.0) then
-          ierr=ierr1
-          herr=herr1
-        endif
-        if (ierr.eq.0 .and. ierr2.ne.0) then
-          ierr=ierr2
-          herr=herr2
-        endif
-        if (ierr.eq.0 .and. dl.le.0.d0) ierr=1
-        icnc=ic2
-        RETURN
-      endif
-c
-      call DPDT (t,dl,x,dpt)
-      call DPDD (t,dl,x,dpdrho)
-      call CVCPK (icomp,t,dl,cv,cp)
-      call ENTHAL (t,dl,x,hl)
-      call ENTHAL (t,dv,x,hv)
-      beta=dpt/dpdrho/dl
-      dpdtsat=(hv-hl)/t/(1.d0/dv-1.d0/dl)     ! d(p)/d(T) at sat. liq.
-      dddtsat=(dl1-dl2)/2.d0/dt               ! d(rho)/d(T) at sat. liq.
-      d2pdtsat=(p2+p1-2.d0*p)/dt**2           ! d^2(p)/d(T)^2 at sat. liq.
-      csat=cp-beta/dl*dpdtsat*t
-      cv2p=csat+t/dl**2*dddtsat*dpdtsat+t*(1.d0/rho-1.d0/dl)*d2pdtsat
-      icnc=ic2
-c
-      RETURN
-      end                                              !subroutine CV2PK
-c
-c ======================================================================
-c
-      subroutine TPRHOB (t,p,rho1,rho2,x,rho,ierr,herr)
-c
-c  iterate for density given temperature, pressure and an upper and lower
-c  bound for the density.  This routine is only meant to replace TPRHO
-c  in special cases near the critical point.  (And is only used by SATT.)
-c
-c  inputs:
-c        t--temperature [K]
-c        p--pressure [kPa]
-c     rho1--first bound on density [mol/L]
-c     rho2--second bound on density [mol/L]
-c        x--composition [array of mol frac]
-c  outputs:
-c      rho--molar density [mol/L]
-c     ierr--error flag:   0 = successful
-c                         1 = failed to converge
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
-c  11-08-01 EWL, original version
-c
-      include 'commons.for'
-      character*255 herr
-      dimension x(ncmax)
-
-      ierr=0
-      herr=' '
-      tolr=1.d-9
-      d1=rho1
-      d2=rho2
-      if (d1.gt.d2) then
-        d1=rho2
-        d2=rho1
-      endif
-      it=1
-      rho=(d1+d2)/2.d0
- 140  continue
-      call PRESS (t,rho,x,p1)
-      call DPDD (t,rho,x,dpd)
-      rho0=rho
-c  use false position to get next root
-      if (abs(dpd).gt.1.d-20) rho=rho+(p-p1)/dpd
-c  keep within bounds
-      if (rho.lt.d1) rho=(rho0+d1)/2.d0
-      if (rho.gt.d2) rho=(rho0+d2)/2.d0
-      if (ABS(p1-p).lt.tolr) RETURN
-      it=it+1
-      if (it.eq.10) tolr=tolr*100
-      if (it.eq.15) tolr=tolr*100
-      if (it.lt.25) goto 140
-
-      ierr=1
-      RETURN
-      end                                             !subroutine TPRHOB
-c
-c ======================================================================
-c
-      subroutine DLDV (t,p,rhol,rhov,xl,xv,ierr,herr)
-      include 'commons.for'
-      character*255 herr
-      dimension xl(ncmax),xv(ncmax)
-
-      tolr=1.0d-6
-      deld=1.d0
-      call CRITP (xl,tc,pc,rhoc,ierr,herr)
-      rhol=rhoc*1.1d0
-      rhov=rhoc
-      it=0
- 140  continue
-      it=it+1
-
-      it2=0
- 110  continue
-      call DPDD2 (t,rhol,xl,dpdl2)
-      call DPDD (t,rhol,xl,dpdl)
-      call PRESS (t,rhol,xl,pl)
-      if (abs(rhol).gt.1.d6) then
-        ierr=1
-        herr=' '
-        RETURN
-      endif
-      if (dpdl2.lt.0.d0 .or. dpdl.lt.0.d0 .or. pl.lt.0.d0) then
-        rhol=rhol*1.05d0
-        it2=it2+1
-        if (it2.lt.100) goto 110
-      endif
-      if (dpdl.gt.1.d4) then
-        if (ABS(pl).gt.pc*1.5d0 .and. rhol-rhoc.lt.5) then
-          rhol=rhol*1.5d0
-          it2=it2+1
-          if (it2.lt.100) goto 110
-        endif
-      endif
-
-
-      it2=0
- 120  continue
-      call DPDD2 (t,rhov,xv,dpdv2)
-      call DPDD (t,rhov,xv,dpdv)
-      call PRESS (t,rhov,xv,pv)
-      if (ABS(dpdv).gt.1.d5) then
-        if (ABS(pv).gt.pc*1.5d0) then
-          rhov=rhov*0.5d0
-          it2=it2+1
-          if (it2.lt.100) goto 120
-        endif
-      endif
-      if (dpdv2.gt.0.d0 .or. dpdv.lt.0.d0) then
-        rhov=rhov*.95d0
-        it2=it2+1
-        if (it2.lt.100) goto 120
-      endif
-      if (it.eq.1) then
-        rhov=rhov*.95d0
-        call DPDD2 (t,rhov,xv,dpdv2)
-        call DPDD (t,rhov,xv,dpdv)
-        call PRESS (t,rhov,xv,pv)
-      endif
-
-
-
-      p=(pl+pv)/2.d0
-
-      if (abs(pv-p).gt.1.d-10 .and. abs(dpdv).gt.1.d-10) then
-        deld=1.d0/(-dpdv/(pv-p)+dpdv2/2.d0/dpdv)
-      else
-        deld=deld/2.d0
-      endif
- 860  continue
-      if (ABS(deld/rhov).gt.0.5d0) then
-        deld=deld/10.d0
-        goto 860
-      endif
-      rhov=rhov+deld
-
-      if (abs(pl-p).gt.1.d-10 .and. abs(dpdl).gt.1.d-10) then
-        deld=1.d0/(-dpdl/(pl-p)+dpdl2/2.d0/dpdl)
-      else
-        deld=deld/2.d0
-      endif
- 870  continue
-      if (ABS(deld/rhol).gt.1.d0) then
-        deld=deld/10.d0
-        goto 870
-      endif
-      rhol=rhol+deld
-      if (it.lt.50 .and. ABS(pl-pv).gt.tolr) goto 140
-
-      ierr=0
-      herr=' '
-      RETURN
-      end                                               !subroutine DLDV
-c
-c ======================================================================
-c
-      subroutine LIQSPNDL (t,x,rhol,ierr,herr)
-c
-c  Find the liquid spinodal density for a given temperature.
-c  An estimate (rhol) can be provided otherwise it will be calulated from an
-c  auxiliary spline function (which was prepared during SETUP).
-c
-c  inputs:
-c        t--temperature [K]
-c        x--composition [array of mol frac]
-c     rhol--density at liquid spinodal [mol/L] (initial guess)
-c           for negative inputs the corresponding spline function will be evaluated
-c  outputs:
-c     rhol--liquid spinodal [mol/L] (initial guess can be provided)
-c     ierr--error flag:   0 = successful
-c                       124 = failed to converge
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
-c  11-28-06 EWL, original version taken from code in SATT
-c  09-15-11  MK, split subroutine SPNDL into liquid and vapor routines
-c
-      include 'commons.for'
-      character*255 herr
-      character*255 herr2
-      dimension x(ncmax)
-c
-      ierr=0
-      herr=' '
-c
-      call CRITP (x,tc,pc,rhoc,ierr,herr)
-      call ISPURE (x,icomp)
-c
-      if (t.gt.tc+1.0d-8 .and. icomp.ne.0) then
-        ierr=121
-        write (herr,1121) t,tc,hnull
-        call ERRMSG (ierr,herr)
- 1121   format ('[LIQSPNDL error 121] ',
-     &          'temperature input to spinodal routine is ',
-     &          'greater than critical temperature; T =',g12.5,
-     &          ' K, Tcrit =',g12.5,' K.',a1)
-        RETURN
-      end if
-c
-      if (rhol.le.0.d0) then
-        call CSPLNVAL (ispndl_l,tspndl_l,dspndl_l,cspndl_l,
-     &                        t,rhol,ierr2,herr2)
-        if (ierr2.ne.0) rhol=dtpn(icomp)
-      endif
-c
-      it=0
-      tolr=1.d-8
-c  find the liquid spinodal (point where dpdrho=0)
- 310  continue
-      call DPDD (t,rhol,x,dpd)
-      call DPDD2 (t,rhol,x,dpd2)
-      d1=rhol
-      dp1=dpd
-      if (abs(dpd2).gt.1.d-20) rhol=rhol-dpd/dpd2
-      it=it+1
-      if (it.eq.10) tolr=tolr*100.d0
-      if (it.eq.15) tolr=tolr*100.d0
-      if (it.gt.30 .or. rhol.lt.rhoc) then
-c  in case of failure, use the false position method:
-c  (when the nonanalytical terms are used, this may be caused due to the
-c   uncalculated dpdd2 part)
-        d2=rhol
-        call DPDD (t,d2,x,dp2)
-c  check for good bounds; if bad, find new ones:
-        if (rhol.lt.rhoc .or. dp1*dp2.ge.0.d0) then
-          it=0
-          d1=rhoc
-          d2=rhoc
-          call DPDD (t,d1,x,dp1)
- 320      continue
-          d2=d2*1.02d0
-          call DPDD (t,d2,x,dp2)
-          it=it+1
-          if (it.gt.100) goto 390
-          if (dp1*dp2.gt.0) goto 320
-        endif
-        it=0
-        tolr=1.d-8
- 330    continue
-        if (abs(dp2-dp1).gt.1.d-20) rhol=d1-dp1*(d2-d1)/(dp2-dp1)
-        call DPDD (t,rhol,x,dpd)
-        if (dpd*dp1.lt.0.d0) then
-          d2=rhol
-          dp2=dpd
-        else
-          d1=rhol
-          dp1=dpd
-        endif
-        it=it+1
-        if (it.gt.100) goto 390
-        if (abs(dpd).gt.tolr) goto 330
-      endif
-      if (abs(dpd).gt.tolr) goto 310
-      RETURN
-C
- 390  continue
-      ierr=124
-      write (herr,1124) t,hnull
-      call ERRMSG (ierr,herr)
-      rhol=rhoc
- 1124 format ('[LIQSPNDL error 124] ',
-     &        'iteration for spinodals did not converge; ',
-     &        'T =',g12.5,' K.',a1)
-      RETURN
-      end                                           !subroutine LIQSPNDL
-c
-c ======================================================================
-c
-      subroutine VAPSPNDL (t,x,rhov,ierr,herr)
-c
-c  Find the vapor spinodal density for a given temperature.
-c  An estimate (rhov) can be provided otherwise it will be calulated from an
-c  auxiliary spline function (which was prepared during SETUP).
-c
-c  inputs:
-c        t--temperature [K]
-c        x--composition [array of mol frac]
-c     rhov--density at vapor spinodal [mol/L] (initial guess)
-c           for negative inputs the corresponding spline function will be evaluated
-c  outputs:
-c     rhov--density at vapor spinodal [mol/L]
-c     ierr--error flag:   0 = successful
-c                       124 = failed to converge
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
-c  11-28-06 EWL, original version taken from code in SATT
-c  09-15-11  MK, split subroutine SPNDL into liquid and vapor routines
-c
-      include 'commons.for'
-      character*255 herr
-      character*255 herr2
-      dimension x(ncmax)
-c
-      ierr=0
-      herr=' '
-c
-      call CRITP (x,tc,pc,rhoc,ierr,herr)
-      call ISPURE (x,icomp)
-c
-      if (t.gt.tc+1.0d-8 .and. icomp.ne.0) then
-        ierr=121
-        write (herr,1121) t,tc,hnull
-        call ERRMSG (ierr,herr)
- 1121   format ('[VAPSPNDL error 121] ',
-     &          'temperature input to spinodal routine is ',
-     &          'greater than critical temperature; T =',g12.5,
-     &          ' K, Tcrit =',g12.5,' K.',a1)
-        RETURN
-      end if
-c
-      if (rhov.le.0.d0) then
-        call CSPLNVAL (ispndl_v,tspndl_v,dspndl_v,cspndl_v,
-     &                        t,rhov,ierr2,herr2)
-        if (ierr2.ne.0) rhov=0.1d0
-      endif
-c
-      it=0
-      tolr=1.d-8
- 340  continue
-      call DPDD (t,rhov,x,dpd)
-      call DPDD2 (t,rhov,x,dpd2)
-      d1=rhov
-      dp1=dpd
-      if (abs(dpd2).gt.1.d-20) rhov=rhov-dpd/dpd2
-      it=it+1
-      if (it.eq.10) tolr=tolr*100.d0
-      if (it.eq.15) tolr=tolr*100.d0
-      if (it.gt.30 .or. rhov.gt.rhoc) then
-c  false position method:
-        d2=rhov
-        call DPDD (t,d2,x,dp2)
-c  check for good bounds; if bad, find new ones:
-        if (d1.gt.rhoc .or. d2.gt.rhoc .or. dp1*dp2.ge.0.d0) then
-          it=0
-          d1=rhoc
-          d2=rhoc
-          call DPDD (t,d1,x,dp1)
- 350      continue
-          d2=d2/1.02d0
-          call DPDD (t,d2,x,dp2)
-          it=it+1
-          if (it.gt.100) goto 390
-          if (dp1*dp2.gt.0) goto 350
-        endif
-        it=0
-        tolr=1.d-8
- 360    continue
-        if (abs(dp2-dp1).gt.1.d-20) rhov=d1-dp1*(d2-d1)/(dp2-dp1)
-        call DPDD (t,rhov,x,dpd)
-        if (dpd*dp1.lt.0.d0) then
-          d2=rhov
-          dp2=dpd
-        else
-          d1=rhov
-          dp1=dpd
-        endif
-        it=it+1
-        if (it.gt.100) goto 390
-        if (abs(dpd).gt.tolr) goto 360
-      endif
-      if (abs(dpd).gt.tolr) goto 340
-      RETURN
-C
- 390  continue
-      ierr=124
-      write (herr,1124) t,hnull
-      call ERRMSG (ierr,herr)
-      rhov=rhoc
- 1124 format ('[VAPSPNDL error 124] ',
-     &        'iteration for spinodals did not converge; ',
-     &        'T =',g12.5,' K.',a1)
-      RETURN
-c
-      end                                           !subroutine VAPSPNDL
-c
-c ======================================================================
-c
-      subroutine SETLSPNDL (icomp,ierr,herr)
-c
-c  Prepares a cubic spline interpolating the liquid spinodal.
-c
-c  inputs:
-c    icomp--pure fluid number for which spinodals will be calculated
-c  outputs:
-c     ierr--error flag:   0 = successful
-c                         1 = called with a mixture composition (pure fluids only)
-c                         2 = convergence porblems in LIQSPNDL
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by Matthias Kunick, NIST Thermophysics Division, Boulder, Colorado
-c  09-15-11  MK, original version
-c
-c
-      include 'commons.for'
-      character*255 herr
-      dimension x(ncmax)
-c
-      parameter (qcritreg=0.85d0)
-      parameter (icritreg=10)
-c
-      ierr=0
-      herr=' '
-c
-      if (icomp.eq.0) then
-        ierr=1
-        write (herr,1001)
-        call ERRMSG (ierr,herr)
- 1001   format ('[SETLSPNDL error 1] ',
-     &          'SETLSPNDL can handle pure fluids only')
-        RETURN
-      endif
-c
-      call INFO (icomp,wmm,tt,tb,tc,pc,dc,zc,acf,dip,rgas)
-      call CRITP (x,tc,pc,rhoc,ierr,herr)
-c
-      t=tt
-      pt=pc*10.d0**(-2.333333d0*(1.d0+accen(icomp))*(tc/tt-1.d0))
-      call TPRHO (tt,pt,x,1,0,rhol,ierr,herr)
-      dt=(tc-tt)*qcritreg/(iptmax-icritreg-1)
-      j=0
-      rhol=dtpn(icomp)
-      do i=1,iptmax-icritreg
-        call LIQSPNDL (t,x,rhol,ierr,herr)
-        if (ierr.eq.0) then
-          j=j+1
-          dspndl_l(j)=rhol
-          tspndl_l(j)=t
-        endif
-        t=t+dt
-      enddo
-c
-      dt=(tc-t)/(icritreg-1)
-      do i=1,icritreg
-        call LIQSPNDL (t,x,rhol,ierr,herr)
-        if (ierr.eq.0) then
-          j=j+1
-          dspndl_l(j)=rhol
-          tspndl_l(j)=t
-        endif
-        t=t+dt
-      enddo
-c
-      if (j.lt.5) then
-        ierr=2
-        write (herr,1002)
-        call ERRMSG (ierr,herr)
- 1002   format ('[SETLSPNDL error 2] ',
-     &          'Less then 5 points converged in LIQSPNDL')
-        RETURN
-      endif
-c
-      ispndl_l=j
-      call CSPLINE (ispndl_l-1, tspndl_l, dspndl_l, cspndl_l)
-c
-      end                                          !subroutine SETLSPNDL
-c
-c ======================================================================
-c
-      subroutine SETVSPNDL (icomp,ierr,herr)
-c
-c  Prepares a cubic spline interpolating the vapor spinodal.
-c
-c  inputs:
-c    icomp--pure fluid number for which spinodals will be calculated
-c  outputs:
-c     ierr--error flag:   0 = successful
-c                         1 = called with a mixture composition (pure fluids only)
-c                         2 = convergence problems in LIQSPNDL
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by Matthias Kunick, NIST Thermophysics Division, Boulder, Colorado
-c  09-15-11  MK, original version
-c
-      include 'commons.for'
-      character*255 herr
-      dimension x(ncmax)
-      dimension dspndl_v_save(iptmax)
-      dimension tspndl_v_save(iptmax)
-c
-      parameter (qcritreg=0.85d0)
-      parameter (qlowtreg=0.75d0)
-      parameter (icritreg=10)
-      parameter (ilowtreg=10)
-c
-      ierr=0
-      herr=' '
-c
-      if (icomp.eq.0) then
-        ierr=1
-        write (herr,1001)
-        call ERRMSG (ierr,herr)
- 1001   format ('[SETVSPNDL error 1] ',
-     &          'SETVSPNDL can handle pure fluids only')
-        RETURN
-      endif
-c
-      call INFO (icomp,wmm,tt,tb,tc,pc,dc,zc,acf,dip,rgas)
-      call CRITP (x,tc,pc,rhoc,ierr,herr)
-c
-      t=tt
-      pt=pc*10.d0**(-2.333333d0*(1.d0+accen(icomp))*(tc/tt-1.d0))
-      call TPRHO (tt,pt,x,2,0,rhov,ierr,herr)
-      tlow=tt*qlowtreg
-      dt=(tlow-tt)/(ilowtreg-1)
-      j=0
-      rhov=ptpn(icomp)/r/ttpn(icomp)
-      if (rhov.gt.200) rhov=1.d-10  !Check for fitted fld file with t<1
-      do i=1,ilowtreg
-        call VAPSPNDL (t,x,rhov,ierr,herr)
-        if (ierr.eq.0) then
-          j=j+1
-          dspndl_v(j)=rhov
-          tspndl_v(j)=t
-        endif
-        t=t+dt
-      enddo
-c
-      !re-order points
-      do k=1,j
-        dspndl_v_save(k)=dspndl_v(k)
-        tspndl_v_save(k)=tspndl_v(k)
-      enddo
-      do k=1,j
-        dspndl_v(k)=dspndl_v_save(j-k+1)
-        tspndl_v(k)=tspndl_v_save(j-k+1)
-      enddo
-c
-      t=tspndl_v(j)-dt
-      dt=(tc-t)*qcritreg/(iptmax-icritreg-ilowtreg-1)
-      rhov=dspndl_v(j)
-      do i=1,iptmax-icritreg-ilowtreg
-        call VAPSPNDL (t,x,rhov,ierr,herr)
-        if (ierr.eq.0) then
-          j=j+1
-          dspndl_v(j)=rhov
-          tspndl_v(j)=t
-        endif
-        t=t+dt
-      enddo
-c
-      dt=(tc-t)/(icritreg-1)
-      do i=1,icritreg
-        call VAPSPNDL (t,x,rhov,ierr,herr)
-        if (ierr.eq.0) then
-          j=j+1
-          dspndl_v(j)=rhov
-          tspndl_v(j)=t
-        endif
-        t=t+dt
-      enddo
-c
-      if (j.lt.5) then
-        ierr=2
-        write (herr,1002)
-        call ERRMSG (ierr,herr)
- 1002   format ('[SETVSPNDL error 2] ',
-     &          'Less then 5 points converged in VAPSPNDL')
-        RETURN
-      endif
-c
-      ispndl_v=j
-      call CSPLINE (ispndl_v-1, tspndl_v, dspndl_v, cspndl_v)
-c
-      end                                          !subroutine SETVSPNDL
-c
-c ======================================================================
-c
-      subroutine FNCRPT (x,d,p,t,ierr,herr)
-c
-c  Find the critical point of a pure fluid based on the EOS.
-c  This is currently only for pure fluids!
-c
-c  inputs:
-c        x--composition [array of mol frac]
-c  outputs:
-c        t--temperature [K]
-c        p--pressure [kPa]
-c        d--density [mol/L]
-c     ierr--error flag:   0 = successful
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
-c  01-01-96 EWL, original version taken from code in SATT
-c
-c
-      include 'commons.for'
-      character*255 herr
-      dimension x(ncmax)
-c
-      call CRITP (x,t,pc2,d,ierr,herr)
-      iter=0
-      ac=1.d-10
-c     ac=1.d-8
-c  get first point
-      told=t+.1d0
-      d=crtden(x,told,d)
-      if (d.le.0) goto 30
-      call DPDD (told,d,x,fold)
-      fold=fold/1000.d0
- 20   d=crtden(x,t,d)
-      if (d.le.0) goto 30
-      call DPDD (t,d,x,f)
-      f=f/1000.d0
-      iter=iter+1
-      if (iter.gt.20) goto 30
-      if(ABS(f).lt.ac)then
-        call PRESS (t,d,x,p)
-        RETURN
-      endif
-c  get next point by using the slope of the previous two points.
-      if (fold.eq.f) goto 30
-      t1=t-f*(told-t)/(fold-f)
-      told=t
-      fold=f
-      t=t1
-      if (t.gt.0) goto 20
- 30   continue
-c     write (*,*) ' *** Fncrpt: No convergence ***'
-      end                                             !subroutine FNCRPT
-      function CRTDEN (x,t,d)
-      include 'commons.for'
-      dimension x(ncmax)
-      iter=0
- 10   iter=iter+1
-      call DPDD2 (t,d,x,df0)
-      crtden=d
-      if(ABS(df0).lt.1.d-12) RETURN
-c     if(ABS(df0).lt.1.d-10) return
-      if (iter.gt.30) then
-c       write (*,*) 'Crtden: No convergence'
-        RETURN
-      endif
-      call DPDD2 (t,d+0.0001d0,x,df1)
-      call DPDD2 (t,d-0.0001d0,x,df2)
-      fp=(df1-df2)/0.0002d0
-      fpp=(df1+df2-2.d0*df0)/0.00000001d0
-      d=d+1.d0/(-fp/df0+fpp/2.d0/fp)
-      if (d.le.0) RETURN
-      goto 10
-      end                                               !function CRTDEN
-c
-c ======================================================================
-c
-      subroutine SATEST (iFlash,t,p,x,xliq,xvap,ierr,herr)
-c
-c  Estimate temperature, pressure, and compositions to be used
-c  as initial guesses to SATTP.
-c
-c  inputs:
-c   iFlash--see inputs to SATTP
-c        t--temperature [K] (input or output)
-c        p--pressure [MPa] (input or output)
-c        x--composition [array of mol frac]
-c  outputs:
-c     xliq--liquid phase composition [array of mol frac]
-c     xvap--vapor phase composition [array of mol frac]
-c     ierr--error flag:   0 = successful
-c                         1 = unsuccessful
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by Diego Ortiz, NIST Thermophysics Division, Boulder, Colorado
-c  07-01-10 DOO, original version
-c
-      include 'commons.for'
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax)
-      character herr*255
-c     dimension tini,ti,Tol,told,fnold
-c     dimension i,j,k,dummy
-c     dimension amag,fn,fnprime,tmp2
-c     dimension tmp3,tmp4,taux1,taux2,taux3
-c     dimension fnaux1,fnaux2,fnaux3,fnini
-c     dimension tx,alpha
-      dimension pc2(ncmax),tc2(ncmax),acf2(ncmax),wmm2(ncmax)
-c     dimension wmm,ttrp,tnbpt,tc,pc,dc,zc,acf,dip,Rgas
-c
-      ierr=0
-      do i=1,nc
-        Call INFO (i,wmm2(i),ttrp,tnbpt,tc2(i),pc2(i),dc,zc,acf2(i),dip,
-     & Rgas)
-        xliq(i)=x(i)
-        xvap(i)=x(i)
-      enddo
-      alpha=1
-
-      If (t.eq.0 .or. iFlash.eq.3 .or. iFlash.eq.4) Then
-        If (p.le.0) Then
-          ierr=1
-          RETURN
-        endif
-        tini=0
-        do i=1,nc
-          tini=tini+x(i)*tc2(i)/(1-
-     & 0.428571*(Log(p/pc2(i))/Log(10D0))/(1+acf2(i)))
-        enddo
-      Else
-        tini=t
-      End If
-      Tol=0.00000001
-
-C     Do not remove parenthesis around p on the calls to PTEST.  It needs to send the value, not the memory location.
-      If (iFlash.eq.1) Then
-        Call PTEST (1,t,(p),alpha,x,tc2,pc2,acf2,p,xvap,ierr,herr)
-        Call PTEST (5,t,(p),alpha,x,tc2,pc2,acf2,p,xvap,ierr,herr)
-
-      ElseIf (iFlash.eq.2) Then
-        Call PTEST (2,t,(p),alpha,x,tc2,pc2,acf2,p,xliq,ierr,herr)
-        Call PTEST (6,t,(p),alpha,x,tc2,pc2,acf2,p,xliq,ierr,herr)
-
-      ElseIf (iFlash.eq.3 .or. iFlash.eq.4) Then
-        do j=1,7
-          dummy=0.7d0+(1.d0-j)/10.d0
-          Call PTEST(iFlash,tini,p,alpha,x,tc2,pc2,acf2,fnini,xvap,ierr,
-     & herr)
-          taux1=dummy*tini
-          Call PTEST (iFlash,taux1,p,alpha,x,tc2,pc2,acf2,fnaux1,xvap,
-     & ierr,herr)
-          taux2=tini/dummy
-          Call PTEST (iFlash,taux2,p,alpha,x,tc2,pc2,acf2,fnaux2,xvap,
-     & ierr,herr)
-          If (fnini*fnaux1.lt.0 .or. fnini*fnaux2.lt.0) GoTo 10
-        enddo
- 10   continue
-        If (fnini*fnaux1.lt.0) Then
-          taux2=(tini+taux1)/2
-          Call PTEST (iFlash,taux2,p,alpha,x,tc2,pc2,acf2,fnaux2,xvap,
-     & ierr,herr)
-          If (fnaux2*fnini.lt.0) Then
-            taux1=(taux2+tini)/2
-            Call PTEST (iFlash,taux1,p,alpha,x,tc2,pc2,acf2,fnaux1,xvap,
-     & ierr,herr)
-            t=(taux1+taux2)/2
-            If (fnaux1*fnini.lt.0) t=(taux1+tini)/2
-          Else
-            taux3=(taux2+taux1)/2
-            Call PTEST (iFlash,taux3,p,alpha,x,tc2,pc2,acf2,fnaux3,xvap,
-     & ierr,herr)
-            t=(taux3+taux1)/2
-            If (fnaux3*fnaux2.lt.0) t=(taux3+taux2)/2
-          End If
-        ElseIf (fnini*fnaux2.lt.0) Then
-          taux1=(tini+taux2)/2
-          Call PTEST (iFlash,taux1,p,alpha,x,tc2,pc2,acf2,fnaux1,xvap,
-     & ierr,herr)
-          If (iFlash.eq.3) Then
-            t=(taux1+taux2)/2
-            If (fnaux1*fnini.lt.0) t=(taux1+tini)/2
-          ElseIf (iFlash.eq.4) Then
-            If (fnaux1*fnini.lt.0) Then
-              taux2=(taux1+tini)/2
-              Call PTEST (iFlash,taux2,p,alpha,x,tc2,pc2,acf2,fnaux2,
-     & xvap,ierr,herr)
-              t=(taux2+taux1)/2
-              If (fnaux2*fnini.lt.0) t=(taux2+tini)/2
-            Else
-              taux3=(taux1+taux2)/2
-              Call PTEST (iFlash,taux3,p,alpha,x,tc2,pc2,acf2,fnaux3,
-     & xvap,ierr,herr)
-              t=(taux3+taux2)/2
-              If (fnaux3*fnaux1.lt.0) t=(taux3+taux1)/2
-            End If
-          End If
-        End If
-        amag=2*Tol
-        tmp3=100
-        tmp4=100
-        j=0
- 30   continue
-        If (amag.gt.Tol .or. tmp3.gt.1 .or. tmp4.gt.1) Then
-          j=j+1
-          If (j.gt.100) Then
-            ierr=1
-            RETURN
+          if (icomp.ne.0 .and. it.eq.20 .and. iw.ge.1) then
+            if (kphd.eq.0 .and. D.gt.55.4d0) then          !For water, if not converging at densities near Dtrp, then the point is most likely between the triple point and the temperature at the maximum density, so change the bounds and send SATD a kph of -1.
+              kphd=-1
+              call HESCALC (ibt,Ttpn(icomp),Dtpn(icomp),z,s1)
+              v(4)=Dtpn(icomp)
+              f(4)=s1-s
+              D=55.5d0
+              it=1
+              itmax=19
+            endif
           endif
-          Call PTEST (iFlash,t,p,alpha,x,tc2,pc2,acf2,fn,xvap,ierr,herr)
-          tmp2=0
-          do i=1,nc
-            tx=5.373*tc2(i)
-            If (iFlash.eq.3) tmp2=tmp2+(Exp((-tx*acf2(i)-tx)/t+
-     &          5.373*acf2(i)))*(tx*pc2(i)*acf2(i)*x(i)+tx*pc2(i)*x(i))
-            If (iFlash.eq.4) tmp2=tmp2+(Exp((tx*acf2(i)+tx)/t-
-     &          5.373*acf2(i)))*((-tx*acf2(i)*x(i))/pc2(i)-
-     &          (tx*x(i))/pc2(i))
-          enddo
-          fnprime=215.508424158*tmp2*((fn-1)/t)**2/p
-          If (iFlash.eq.4) fnprime=-0.004640189839*p*tmp2/(t**2)
-          told=t
-          If (fnprime.ne.0) t=told-(fn/fnprime)
-          fnold=fn
-          Call PTEST (iFlash,t,p,alpha,x,tc2,pc2,acf2,fn,xvap,ierr,herr)
-          amag=Abs(fn)
-          tmp3=(Abs(told-t)/told)*100
-          tmp4=(Abs(fnold-fn)/fnold)*100
-          GoTo 30
-        End If
-        If (iFlash.eq.3) Call PTEST(5,t,p,alpha,x,tc2,pc2,acf2,fn,xvap,
-     &      ierr,herr)
-        If (iFlash.eq.4) Call PTEST(6,t,p,alpha,x,tc2,pc2,acf2,fn,xliq,
-     &      ierr,herr)
-      End If
-      end                                             !subroutine SATEST
-c
-c ======================================================================
-c
-      subroutine SAT0EST (t,p,x,xliq,xvap,ierr,herr)
-c
-c  Estimate compositions for 2-phase states to be used
-c  as initial guesses to SATTP.
-c
-c  inputs:
-c   iFlash--see inputs to SATTP
-c        t--temperature [K] (input or output)
-c        p--pressure [MPa] (input or output)
-c        x--composition [array of mol frac]
-c  outputs:
-c     xliq--liquid phase composition [array of mol frac]
-c     xvap--vapor phase composition [array of mol frac]
-c     ierr--error flag:   0 = successful
-c                         1 = unsuccessful
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by Diego Ortiz, NIST Thermophysics Division, Boulder, Colorado
-c  07-01-10 DOO, original version
-c
-      include 'commons.for'
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax)
-      character herr*255
-c     dimension alphaini,ti,Tol,alphaold,fnold
-c     dimension i,j,k,dummy,Pb,Tb,Pd,Td
-c     dimension temp1,amag,fn,fnprime,temp2
-c     dimension temp3,temp4,alpha1,alpha2,alpha3,alpha
-c     dimension fnaux1,fnaux2,fnaux3,fnini
-      dimension pc2(ncmax),tc2(ncmax),acf2(ncmax),wmm2(ncmax)
-c     dimension wmm,ttrp,tnbpt,tc,pc,dc,zc,acf,dip,Rgas
-c
-      ierr=0
-      do i=1,nc
-        Call INFO (i,wmm2(i),ttrp,tnbpt,tc2(i),pc2(i),dc,zc,acf2(i),dip,
-     & Rgas)
-      enddo
-
-C     Check if (T,P) is in the two-phase region
-      Tb=0.d0
-      Td=0.d0
-      Call SATEST (1,t,Pb,x,xliq,xvap,ierr,herr)
-      Call SATEST (2,t,Pd,x,xliq,xvap,ierr,herr)
-      Call SATEST (3,Tb,p,x,xliq,xvap,ierr,herr)
-      Call SATEST (4,Td,p,x,xliq,xvap,ierr,herr)
-      If ((t-Td)*(t-Tb).gt.0 .or. (p-Pb)*(p-Pd).gt.0) Then
-        do i=1,nc
-        xvap(i)=x(i)/2
-        xliq(i)=x(i)
-        enddo
-        RETURN
-      End If
-
-      alphaini=0.5
-      alpha1=0.000000001
-      alpha2=0.999999999
-      Call PTEST (4,t,p,alphaini,x,tc2,pc2,acf2,fnini,xvap,ierr,herr)
-      Call PTEST (4,t,p,alpha1,x,tc2,pc2,acf2,fnaux1,xvap,ierr,herr)
-      Call PTEST (4,t,p,alpha2,x,tc2,pc2,acf2,fnaux2,xvap,ierr,herr)
-
-      If (fnini*fnaux1.lt.0) Then
-        alpha2=(alphaini+alpha1)/2
-        Call PTEST (4,t,p,alpha2,x,tc2,pc2,acf2,fnaux2,xvap,ierr,herr)
-        If (fnaux2*fnini.lt.0) Then
-          alpha1=(alpha2+alphaini)/2
-          Call PTEST (4,t,p,alpha1,x,tc2,pc2,acf2,fnaux1,xvap,ierr,herr)
-          alpha=(alpha1+alpha2)/2
-          If (fnaux1*fnini.lt.0) alpha=(alpha1+alphaini)/2
-        Else
-          alpha3=(alpha2+alpha1)/2
-          Call PTEST (4,t,p,alpha3,x,tc2,pc2,acf2,fnaux3,xvap,ierr,herr)
-          alpha=(alpha3+alpha1)/2
-          If (fnaux3*fnaux2.lt.0) alpha=(alpha3+alpha2)/2
-        End If
-      ElseIf (fnini*fnaux2.lt.0) Then
-        alpha1=(alphaini+alpha2)/2
-        Call PTEST (4,t,p,alpha1,x,tc2,pc2,acf2,fnaux1,xvap,ierr,herr)
-        If (fnaux1*fnini.lt.0) Then
-          alpha2=(alpha1+alphaini)/2
-          Call PTEST (4,t,p,alpha2,x,tc2,pc2,acf2,fnaux2,xvap,ierr,herr)
-          alpha=(alpha2+alpha1)/2
-          If (fnaux2*fnini.lt.0) alpha=(alpha2+alphaini)/2
-        Else
-          alpha3=(alpha1+alpha2)/2
-          Call PTEST (4,t,p,alpha3,x,tc2,pc2,acf2,fnaux3,xvap,ierr,herr)
-          alpha=(alpha3+alpha2)/2
-          If (fnaux3*fnaux1.lt.0) alpha=(alpha3+alpha1)/2
-        End If
-      End If
-
-      Tol=0.00001d0
-      amag=2*Tol
-      temp3=100
-      temp4=100
-      j=0
- 30   continue
-      If (amag.gt.Tol .or. temp3.gt.1 .or. temp4.gt.1) Then
-        j=j+1
-        Call PTEST (4,t,p,alpha,x,tc2,pc2,acf2,fn,xvap,ierr,herr)
-        temp1=0
-        do i=1,nc
-          temp2=Exp((5.373d0*tc2(i)*acf2(i)+5.373*tc2(i))/t)
-          temp3=pc2(i)*215.508424158d0**(1+acf2(i))
-          temp1=temp1-(x(i)*0.004640189839d0*temp2*(p*temp2-
-     & temp3))/((alpha*(p*temp2-temp3)-p*temp2)**2)
-        enddo
-        fnprime=p*temp1*215.508424158d0
-        alphaold=alpha
-        alpha=alphaold-(fn/fnprime)
-        if (alpha.gt.1.d0) alpha=(1.d0+alphaold)/2.d0
-        If (alpha.gt.1E+20 .or. j.gt.100) Then
-          ierr=1
-          RETURN
+          call SATD (D,z,kphd,kr,T,P,Dl,Dv,x,y,ierr,herr)
         endif
-        fnold=fn
-        Call PTEST (4,t,p,alpha,x,tc2,pc2,acf2,fn,xvap,ierr,herr)
-        amag=Abs(fn)
-        temp3=(Abs(alphaold-alpha)/alphaold)*100
-        temp4=(Abs(fnold-fn)/fnold)*100
-        GoTo 30
-      End If
-
-      Call PTEST (6,t,p,alpha,x,tc2,pc2,acf2,fn,xliq,ierr,herr)
-      do i=1,nc
-        xvap(i)=(x(i)-xliq(i)*(1-alpha))/alpha
+        if (ierr.lt.100) ierr=0        !Ignore boundary errors.
+        if (ierr.le.0) then
+          call HESCALC (ibt,T,D,z,s1)
+          f(2)=s1-s
+          v(2)=D
+          call ROOTSEARCH (1234,0,0,v,f,D,it,ib,lneg,lpos)           !Compute next guess for temperature.
+          if (ABS(f(2)).lt.tolr) goto 300        !Check for convergence.
+        else
+          D=D*0.9d0
+        endif
       enddo
-      end                                            !subroutine SAT0EST
-c
-c ======================================================================
-c
-      subroutine PTEST(inp,t,p,alpha,x,tc2,pc2,acf2,calc,xout,ierr,herr)
-c
-c  Part of the SATEST routines
-c
-c  inputs:
-c  outputs:
-c     ierr--error flag:   0 = successful
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by Diego Ortiz, NIST Thermophysics Division, Boulder, Colorado
-c  07-01-10 DOO, original version
-c
-      include 'commons.for'
-      dimension x(ncmax),xout(ncmax),pc2(ncmax),tc2(ncmax),acf2(ncmax)
-      character herr*255
-c     dimension i
-c     dimension sum
-      dimension ptemp(ncmax)
-c
+
+c Iteration failed.
       ierr=0
-      herr=' '
+      if (icomp.ne.0) then
+        if (ABS(v(4)-v(5)).lt.0.1d0 .and. ABS(T-Tc).lt.0.01d0) goto 300        !Check for close answer very near the critical point.
+      endif
+      if (ierr1.eq.193) ierr1=194
+      if (ierr1.eq.192) ierr1=193
+      if (ierr1.eq.0  ) ierr1=192
+      ierr=ierr1
 
-      If (t.le.0) RETURN
-      do i=1,nc
-        ptemp(i)=pc2(i)*Exp(5.373*(1+acf2(i))*(1-tc2(i)/t))
-        If (ptemp(i).gt.pc2(i)) ptemp(i)=pc2(i)+1*(ptemp(i)-pc2(i))
-      enddo
-      sum=0
-      If (inp.eq.1) Then
-        do i=1,nc
-          sum=sum+x(i)*ptemp(i)
-        enddo
-        calc=sum
-      ElseIf (inp.eq.2) Then
-        do i=1,nc
-          sum=sum+x(i)/ptemp(i)
-        enddo
-        calc=1/sum
-      ElseIf (inp.eq.3) Then
-        do i=1,nc
-          sum=sum+x(i)*ptemp(i)
-        enddo
-        calc=1-p/sum
-      ElseIf (inp.eq.4) Then
-        do i=1,nc
-          divs=(1-alpha+alpha*ptemp(i)/p)
-          if (divs.gt.0.d0) sum=sum+x(i)/divs
-        enddo
-        calc=1-sum
-      ElseIf (inp.eq.5) Then
-        do i=1,nc
-          xout(i)=x(i)/p*ptemp(i)
-          If (xout(i).lt.0.000001 .and. x(i).gt.0.d0) xout(i)=0.000001
-          If (xout(i).gt.0.999999) xout(i)=0.999999
-          sum=sum+xout(i)
-        enddo
-        do i=1,nc
-          xout(i)=xout(i)/sum
-        enddo
-      ElseIf (inp.eq.6) Then
-        do i=1,nc
-          xout(i)=x(i)/(1-alpha+alpha*ptemp(i)/p)
-          If (xout(i).lt.0.000001 .and. x(i).gt.0.d0) xout(i)=0.000001
-          If (xout(i).gt.0.999999) xout(i)=0.999999
-          sum=sum+xout(i)
-        enddo
-        do i=1,nc
-          xout(i)=xout(i)/sum
-        enddo
-      Else
-      End If
-      end                                              !subroutine PTEST
+c Iteration converged.
+ 300  if (ierr.le.0) then
+        nroot=nroot+1
+        if (nroot.eq.1) then
+          T1=T               !First root found.
+          P1=P
+          D1=D
+          k1=ABS(kphs)
+          if (ABS(kphs).lt.3) k1=1
+          if (ABS(kphs).lt.3 .and. D.lt.Dc) k1=2
+          if (kr.eq.3) k1=3
+        elseif (nroot.eq.2) then
+          T2=T               !Second root found.
+          P2=P
+          D2=D
+          k2=ABS(kphs)
+          if (kr.eq.3) k2=3
+        else
+          T3=T               !Third root found.
+          P3=P
+          D3=D
+          k3=ABS(kphs)
+        endif
+      endif
+
+c  Check if additional roots exist.
+      if (kphs.eq.1 .and. s.gt.Ssmin .and. Ssmin.ne.0.) then
+        kphs=2
+        goto 200
+      elseif (kphs.eq.2) then          !Check if third root exists.
+        kphs=-2
+        goto 200
+      elseif (kphs.eq.-3) then         !Check if a second melting point root exists.
+        Dliq=Dsmin2
+        sliq=Ssmin2
+        kphs=3
+        goto 200
+      endif
+      if (k1+k2+k3.eq.0 .and. ierr.eq.0) ierr1=192
+
+ 500  if (ierr1.ge.192) ierr=ierr1
+      if (ierr1.ge.192) call ERRNUM(192,0,' ',' ',0d0,0d0,0d0,ierr,herr)
+
+c  Check if limits have been exceeded, return that message if no other error has occurred.
+      iErrNum=iErrNum-1
+      if (iErrNum.le.0) call CHECKLIMITS ('S5',T,D,P,z,ierr,herr)
+      RETURN
+
+ 66   smx=sliq
+      if (kphs.eq.-3) smx=Ssmin2
+      call ERRNUM (66,0,' ',' ',s,smx,0d0,ierr,herr)
+      goto 500
+ 67   smx=Ssmax
+      if (svap.gt.Ssmax) smx=svap
+      call ERRNUM (67,0,' ',' ',s,smx,0d0,ierr,herr)
+      goto 500
+  68  call ERRNUM (68,0,' ',' ',s,svap,0d0,ierr,herr)
+      goto 500
+
+      end                                                subroutine SATS
 c
 c ======================================================================
 c
-      subroutine SATTP (t,p,x,iFlsh,iGuess,d,Dl,Dv,xliq,xvap,q,ierr,
-     & herr)
+      subroutine SATE (e,z,kph,nroot,k1,T1,P1,D1,k2,T2,P2,D2,ierr,herr)
 c
-c  Estimate temperature, pressure, and compositions to be used
-c  as initial guesses to SATTP
+c  Iterate for temperature, pressure, and density given energy along
+c  the saturation boundary and the composition.
 c
-c  inputs:
-c   iFlsh--Phase flag:    0 - Flash calculation (T and P known)
-c                         1 - T and xliq known, P and xvap returned
-c                         2 - T and xvap known, P and xliq returned
-c                         3 - P and xliq known, T and xvap returned
-c                         4 - P and xvap known, T and xliq returned
-c                         if this value is negative, the retrograde point will be returned
-c        t--temperature [K] (input or output)
-c        p--pressure [MPa] (input or output)
-c        x--composition [array of mol frac]
-c   iGuess--if set to 1, all inputs are used as initial guesses for the calculation
-c  outputs:
-c        d--overall molar density [mol/L]
-c       Dl--molar density [mol/L] of saturated liquid
-c       Dv--molar density [mol/L] of saturated vapor
-c     xliq--liquid phase composition [array of mol frac]
-c     xvap--vapor phase composition [array of mol frac]
-c        q--quality
-c     ierr--error flag:   0 = successful
-c                         1 = unsuccessful
-c     herr--error string (character*255 variable if ierr<>0)
+c  Inputs:
+c        e--Molar energy [J/mol]
+c        z--Composition (array of mole fractions)
+c      kph--Flag specifying desired root:
+c           0 - Return all roots along the liquid-vapor line
+c           1 - Return only the liquid VLE root
+c           2 - Return only the vapor VLE roots
+c           3 - Return liquid SLE root (melting line)
+c           4 - Return vapor SVE root (sublimation line)
+c
+c  Outputs:
+c  (See subroutine SATH for the description of outputs.)
+c
+c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  05-16-05 EWL, original version
+
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension z(ncmax)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SATE
+
+
+      ieflg=1
+      call SATH (e,z,kph,nroot,k1,T1,P1,D1,k2,T2,P2,D2,ierr,herr)
+      ieflg=0
+      if (ierr.ne.0) then
+        i=INDEX(herr,'SATH')
+        if (i.gt.0) herr=herr(1:i+2)//'E'//herr(i+4:255)
+        i=INDEX(herr,'h =')
+        if (i.gt.0) herr=herr(1:i-1)//'e'//herr(i+1:255)
+        i=INDEX(herr,'enthalpy')
+        if (i.gt.0) herr=herr(1:i-1)//'energy'//herr(i+8:255)
+      endif
+      end                                                subroutine SATE
+c
+c ======================================================================
+c
+      subroutine SATTP (T,P,z,iFlsh,iGuess,D,Dl,Dv,x,y,q,ierr,herr)
+c
+c  Calculate saturation properties for bubble, dew, or 2-phase states
+c  with the use of analytical derivatives of the Helmholtz energy with
+c  respect to composition.
+c
+c  Inputs:
+c        T--Temperature [K] (input or output)
+c        P--Pressure [kPa] (input or output)
+c        z--Composition (array of mole fractions)
+c    iFlsh--Phase flag:  0 - Flash calculation (T and P known)
+c                        1 - T and x known, P and y returned
+c                        2 - T and y known, P and x returned
+c                        3 - P and x known, T and y returned
+c                        4 - P and y known, T and x returned
+c                            If this value is negative, the retrograde point will be returned.
+c   iGuess--If set to 1, the parameters Dl, Dv, x, and y are used as initial guesses for the calculation.
+c           If Dl and Dv are set to zero when iGuess=1, then the densities are obtained from the first call to TPRHO.
+c           If Dl and Dv are not zero when iGuess=1, those values are used as initial values.
+c           If set to 2 and splines have been calculated, use inputs rather than spline values.
+c
+c  Outputs:
+c        D--Overall density [mol/L]
+c       Dl--Molar density of saturated liquid [mol/L]
+c       Dv--Molar density of saturated vapor [mol/L]
+c        x--Liquid phase composition (array of mole fractions)
+c        y--Vapor phase composition  (array of mole fractions)
+c        q--Quality
+c     ierr--Error flag:  0 - Successful
+c                      121 - T>Tmax (maxcondentherm)
+c                      141 - P>Pmax (maxcondenbar)
+c                      151 - Iteration failed
+c                      156 - Probable Type III mixture with no liquid solution
+c                      159 - Wrong input value for iFlsh
+c                      (See subroutine LIMITX for other possible error numbers.)
+c     herr--Error string (character*255)
 c
 c  written by Andreas Jaeger, Johannes Gernert, Diego Ortiz, and Eric Lemmon
 c  06-20-11 EWL, original version
-c
-      include 'commons.for'
-      dimension x(ncmax),xliq(ncmax),xvap(ncmax),ix(ncmax),ij(ncmax)
+c  08-28-13 EWL, check for T<0
+c  10-22-13 EWL, check for Dliq<Dvap when iFlsh=0
+c  03-26-13 EWL, add additional checks and modifications for better convergence
+c  05-13-14 EWL, add check for T>Tmax or P>Pmax
+c  06-05-14 EWL, check for divide by zero
+
+      include 'COMMONS.INC'
+      include 'COMFEQ.INC'
+      dimension x(ncmax),y(ncmax),z(ncmax),ix(ncmax),ij(ncmax)
       character herr*255
       dimension dadn(ncmax),dnadn(ncmax)
       dimension xvap_new(ncmax),xliq_new(ncmax)
@@ -4892,142 +1722,194 @@ c
      &          dphidxjliq(ncmax,ncmax),dphidxjvap(ncmax,ncmax),
      &          dphidTliq(ncmax),dphidPliq(ncmax),
      &          dphidTvap(ncmax),dphidPvap(ncmax)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SATTP
 
-c  Set up pointer array ix to sort the components by largest first, removing
-c  any that are zero.
+
+      ierr=0
+      iErrNum=iErrNum+1
+      iFlash=ABS(iFlsh)
+      call ISPURE (z,icomp)
+      call SATSAVE (1,icomp,iFlash,T,P,D,Dl,Dv,q,x,y,z,ierr,iexit)   !Check if this calculation has already been done for the input conditions.
+      if (iexit.eq.1) GOTO 500
+
+      erMaxOld=0d0
       iGues=iGuess
+      if (iGues.gt.1) iGues=1
+      iGues1=iGues
+      iGues2=iGues
+      if (Dl.lt.1d-100) iGues1=0
+      if (Dv.lt.1d-100) iGues2=0
+      iErBad=0
+      it0=0
+      it2=0
       nc2=nc
+      ij=1
+      ix=0
+      m=0
+
+c  Sort the compositions in order of largest to smallest with the pointer array ix, removing
+c   any that are zero, so that every call to SATTP is independent of the order of the fluids.
       do i=1,nc
-        ij(i)=1
-      enddo
-      do i=1,nc
-        if (x(i).le.0.d0) nc2=nc2-1
+        if (z(i).le.0.) nc2=nc2-1      !Decrease the number of components by 1 for zero compositions.
         k=1
         do j=1,nc
           if (ij(k).eq.0) k=j
-          if (x(j).gt.x(k) .and. ij(j).eq.1) k=j
+          if (z(j).gt.z(k) .and. ij(j).eq.1) k=j           !Find the slot that has the largest composition of those that have not yet been set.
         enddo
         ij(k)=0
-        if (x(k).gt.0.d0) ix(i)=k
+        if (z(k).gt.0.) ix(i)=k        !Set the ix array to the slot found above.
+        if (z(i).le.0.) m=i            !If the composition is zero, save this location for use below.
+      enddo
+      do i=1,nc
+        if (ix(i).eq.0.) ix(i)=m       !If ix has not been set, use any location where the composition was zero.
       enddo
 
-      call ISPURE (x,icomp)
-      call CRITP (x,tc,pc,rhoc,ierr,herr)
-      iSatFlg=0
+      call CRITP (z,Tc,Pc,Dc,ierr1,herr)
+      if (iGues.eq.0) then
+        if (iFlash.eq.1 .or. iFlash.eq.2) P=Pc
+        if (iFlash.eq.3 .or. iFlash.eq.4) T=Tc
+      endif
+      iSatFlg=0    !A value of 0 for iSatFlg means it's safe to call SATTP non-recursively.
       irdxerr=0
-      eMax=0
+      erMax=0
       iretrog=0
+      xvap_new(1:nc)=0
+      xliq_new(1:nc)=0
       if (iFlsh.lt.0) iretrog=1
-      iFlash=abs(iFlsh)
+      if (iFlash.lt.0 .or. iFlash.gt.4) goto 159
+      if (iFlash.gt.2 .and. iGues.eq.0) T=300d0
 
-      if (iSpline.ne.0 .and. iFlash.gt.0) then
-        call MAXT (x,tmaxt,tmaxp,tmaxd,ierr,herr)
-        call MAXP (x,pmaxt,pmaxp,pmaxd,ierr,herr)
-        d=rhoc*2.d0
-        if (iFlash.eq.2 .or. iFlash.eq.4) d=rhoc/10.d0
-        if (iretrog.eq.1 .and. tmaxd.gt.0.d0) d=(tmaxd+rhoc)/2.d0
+c  If SATSPLN was called, use the splines to get very good estimates of the phase boundaries.
+      if (iSpline.ne.0 .and. iFlash.gt.0 .and. iGuess.ne.2) then
+        call MAXT (z,TmaxT,TmaxP,TmaxD,ierr1,herr)         !Cricondentherm
+        call MAXP (z,PmaxT,PmaxP,PmaxD,ierr2,herr)         !Cricondenbar
         if (iFlash.eq.1 .or. iFlash.eq.2) then
-          call SPLNROOT (nc+1,0,t,d,ierr,herr)
-          if (ierr.gt.0) then
-            d=d*0.75d0
-            if (d.lt.1.d-5) d=rhoc*0.75d0
-            call SPLNROOT (nc+1,0,t,d,ierr,herr)
-          endif
-          if (ierr.gt.0) d=rhoc*2.d0
-          call SPLNVAL (nc+1,1,d,dydd,ierr,herr)
-          if (iFlash.eq.1 .and. dydd.gt.0) goto 10  !Exit if d(T)/d(rho) is positive (vapor surface)
-        else
-          call SPLNROOT (nc+2,0,p,d,ierr,herr)
-          call SPLNVAL (nc+2,1,d,dydd,ierr,herr)
-          if (iFlash.eq.3 .and. dydd.gt.0) goto 10  !Exit if d(P)/d(rho) is positive (vapor surface)
+          if (ierr1.eq.0 .and. T.gt.TmaxT+1d0 .and. MixTyp.le.1)goto 121       !T is above maxcondentherm, exit with error.
+        elseif (iFlash.eq.3 .or. iFlash.eq.4) then
+          if (ierr2.eq.0 .and. P.gt.PmaxP+10d0.and. MixTyp.le.1)goto 141       !P is above maxcondenbar, exit with error.
         endif
-        Dl=d
-        Dv=d
 
-        do j=1,nc+3
-          call SPLNVAL (j,0,d,y,ierr,herr)
-          y=abs(y)
-          if (j.le.nc) then
-            if (iFlash.eq.1 .or. iFlash.eq.3) then
-              xvap(j)=abs(y)
-              xliq(j)=x(j)
-            else
-              xliq(j)=abs(y)
-              xvap(j)=x(j)
-            endif
-          elseif (j.eq.nc+1) then
-            if (iFlash.eq.3 .or. iFlash.eq.4) t=y
-          elseif (j.eq.nc+2) then
-            if (iFlash.eq.1 .or. iFlash.eq.2) p=y
-          elseif (j.eq.nc+3) then
-            if (iFlash.eq.1 .or. iFlash.eq.3) Dv=y
-            if (iFlash.eq.2 .or. iFlash.eq.4) Dl=y
-          endif
-        enddo
-        sumx=sum(xliq(1:nc))
-        sumy=sum(xvap(1:nc))
-        xliq(1:nc)=xliq(1:nc)/sumx
-        xvap(1:nc)=xvap(1:nc)/sumy
+        x(1:nc)=z(1:nc)
+        y(1:nc)=z(1:nc)
+        iprop=1
+        if (iFlash.eq.3 .or. iFlash.eq.4) iprop=2
+        if (iFlash.eq.1 .or. iFlash.eq.3) then
+          call SATGUESS (1,iprop,0,0,x,T,P,Dl,h,s,Dv,y,ierr,herr)    !Use SATGUESS to get the estimates from the splines.
+          if (iFlash.eq.3 .and. ierrPmx.gt.0 .and. Dl.le.Dv) goto 156
+        elseif (iFlash.eq.2 .or. iFlash.eq.4) then
+          call SATGUESS (2,iprop,0,0,y,T,P,Dv,h,s,Dl,x,ierr,herr)
+        endif
+        iGues1=1
+        iGues2=1
         iGues=1
       endif
 
- 10   continue
-c  PR does not have derivatives needed for SATTP, must use SATT
-      if (icomp.ne.0 .or. irdxerr.ne.0 .or .heos.eq.'PR') then
-        iSatFlg=1
-        if (iFlash.eq.1 .or. iFlash.eq.2) then
-          call SATT (t,x,iFlash,p,Dl,Dv,xliq,xvap,ierr,herr)
-        elseif (iFlash.eq.3 .or. iFlash.eq.4) then
-          call SATP (p,x,iFlash-2,t,Dl,Dv,xliq,xvap,ierr,herr)
+c  Try SATT or SATP if SATTP fails.  The parameter irdxerr indicates if failure happened at the end of this routine, and it returns here to call SATT or SATP.
+ 10   if (icomp.ne.0 .or. irdxerr.ne.0 .or.
+     &    iEOSmx.eq.iEOSPR .or. iEOSmx.eq.iEOSPR3) then
+        if (ierr.lt.100) ierr=999
+        iSatFlg=1            !A value of 0 for iSatFlg means it's safe to call SATTP non-recursively.
+        if (iFlash.eq.1 .or. iFlash.eq.2) then             !Temperature was sent as the input.
+          if (iFlash.eq.1 .and. iSpline.ne.0) then
+            tt=0d0
+            call SATGUESS (1,-1,0,0,z,tt,P,D,h,s,Dy,y,ierr,herr)
+            if (ierr.eq.0 .and. D.gt.Dc*1.5d0) then
+              call SATGUESS (1,21,0,0,z,tt,P,D,h,s,d2,y,ierr,herr)             !2nd derivative at root.
+              if (T.lt.tt .and. d2.gt.0) goto 450          !Exit if splines show that the input temperature in the liquid phase is below that of all possible roots.
+            endif
+          endif
+          if (ierr.lt.100) ierr=999
+          P=ABS(P)
+          if (iSatFlg1.eq.0)call SATT (T,z,iFlash,P,Dl,Dv,x,y,ierr,herr)
+        elseif (iFlash.eq.3 .or. iFlash.eq.4) then         !Pressures was sent as the input.
+          T=ABS(T)
+          if(iSatFlg1.eq.0)call SATP(P,z,iFlash-2,T,Dl,Dv,x,y,ierr,herr)
         else
-          call TPFLSH(t,p,x,d,Dl,Dv,xliq,xvap,q,e,h,s,cv,cp,w,ierr,herr)
+          iSatFlg=1          !A value of 0 for iSatFlg means it's safe to call SATTP non-recursively.
+          if (iTPflg.eq.0)
+     &    call TPFLSH(T,P,z,D,Dl,Dv,x,y,q,e,h,s,Cv,Cp,w,ierr,herr)   !Both T and P were sent as inputs, x and y are the outputs (2-phase flash inputs).
+          iSatFlg=0          !A value of 0 for iSatFlg means it's safe to call SATTP non-recursively.
         endif
         if (iFlash.eq.1 .or. iFlash.eq.3) then
           q=0
-          d=Dl
+          D=Dl
         elseif (iFlash.eq.2 .or. iFlash.eq.4) then
           q=1
-          d=Dv
+          D=Dv
         endif
-        iSatFlg=0
-        if (ierr.eq.0) then
-          if (abs(dl-dv).lt.0.1d0 .and. abs(dl-rhoc).gt.0.1d0) ierr=1
-          if (dl+dv.lt.rhoc) ierr=1
+        if (ierr.le.0 .and. iAnc(icomp).eq.0) then
+          if (ABS(Dl-Dv).lt.0.1d0 .and. ABS(Dl-Dc).gt.0.1d0) ierr=999
+          if (Dl+Dv.lt.Dc) ierr=999
         endif
-        RETURN
+        if (ierr.eq.151 .or. ierr.ge.700) goto 450
+        goto 500
       endif
 
-      If (iGues.eq.0) Then
-        dv=rhoc
-        dl=rhoc
-        If (iFlash.eq.3 .or. iFlash.eq.4) t=300
-        If (iFlash.ne.0) Call SATEST (iFlash,t,p,x,xliq,xvap,ierr,herr)
-        If (iFlash.eq.0) Call SAT0EST (t,p,x,xliq,xvap,ierr,herr)
-      End If
+c  If Splines are not known, use SATEST or SAT0EST to get estimates, which could be significantly in error for mixtures such as those with water and air.
+ 150  if (iGues.eq.0) then
+        Dv=Dc
+        Dl=Dc
+        if (iFlash.eq.3 .or. iFlash.eq.4) T=300
+        if (iFlash.ne.0) call SATEST (iFlash,T,P,z,x,y,ierr,herr)    !Saturation inputs
+        if (iFlash.eq.0) call SAT0EST (T,P,z,x,y,ierr,herr)          !Flash inputs
+        if (it2.ne.0) then
+          if (iFlash.eq.1 .or. iFlash.eq.3) then           !If the routine failed because the estimates were bad, significantly increase the mole fraction
+            yMax=MAXVAL(y(1:nc))                           !  of the heaviest component and try again.
+            do i=1,nc
+              if (y(i).gt.yMax*0.99d0) y(i)=y(i)+(1d0-y(i))*0.9d0
+            enddo
+            y(1:nc)=y(1:nc)/SUM(y(1:nc))
+          else
+            xMax=MAXVAL(x(1:nc))
+            do i=1,nc
+              if (x(i).gt.xMax*0.99d0) x(i)=10d0*x(i)
+            enddo
+            x(1:nc)=x(1:nc)/SUM(x(1:nc))
+          endif
+        endif
+      endif
 
-      tol1=1.d-12
-      tol2=1.d-10
+      tol1=1d-12
+      tol2=1d-10
       ierr=0
       herr=' '
-      dvap=dv
-      dliq=dl
+      Dvap=Dv
+      Dliq=Dl
       ieqn=nc2
       if (iFlash.eq.0) ieqn=2*(nc2-1)
 
-      do il=1,30
-        GibbsEQN=0.d0
+      it0=it0+1
+      do it=it0,30
+        GibbsEQN=0d0
 c...Vapor
-        call TPRHO (t,p,xvap,2,iGues,dvap,ierr,herr)
-        if (ierr.ne.0) then
-          call TPRHO (t,p,xvap,1,0,dvap,ierr,herr)
-          if (ierr.ne.0) goto 1000
+        call TPRHO (T,P,y,2,iGues2,Dvap,ierr,herr)
+        if (ierr.gt.0) then
+          P0=P
+          T0=T
+          do i=1,5
+            if (ierr.gt.0 .or. Dvap.gt.Dliq) then
+              do j=1,INT(-0.1d0+i/2d0)+1
+                if (iFlash.eq.1 .or. iFlash.eq.2) P=P/1.2d0
+                if (iFlash.eq.3 .or. iFlash.eq.4) T=T+2d0
+              enddo
+              call TPRHO (T,P,y,2,iGues2,Dvap,ierr,herr)
+              if (i.ge.3) iGues2=0
+            endif
+          enddo
+          if (ierr.gt.0) then
+            if (iFlash.eq.1 .or. iFlash.eq.2) P=P0
+            if (iFlash.eq.3 .or. iFlash.eq.4) T=T0
+            call TPRHO (T,P,y,1,0,Dvap,ierr,herr)
+            if (ierr.gt.0) goto 1000
+          endif
         endif
-        call PHIDERV (2,t,dvap,xvap,dadn,dnadn,ierr,herr)
-        if (ierr.eq.191) then !Derivatives of the Helmholtz equation are not available, use SATT or SATP
+        iGues2=1
+        call PHIDERV (2,T,Dvap,y,dadn,dnadn,ierr,herr)
+        if (ierr.eq.191) then          !Derivatives of the Helmholtz equation are not available, use SATT or SATP.
           irdxerr=ierr
           goto 10
         endif
-        if (ierr.ne.0) goto 1000
+        if (ierr.gt.0) goto 1000
         do j=1,nc2
           xlnfivap(j)=xlnfi(ix(j))
           dphidtvap(j)=dphidt(ix(j))
@@ -5035,40 +1917,36 @@ c...Vapor
           do k=1,nc2
           dphidxjvap(j,k)=dphidxj(ix(j),ix(k))-dlnphiidxj(ix(nc2),ix(k))
           enddo
-          dphidxjvap(j,nc2)=dphidxjvap(j,nc2)-1.d0/xvap(ix(nc2))
-        end do
+          if (y(ix(nc2)).gt.1d-50)
+     &        dphidxjvap(j,nc2)=dphidxjvap(j,nc2)-1d0/y(ix(nc2))
+        enddo
 
 c...Liquid
-        call TPRHO (t,p,xliq,1,iGues,dliq,ierr,herr)
-        if (ierr.ne.0 .and. iFlash.eq.3) then
-          t=t-5.d0
-          call TPRHO (t,p,xliq,1,iGues,dliq,ierr,herr)
-          if (ierr.ne.0) then
-            t=t-5.d0
-            call TPRHO (t,p,xliq,1,iGues,dliq,ierr,herr)
+        call TPRHO (T,P,x,1,iGues1,Dliq,ierr,herr)
+        if (Dliq.lt.Dc/10d0) call TPRHO (T,P,x,1,0,Dliq,ierr,herr)
+        if (ierr.gt.0) then
+          P0=P
+          T0=T
+          do i=1,10
+            if (ierr.gt.0 .or. Dliq.lt.Dvap) then
+              do j=1,INT(-0.1d0+i/2d0)+1
+                if (iFlash.eq.1 .or. iFlash.eq.2) P=P*1.2d0
+                if (iFlash.eq.3 .or. iFlash.eq.4) T=T-2d0
+              enddo
+              call TPRHO (T,P,x,1,iGues1,Dliq,ierr,herr)
+              if (i.ge.3) iGues1=0
+            endif
+          enddo
+          if (ierr.gt.0) then
+            if (iFlash.eq.1 .or. iFlash.eq.2) P=P0
+            if (iFlash.eq.3 .or. iFlash.eq.4) T=T0
+            call TPRHO (T,P,x,2,0,Dliq,ierr,herr)
+            if (ierr.gt.0) goto 1000
           endif
-          if (ierr.ne.0) t=t+10.d0
         endif
-        if (ierr.ne.0 .and. iFlash.eq.1) then
-          p0=p
-          p=p*1.2d0
-          call TPRHO (t,p,xliq,1,iGues,dliq,ierr,herr)
-          if (ierr.ne.0) then
-            p=p*1.5d0
-            call TPRHO (t,p,xliq,1,iGues,dliq,ierr,herr)
-          endif
-          if (ierr.ne.0) then
-            p=p*1.5d0
-            call TPRHO (t,p,xliq,1,iGues,dliq,ierr,herr)
-          endif
-          if (ierr.ne.0) p=p0
-        endif
-        if (ierr.ne.0) then
-          call TPRHO (t,p,xliq,2,0,dliq,ierr,herr)
-          if (ierr.ne.0) goto 1000
-        endif
-        call PHIDERV (2,t,dliq,xliq,dadn,dnadn,ierr,herr)
-        if (ierr.ne.0) goto 1000
+        iGues1=1
+        call PHIDERV (2,T,Dliq,x,dadn,dnadn,ierr,herr)
+        if (ierr.gt.0) goto 1000
         do j=1,nc2
           xlnfiliq(j)=xlnfi(ix(j))
           dphidtliq(j)=dphidt(ix(j))
@@ -5076,52 +1954,58 @@ c...Liquid
           do k=1,nc2
           dphidxjliq(j,k)=dphidxj(ix(j),ix(k))-dlnphiidxj(ix(nc2),ix(k))
           enddo
-          dphidxjliq(j,nc2)=dphidxjliq(j,nc2)-1.d0/xliq(ix(nc2))
-        end do
+          if (x(ix(nc2)).gt.0d0)
+     &        dphidxjliq(j,nc2)=dphidxjliq(j,nc2)-1d0/x(ix(nc2))
+        enddo
 
         do j=1,nc2
           GibbsEQN(j)=xlnfivap(j)-xlnfiliq(j)
-        end do
+        enddo
         if (iFlash.eq.0) then
           do j=1,nc2-2
-            dxkdxj_vap=(xvap(ix(nc2-1))-x(ix(nc2-1)))/
-     &                 (xvap(ix(j))-x(ix(j)))
-            dxkdxj_liq=(xliq(ix(nc2-1))-x(ix(nc2-1)))/
-     &                 (xliq(ix(j))-x(ix(j)))
+            dxkdxj_vap=0d0
+            dxkdxj_liq=0d0
+            if (y(ix(j))-z(ix(j)).ne.0.)
+     &      dxkdxj_vap=(y(ix(nc2-1))-z(ix(nc2-1)))/
+     &                 (y(ix(j))-z(ix(j)))
+            if (x(ix(j))-z(ix(j)).ne.0.)
+     &      dxkdxj_liq=(x(ix(nc2-1))-z(ix(nc2-1)))/
+     &                 (x(ix(j))-z(ix(j)))
             GibbsEQN(nc2+j)=dxkdxj_vap-dxkdxj_liq
-          end do
-        end if
+          enddo
+        endif
 
-        if (il.eq. 8) tol1=tol1*10
-        if (il.eq.12) tol1=tol1*10
-        if (il.eq.16) tol1=tol1*10
-        if (il.eq.20) tol1=tol1*10
-        if (il.eq. 8) tol2=tol2*10
-        if (il.eq.12) tol2=tol2*10
-        if (il.eq.16) tol2=tol2*10
-        if (il.eq.20) tol2=tol2*10
-        eMax=maxval(dabs(GibbsEQN))
-        if (eMax.lt.tol1) goto 1000
+        call TOLRNC (tol1,it,8,12,16,20,0)       !Loosen tolerance if not converging.
+        call TOLRNC (tol2,it,8,12,16,20,0)
+        erMax=maxval(ABS(GibbsEQN))
+        if (erMax.lt.tol1 .and. it.ne.1) goto 1000
 
-c..Set up Jacobian matrix
-        xJacMatrix(1:ieqn,1:ieqn)=0.d0
+c..Set up Jacobian matrix.
+        xJacMatrix(1:ieqn,1:ieqn)=0d0
         if (iFlash.eq.0) then
           do j=1,nc2-1
             do k=1,nc2
               xJacMatrix(k,j)=dphidxjvap(j,k)
               xJacMatrix(k,nc2-1+j)=-dphidxjliq(j,k)
-            end do
-          end do
+            enddo
+          enddo
           do j=1,nc2-2
-            xJacMatrix(nc2+j,j)=
-     &               -(xvap(ix(nc2-1))-x(ix(nc2-1)))/
-     &               ((xvap(ix(j))-x(ix(j)))**2)
-            xJacMatrix(nc2+j,nc2-1)=1.d0/(xvap(ix(j))-x(ix(j)))
-            xJacMatrix(nc2+j,nc2-1+j)=
-     &                (xliq(ix(nc2-1))-x(ix(nc2-1)))/
-     &               ((xliq(ix(j))-x(ix(j)))**2)
-            xJacMatrix(nc2+j,2*(nc2-1))=-1.d0/(xliq(ix(j))-x(ix(j)))
-          end do
+            xJacMatrix(nc2+j,j)=0d0
+            xJacMatrix(nc2+j,nc2-1)=0d0
+            xJacMatrix(nc2+j,nc2-1+j)=0d0
+            if (y(ix(j))-z(ix(j)).ne.0.) then
+              xJacMatrix(nc2+j,j)=
+     &                 -(y(ix(nc2-1))-z(ix(nc2-1)))/
+     &                 ((y(ix(j))-z(ix(j)))**2)
+              xJacMatrix(nc2+j,nc2-1)=1d0/(y(ix(j))-z(ix(j)))
+            endif
+            if (x(ix(j))-z(ix(j)).ne.0.) then
+              xJacMatrix(nc2+j,nc2-1+j)=
+     &                  (x(ix(nc2-1))-z(ix(nc2-1)))/
+     &                 ((x(ix(j))-z(ix(j)))**2)
+              xJacMatrix(nc2+j,2*(nc2-1))=-1d0/(x(ix(j))-z(ix(j)))
+            endif
+          enddo
         else
           do k=1,nc2
             do j=1,nc2-1
@@ -5130,1104 +2014,1208 @@ c..Set up Jacobian matrix
               elseif (iFlash.eq.2 .or. iFlash.eq.4) then
                 xJacMatrix(k,j)=-dphidxjliq(j,k)
               endif
-            end do
+            enddo
             if (iFlash.eq.1 .or. iFlash.eq.2) then
               xJacMatrix(k,nc2)=dphidpvap(k)-dphidpliq(k)
             elseif (iFlash.eq.3 .or. iFlash.eq.4) then
               xJacMatrix(k,nc2)=dphidtvap(k)-dphidtliq(k)
             endif
-          end do
+          enddo
         endif
-c..Solve Jacobian matrix
+c..Solve Jacobian matrix.
         Delta_X=-GibbsEQN
-        call LUdecomp (ieqn,50,xJacMatrix,Delta_X,ierr,herr)
-        eMax=maxval(dabs(Delta_X))
-        if (eMax.lt.tol2) goto 1000
-
- 100    continue
-        jj=0
-        if (iFlash.eq.0) jj=nc2-1
-        t_new=0.d0
-        p_new=0.d0
-        sum_liq=0.d0
-        sum_vap=0.d0
-        sum_vsmall=0.d0
-
-        do j=1,nc2
-          if (x(ix(j)).gt.0.d0) then
-            if (j.lt.nc2) then
-              xvap_new(ix(j))=xvap(ix(j))+Delta_X(j)
-              xliq_new(ix(j))=xliq(ix(j))+Delta_X(j+jj)
-            else
-              xvap_new(ix(nc2))=1.d0-sum_vap-sum_vsmall
-              xliq_new(ix(nc2))=1.d0-sum_liq
-              t_new=t+Delta_X(j)
-              p_new=p+Delta_X(j)
-            end if
-            sum_vap=sum_vap+xvap_new(ix(j))
-            sum_liq=sum_liq+xliq_new(ix(j))
-            if (xvap_new(ix(j)).lt.1.d-10)
-     &        sum_vsmall=sum_vsmall+xvap_new(ix(j))
-            k=0
-            if (iFlash.eq.1 .or. iFlash.eq.3) then
-              if (xvap_new(ix(j)).le.0.d0.or.xvap_new(ix(j)).ge.1.d0)k=1
-              if (p_new.lt.0) k=1
-            elseif (iFlash.eq.2 .or. iFlash.eq.4) then
-              if (xliq_new(ix(j)).le.0.d0.or.xliq_new(ix(j)).ge.1.d0)k=1
-            else
-              if (((xvap_new(ix(j))-x(ix(j)))
-     &            *(xliq_new(ix(j))-x(ix(j))).gt.0.d0)
-     &         .or.(xliq_new(ix(j))*xvap_new(ix(j)).lt.0.d0)) k=1
+        call LUDECOMP (ieqn,50,xJacMatrix,Delta_X,ierr,herr)
+        if (ierr.gt.0) goto 1000
+        erMax=maxval(ABS(Delta_X))
+        if (it.gt.1) then
+c         if (erMax.lt.tol2) goto 1000
+          if (erMax.lt.erMaxOld) ierBad=0
+          if (erMax.gt.erMaxOld) ierBad=ierBad+1                     !The convergence criteria is slowly increasing, indicating that the estimated
+          if (ierBad.gt.4 .and. it2.eq.0 .and. iFlash.ne.0) then     !  composition was probably bad, so go back and re-estimate with new estimates.
+            if (erMax/tol2.gt.1000 .or. ierBad.gt.10) then
+              it2=1
+              iGues=0
+              goto 150
             endif
-            if (k.eq.1) then
-              Delta_X=Delta_X/2.d0
-              if (maxval(dabs(Delta_X)).lt.1.d-10) goto 999
-              goto 100
-            end if
           endif
-        end do
+        endif
+        erMaxOld=erMax
 
-        Dl=dliq
-        Dv=dvap
+c  Update unknown properties.
+ 100    jj=0
+        if (iFlash.eq.0) jj=nc2-1
+        sum_liq=0d0
+        sum_vap=0d0
+        sum_vsmall=0d0
+        sum_lsmall=0d0
+
+c  Add the changes determined in the call above to LUDECOMP to the unknown properties.
+        do j=1,nc2-1
+          xvap_new(ix(j))=y(ix(j))+Delta_X(j)
+          xliq_new(ix(j))=x(ix(j))+Delta_X(j+jj)
+        enddo
+        do j=1,nc2-1         !These two loops are kept separate to avoid parallelization issues when the compiler optimizes the code.
+          if (xvap_new(ix(j)).lt.1d-10) then
+            sum_vsmall=sum_vsmall+xvap_new(ix(j))          !Required for loss in numerical precision when summed with 1.
+          else
+            sum_vap=sum_vap+xvap_new(ix(j))
+          endif
+          if (xliq_new(ix(j)).lt.1d-10) then
+            sum_lsmall=sum_lsmall+xliq_new(ix(j))          !Required for loss in numerical precision when summed with 1.
+          else
+            sum_liq=sum_liq+xliq_new(ix(j))
+          endif
+        enddo
+        xvap_new(ix(nc2))=1d0-sum_vap-sum_vsmall
+        xliq_new(ix(nc2))=1d0-sum_liq-sum_lsmall
+        if (xvap_new(ix(nc2)).lt.0. .and. ABS(y(ix(nc2))).lt.1d-12)            !Catch extremely small cases.  This needs a better solution.
+     &      xvap_new(ix(nc2))=y(ix(nc2))
+        T_new=T+Delta_X(nc2)
+        P_new=P+Delta_X(nc2)
+
+c  Make checks on new values, set k equal to 1 if the test fails.
+        k=0
+        if (ABS(Delta_X(nc2)).gt.P/50d0 .and. P.gt.10000) k=1        !For large P, don't let it change too rapidly (Type III mixtures with large dp/dT).
+        do j=1,nc2
+          if (iFlash.eq.1 .or. iFlash.eq.3) then
+            if (xvap_new(ix(j)).le.0..or.xvap_new(ix(j)).ge.1.) k=2
+            if (ABS(xvap_new(ix(j))-y(ix(j))).ge.0.03d0) k=3         !Don't allow large changes in composition.
+            if (P_new.lt.0) k=4
+          elseif (iFlash.eq.2 .or. iFlash.eq.4) then
+            if (xliq_new(ix(j)).le.0..or.xliq_new(ix(j)).ge.1.) k=5
+            if (ABS(xliq_new(ix(j))-x(ix(j))).ge.0.03d0) k=6         !Don't allow large changes in composition.
+            if (T_new.lt.0) k=7
+          else
+            if ((xvap_new(ix(j))-z(ix(j)))*
+     &          (xliq_new(ix(j))-z(ix(j))).gt.0.) then
+              if (MAXVAL(ABS(Delta_X)).gt.1d-2) k=8
+            endif
+            if (xliq_new(ix(j)).le.0. .or. xliq_new(ix(j)).ge.1.) k=9
+            if (xvap_new(ix(j)).le.0. .or. xvap_new(ix(j)).ge.1.) k=10
+          endif
+
+c  If k=1, the tests above failed, so cut the delta in half and try again.
+          if (k.ge.1) then
+            Delta_X=Delta_X/2d0
+            if (MAXVAL(ABS(Delta_X)).lt.1d-10) goto 151
+            goto 100
+          endif
+        enddo
+
+        if (Dliq.le.0.) Dliq=Dc*3d0
+        if (Dvap.le.0.) Dvap=Dc/3d0
+        Dl=Dliq
+        Dv=Dvap
         if (iFlash.eq.1) then
           q=0
-          xvap(ix(1:nc2))=xvap_new(ix(1:nc2))
-          p=p_new
-          d=dliq
+          y(ix(1:nc2))=xvap_new(ix(1:nc2))
+          P=P_new
+          D=Dliq
         elseif (iFlash.eq.2) then
           q=1
-          xliq(ix(1:nc2))=xliq_new(ix(1:nc2))
-          p=p_new
-          d=dvap
+          x(ix(1:nc2))=xliq_new(ix(1:nc2))
+          P=P_new
+          D=Dvap
         elseif (iFlash.eq.3) then
           q=0
-          xvap(ix(1:nc2))=xvap_new(ix(1:nc2))
-          t=t_new
-          d=dliq
+          y(ix(1:nc2))=xvap_new(ix(1:nc2))
+          T=T_new
+          D=Dliq
         elseif (iFlash.eq.4) then
           q=1
-          xliq(ix(1:nc2))=xliq_new(ix(1:nc2))
-          t=t_new
-          d=dvap
+          x(ix(1:nc2))=xliq_new(ix(1:nc2))
+          T=T_new
+          D=Dvap
         elseif (iFlash.eq.0) then
-          q=(x(ix(1))-xliq(ix(1)))/(xvap(ix(1))-xliq(ix(1)))
-          xvap(ix(1:nc2))=xvap_new(ix(1:nc2))
-          xliq(ix(1:nc2))=xliq_new(ix(1:nc2))
-          d=1.d0/((1.0d0-q)/dliq+q/dvap)
-        else
-          stop
-        endif
-        if (p.le.0.d0) goto 1000
-      enddo
+          if (Dv.gt.Dl) then
+            call SWAPV (Dliq,Dvap)
+            call SWAPV (Dl,Dv)
+            call SWAPA (xliq_new,xvap_new)
+          endif
 
- 999  ierr=3
-      herr='SATTP:  Error in iteration'
-      if (il.gt.30) then
-        ierr=2
-        herr='SATTP:  Maximum number of iterations exceeded'
-      endif
+          q=XDIV1(z(ix(1))-xliq_new(ix(1)),
+     &          xvap_new(ix(1))-xliq_new(ix(1)))
+          if (q.gt.1 .or. q.lt.0) then
+            Delta_X=Delta_X/2d0
+            if (MAXVAL(ABS(Delta_X)).lt.1d-10) goto 151
+            goto 100
+          endif
+
+          x(ix(1:nc2))=xliq_new(ix(1:nc2))
+          y(ix(1:nc2))=xvap_new(ix(1:nc2))
+          q=XDIV1(z(ix(1))-x(ix(1)),y(ix(1))-x(ix(1)))
+          if (q.lt.-1d0 .or. q.gt.2d0)
+     &      call GETXYZQ(2,ix(1),q,z,xliq_new,xvap_new,x,y)
+c         q=ABS(q)
+          D=1d0/((1d0-q)/Dliq+q/Dvap)
+        endif
+        if (erMax.lt.tol2) goto 1000
+        if (P.le.0.) goto 1000
+        if (T.gt.1d10) EXIT
+      enddo
+      goto 151     !Iteration failed.
+
 1000  continue
-      if (dv.lt.0) ierr=1
-      if (dl.lt.0) ierr=1
-      if (abs(dl-dv).lt.0.1d0 .and. abs(dl-rhoc).gt.0.1d0) ierr=1
-c     if (dv.gt.dl*1.1d0) ierr=1
-      if (p.gt.pc*10) ierr=1
-      if (p.le.0) ierr=1
-      if (ierr.ne.0 .and. herr(1:1).eq.' ') then
-        herr='SATTP:  Iteration failed'
+      if (Dv.le.0) ierr=151
+      if (Dl.le.0) ierr=151
+      if (P.le.0) ierr=151
+      if (P.lt.20000.) then  !Checks for non-Type III mixtures
+        if (ABS(Dl-Dv).lt.0.1d0 .and. ABS(Dl-Dc).gt.0.1d0) ierr=151
+      else
+        if (ABS(Dl-Dv).lt.1d-6 .and. ABS(Dl-Dc).gt.0.1d0) ierr=151
       endif
-      if (ierr.gt.0 .and. iSatFlg2.eq.0) then
+      if (ierr.le.0) call CHECKSTATE (0,0,T,Dl,x,Err,ierr,herr)
+      if (ierr.le.0) call CHECKSTATE (0,0,T,Dv,y,Err,ierr,herr)
+      if (ierr.gt.0) goto 151
+
+ 400  if (ierr.gt.0 .and. iSatFlg2.eq.0) then    !Don't do the following while SATSPLN is running.
         irdxerr=ierr
         goto 10
       endif
+ 450  if(ierr.gt.0)call ERRNUM (151,0,'SATTP',' ',0d0,0d0,0d0,ierr,herr)
+
+c  Check if limits have been exceeded, return that message if no other error has occurred.
+ 500  iSatFlg=0
+      call SATSAVE (2,icomp,iFlash,T,P,D,Dl,Dv,q,x,y,z,ierr,iexit)   !Save the results if the calculation was successful.
+      iErrNum=iErrNum-1
+      if (iErrNum.le.0) call CHECKLIMITS ('S6',T,D,P,z,ierr,herr)
       RETURN
-      end                                              !subroutine SATTP
+
+ 121  call ERRNUM (121,0,'SATTP',' ',T,TmaxT,0d0,ierr,herr)
+      goto 400
+ 141  call ERRNUM(141,0,'SATTP',' ',P/1000d0,PmaxP/1000d0,0d0,ierr,herr)
+      goto 400
+ 151  call ERRNUM (151,0,'SATTP',' ',0d0,0d0,0d0,ierr,herr)
+      goto 400
+ 156  call ERRNUM (156,0,' ',' ',P/1000d0,0d0,0d0,ierr,herr)         !Don't change the error number, used elsewhere.
+      goto 400
+ 159  call ERRNUM (159,0,'SATTP','iFlash',0d0,0d0,0d0,ierr,herr)
+      goto 400
+
+      end                                               subroutine SATTP
 c
 c ======================================================================
 c
       subroutine SATSPLN (z,ierr,herr)
 c
-c  calculates the phase boundary of a mixture at a given composition,
-c  and the critical point, cricondentherm, and cricondenbar.
+c  Calculates the phase boundary of a mixture at a given composition,
+c  along with the critical point, cricondentherm, and cricondenbar.
 c
-c  inputs:
-c        z--composition [array of mol frac]
-c  outputs:
-c     ierr--error flag:   0 = successful
-c     herr--error string (character*255 variable if ierr<>0)
+c  Inputs:
+c        z--Composition (array of mole fractions)
+c
+c  Outputs:
+c     ierr--Error flag:  0 - Successful
+c                      355 - Saturation routine failed
+c     herr--Error string (character*255)
+      include 'COMMONS.INC'
+      dimension z(ncmax),Rsave(ncmax)
+      character herr*255
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SATSPLN
+
+      ierr=0
+      call ISPURE (z,icomp)
+      if (icomp.ne.0) RETURN
+      zSum=SUM(z(1:nc))
+      if (zSum.lt.1.d-5) then
+        call ERRNUM (312,0,'SATSPLN',' ',0d0,0d0,0d0,ierr,herr)
+        RETURN
+      endif
+      zSum=SUM(ABS(z(1:nc)-zSpln(1:nc)))
+      if (lEQ0(zSum)) RETURN
+
+      Rsave(1:nc)=Reos(1:nc)           !Make all the gas constants the same to avoid critical
+      Reos(1:nc)=xRgas                 ! region errors in the calculation of the splines.
+      call SATSPLN2 (1,0d0,0d0,0d0,0d0,z,ierr,herr)
+      Reos(1:nc)=Rsave(1:nc)
+
+      end                                             subroutine SATSPLN
+c
+c ======================================================================
+c
+      subroutine SATSPLN2 (iFlg,Pstart,Dincr,Dlimit,Plimit,z,ierr,herr)
+c
+c  Calculates the phase boundary of a mixture at a given composition,
+c  along with the critical point, cricondentherm, and cricondenbar.
+c  Additional inputs over those in the original SATSPLN routine are
+c  allowed in this new routine to increase the speed or number of points
+c  being calculated.
+c
+c  Inputs:
+c     iFlg--not used
+c           (send zero for the first four values listed below to use defaults)
+c   Pstart--Initial pressure for spline generator [kPa]
+c    Dincr--Density increment [mol/L]
+c   Dlimit--Upper density limit [mol/L]
+c   Plimit--Upper pressure limit [kPa]
+c        z--Composition (array of mole fractions)
+c
+c  Outputs:
+c     ierr--Error flag:  0 - Successful
+c                      355 - Saturation routine failed
+c                      (See subroutine LIMITX for other possible error numbers.)
+c     herr--Error string (character*255)
 c
 c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
 c  09-20-11 EWL, original version
 c  12-01-12 EWL, change to density marching method
-c
-      include 'commons.for'
-      dimension xPnts(1000),yPnts(1000),coefs(1000)
-      dimension x(ncmax),y(ncmax),z(ncmax),slp(20)
-      character herr*255
-      common /GVtemp/itersgv
+c  07-10-13 EWL, make better initial guesses at very low densities
+c  02-10-15 EWL, add additional inputs and rename to SATSPLN2
+c  05-27-15 EWL, add ierr=-101 for a pure fluid
+c  02-17-16 EWL, add one additional check if SATGV fails by calling SATTP with P=P*2 instead of P=P*10
+c  03-09-16 EWL, if Dl and Dv are almost equal, do not set fail flag when at high densities for Type III mixtures
+c  04-19-16 EWL, add code to find the densities at the minimum and maximum values of temperature
+c  05-16-18 EWL, exit if the AGA8 routine is currently in use
 
+      include 'COMMONS.INC'
+      dimension xPnts(1000),yPnts(1000),coefs(1000),cMatrix(10)
+      dimension x(ncmax),y(ncmax),z(ncmax)
+      character herr*255
+
+      if (lAGA8) RETURN !Exit if AGA8 is in use.
+      ierr=iFlg         !Keep the compiler happy since iFlg is not yet used.
+      iex=0
+      itt=0
+      itp=0
       ierr=0
       herr=' '
-c     if (iSpline.ne.0) then
-c       lsame2=.true.
-c       do i=1,nc
-c         if (abs(z(i)-xspln(i)).gt.1.d-6) lsame2=.false.
-c       enddo
-c       if (lsame2) goto 999
-c     end if
-
+      nArr=0
+      iNxt=0
+      MixTyp=0
       iSpline=0
-      slp=0.d0
+      xArr=0d0
+      xPnts=0
+      yPnts=0
+      coefs=0
+      ioff=0
+      T=300
+      D=0d0
+      P=0.0001d0
+      e=1.d-6
+      zSpln=0d0
+      icnt=0
+      Dx=0
+      Dy=0
+      T_est=300d0
+
       call ISPURE (z,icomp)
-      if (icomp.ne.0) goto 999
-      call CRITP (z,tc,pc,rhoc,ierr,herr)
-      call LIMITS ('EOS',z,tmin,tmax,Dmax,pmax)
-      p=0.001d0
-      t=300
-      rho=0.d0
+      if (icomp.ne.0) RETURN
+      iErrNum=iErrNum+1
+      call CRITP (z,Tc,Pc,Dc,ierr,herr)
+      call LIMITS ('EOS',z,Tmin,Tmax,Dmax,Pmax)
+      call RDXHMX (1,1,0,z,tr01,dr01,ierr,herr)            !Call RDXHMX to make sure that analytical derivatives are available for the mixture.
+      if (ierr.gt.0.and.iEOSmx.ne.iEOSPR.and.iEOSmx.ne.iEOSPR3) goto 500
+      if (Pstart.gt.0.) P=Pstart
 
-c  call RDXHMX to make sure that analytical derivatives are available
-c  for the mixture
-      call RDXHMX (1,1,0,Z,tr01,dr01,ierr,herr)
-      if (ierr.gt.0 .and. heos.ne.'PR') goto 999
+      pp=1d0
+      call SATEST (4,T_est,pp,z,x,y,ierr,herr)            !Get an estimated saturated dew point temperature at 1 kPa.
+      ierr=999
+      do while (ierr.ge.100 .and. P.lt.Pmax .and. P.lt.1d6)          !Search for a temperature starting point in the vapor as a function of pressure.
+        P=P*10d0                       !Increment by a factor of 10 up to 10 kPa...
+        if (P.ge.10d0-e) P=P/5d0       !...then increment by a factor of 2.
+        call SATTP (T,P,z,4,0,D,Dx,Dy,x,y,q,ierr,herr)
+        if (Dy.gt.Dx) call SWAPV (Dx,Dy)
+        if (T.lt.Tmin*0.95d0) ierr=999
+        if (Dx.gt.Dc*1.5d0 .and. Dy.gt.Dc*1.5d0) ierr=999
+        if (Dy.gt.Dc .and. P.lt.Pc/5d0) ierr=999
+        if (ierr.gt.100 .and. ixWat.gt.0 .and. P.gt.1d3) then
+          i=ixWat
+          ixWat=0
+          call SATTP (T,P,z,4,0,D,Dx,Dy,x,y,q,ierr,herr)
+          ixWat=i
+          if (Dx.gt.Dc*1.5d0 .and. Dy.gt.Dc*1.5d0) ierr=999
+          if (Dy.gt.Dc .and. P.lt.Pc/5d0) ierr=999
+        endif
+      enddo
 
 
- 5    continue
-      call SATTP (t,p,z,4,0,d,rhox,rhoy,x,y,q,ierr,herr)
-      if (ierr.gt.0 .or. t.lt.tmin*0.95d0) then
-        p=p*10.d0
-        if (p.lt.pmax) goto 5
-        ierr=1
-        herr='[SATSPLN error 1] saturation routine failed in '//
-     &       'calculating initial state'
-        goto 999
-      endif
+      do icnt=0,8                      !Continue the search if the above failed, with dew point temperatures as inputs, and calculating dew point pressures.
+        if (ierr.lt.100) EXIT
+        T=T_est+DBLE(icnt*20)
+        Dx=0.
+        Dy=0.
+        call SATTP(T,pp,z,2,0,D,Dx,Dy,x,y,q,ierr,herr)
+        if (ierr.lt.100) P=pp
+      enddo
 
-      if (tmin.gt.t) tmin=t
+      do icnt=0,8                      !Continue the search if the above failed, looking for bubble point pressures or temperatures to get dew point pressures.
+        if (ierr.lt.100) EXIT
+        T=T_est+DBLE(icnt*20)
+                         call SATTP(T,pp,z,1,0,D,Dy,Dx,y,x,q,ierr,herr)
+        if (ierr.lt.100) P=pp
+        if (ierr.ge.100) call SATTP(T,P,z,3,0,D,Dy,Dx,y,x,q,ierr,herr)
+      enddo
+
+      if (ierr.ge.100) goto 355
+
+      if (Tmin.gt.T) Tmin=T
       iSatFlg2=1
-      vf=1
-      d=rhoy
-      n=0
-      isame=0
-      dinc=0.1d0
-      d0=1.d-12
- 10   continue
-        call THERM (t,rhoy,y,pp,e,h,s,cv,cp,w,hjt)
-        n=n+1
-        do i=1,nc
-          xarr(i,n)=-500.d0
-          if (x(i).gt.0.d0) xarr(i,n)=log(x(i))
-        enddo
-        xarr(   0,n)=log(rhoy)
-        xarr(nc+1,n)=log(t)
-        xarr(nc+2,n)=log(p)
-        xarr(nc+3,n)=log(rhox)
-        xarr(nc+4,n)=h
-        xarr(nc+5,n)=s
-        if (n.le.5) then
-c  add several very low density states to spline arrays to catch low densities
-          d0=d0*100.d0
-          if (rhoy.gt.d0) then
-            xarr(   0,n)=log(d0)
-            xarr(nc+2,n)=log(d0*r*t)
-            goto 10
-          endif
-        endif
-        rhoyo=rhoy
-        rhoxo=rhox
+      vf=1d0
+      Dinc=0.1d0
+      Dmult=10d0
+      if (Dincr.gt.0) Dinc=Dincr
+      D0=1d-12
+      do n=1,20
+        xArr(n,0)=XLOG(D0)   !Add several very low density states to spline arrays and fill in values later.
+        D0=D0*10d0
+        if (D0.gt.D) EXIT
+      enddo
+      n1=n
+      idir=0
+      ijmp=0
+      Pold=P
+
+c  Save solution to data arrays.
+ 10   do
+        if (ijmp.eq.1) goto 20
+        call CHECKSTATE (0,0,T,D,z,Err,ierr,herr)
+        if (ierr.gt.100 .and. idir.eq.1) goto 20
+        if (idir.eq.0) idir=1
+        if (n+1.ge.narm) EXIT
+        call THERM1 (T,D,z,pp,u,h,s,g)
         iex=0
-        slp(2:20)=slp(1:19)
+        n=n+1
+        if (idir.eq.1) nb=n            !The variable nb is the location where data will be loaded into arrays.
+        if (idir.eq.-1) xArr(nb+1:n+1,0:nc+5)=xArr(nb:n,0:nc+5)      !Move all entries above the current density in the spline arrays one slot up.
+        do i=1,nc                      !Add compositions to spline arrays.
+          xArr(nb,i)=XLOG(x(i))
+        enddo
+        xArr(nb,   0)=XLOG(D)          !Add all calculations to spline arrays.
+        xArr(nb,nc+1)=XLOG(T)
+        xArr(nb,nc+2)=XLOG(P)
+        xArr(nb,nc+3)=XLOG(Dx)
+        xArr(nb,nc+4)=h
+        xArr(nb,nc+5)=s
+        iNxt=iNxt+1
+        if (iNxt.gt.3) iNxt=3
 
- 20     continue
-        if (d.lt.dinc/10.d0) then
-          d=d*10.d0
-        else
-          d=d+dinc
-        endif
-        if (d.lt.0.d0) goto 30
+ 20     ijmp=0
+        if ((T.lt.Tmin*0.999d0 .and. D/Dc.gt.0.5d0) .and. idir.eq.1)EXIT
+        if (n+1.ge.narm) EXIT
 
-        rhoy=d
-        if (n.gt.3) then
-            xval=log(d)
-            xPnts(1:3)=xarr(0,n-2-iex:n-iex)
-            yPnts(1:3)=xarr(nc+3,n-2-iex:n-iex)
-            call POLYN (3,xPnts,yPnts,xval,yval,ierr,herr)
-          rhox=exp(yval)
-            yPnts(1:3)=xarr(nc+1,n-2-iex:n-iex)
-            call POLYN (3,xPnts,yPnts,xval,yval,ierr,herr)
-          t=exp(yval)
-            yPnts(1:3)=xarr(nc+2,n-2-iex:n-iex)
-            call POLYN (3,xPnts,yPnts,xval,yval,ierr,herr)
-          p=exp(yval)
-c           yPnts(1:3)=xarr(nc+5,n-2-iex:n-iex)
-c           call POLYN (3,xPnts,yPnts,xval,yval,ierr,herr)
-c         s=yval
-          do i=1,nc
-            yPnts(1:3)=xarr(i,n-2-iex:n-iex)
-            call POLYN (3,xPnts,yPnts,xval,yval,ierr,herr)
-            xi=exp(yval)
-            if (xi.gt.0) x(i)=xi
+c  Search to find any location where the first pass failed to find a saturation state.
+        if (idir.eq.-1 .and. ierr.lt.100) then
+          dlg=XLOG(D)
+          if (dlg.gt.xArr(n,0)+e .and. xArr(n,0).ne.0.) goto 30                !Check if D>Dmax of the array, if so, exit this section and calculate the next point.
+          do i=nb,2,-1
+            if (dlg.gt.xArr(i-1,0)-e .and. dlg.lt.xArr(i,0)+e) EXIT            !Find the location that bounds the density.
           enddo
-          sumx=sum(x(1:nc))
-          if (abs(sumx).gt.1.d-10) then
-            x(1:nc)=x(1:nc)/sumx
+          if (i.le.2) EXIT             !If not bounded, routine is finished.
+          nb=i                         !nb stores the current working location.
+          D0=EXP(xArr(nb,0))
+          Dn=EXP(xArr(nb-1,0))
+          D=D0
+          if (D.lt.Dinc) EXIT          !If density is less than the density increment, routine is finished.
+
+c  Check if two adjacent points differ by more than the density increment.
+          if (D0-Dn.gt.Dinc+e) then
+            D=DBLE(INT(D0*10d0+0.002d0))/10d0
+            if (D0-D.lt.0.02d0) D=D-Dinc
+            goto 30
           else
-            x(1:nc)=y(1:nc)
+            nb=nb-1
+            D=Dn
+            dif1=ABS(xArr(nb+1,nc+1)-xArr(nb,nc+1))        !Differences between the current point and the one below it.
+            dif0=SUM(ABS(xArr(-3+nb:-1+nb,nc+1)-xArr(-4+nb:-2+nb,nc+1)))       !Get average of the deviations between 3 adjacent points.
+            if (dif1.gt.dif0*2d0 .and. dif0.ne.0d0) then   !Determine if the point at nb has a bigger difference than the ones around it.
+              call NEXTPNT (nb,-2,iNxt,0,D,T,P,Dx,x)
+              goto 30
+            endif
+            goto 20
           endif
         endif
 
-c  density marching algorithm
-        call SATGV (t,p,z,vf,d,1,6,0,rhox,rhoy,x,y,ierr,herr)
-        if (ierr.ne.0) then
-          call SATGV (t,p,z,vf,d,2,6,0,rhox,rhoy,x,y,ierr,herr)
-          if (ierr.ne.0 .and. d.lt.1) then
-            p=p*10.d0
-            call SATTP (t,p,z,4,0,dd,rhox,rhoy,x,y,q,ierr,herr)
-            if (ierr.eq.0) d=dd
-          endif
+ 25     if (D.lt.Dinc/10d0 .and. idir.eq.1) then
+          D=D*Dmult          !Increase very low densities by a factor of 10 until it reaches the value of Dinc.
+        else
+          D=D+DBLE(idir)*Dinc
+          D=DBLE(INT(D*10d0+0.49d0))/10d0        !Make nice even increments of 0.1.
         endif
+        ijmp=1
+        if (ABS(XLOG(D)-xArr(nb,0)).lt.1.d-8) goto 10
+ 30     if (idir.eq.-1) ioff=-2
+        call NEXTPNT (nb,ioff,iNxt,0,D,T,P,Dx,x)
+        if (lEQ0(T)) goto 40
+        if (D.lt.Dc/2d0 .and. P.gt.Pc*5) P=Pc/2d0
+        Tnext=T
+        Dy=D
 
-        if (ierr.le.0) then
-          if (rhoyo.ne.rhoy) s1=(rhoxo-rhox)/(rhoyo-rhoy)
-          slp(1)=s1
-          if (n.gt.10 .and. abs(s1).gt.0.1d0) then
-            if (rhoy.lt.rhoc*1.3d0 .and. rhoy.gt.rhoc*0.7d0) then
-              sa=SUM(slp(2:10))/9.d0  !Average of last several points
-              if (s1*sa.gt.0 .and. abs(s1).lt.abs(sa)) then
-                !Both points same sign, and new slope less than average
-              elseif (abs(slp(2)).le.0.1d0) then
-              elseif (abs((s1-slp(2))/slp(2)).gt.5d0) then
-                ierr=1
-              endif
+
+
+
+
+
+c  Density marching algorithm of G. Venkatarathnam, Ind. Eng. Chem. Res., 53:3723-3730, 2014.
+c  Call with inputs of density with the pressure based algorithm.
+        itt=itt+1
+        call SATGV (T,P,z,vf,D,1,6,0,Dx,Dy,x,y,ierr,herr)
+        if (ierr.eq.805) goto 500 !sum(z)<>1
+        if (ierr.eq.151 .and. D.lt.Dc/10d0 .and. itp.lt.15) then     !If failure happens at the very beginning, go back to SATTP to get a few more points in order for NEXTPNT to work.
+          itp=itp+1
+          P=Pold*1.1
+          call SATTP (T,P,z,4,0,Dd,Dx,Dy,x,y,q,ierr,herr)
+          if (Dd.gt.Dx) ierr=999
+          if (ierr.gt.0 .and. P.lt.1.) then
+            P=Pold*10d0
+            call SATTP (T,P,z,4,0,Dd,Dx,Dy,x,y,q,ierr,herr)
+            if (ierr.gt.0 .and. P.lt.1.) then
+              P=Pold*100d0
+              call SATTP (T,P,z,4,0,Dd,Dx,Dy,x,y,q,ierr,herr)
             endif
           endif
+          if (ierr.lt.100) D=Dd
         endif
 
-c       if (ierr.eq.0) then
-c         if (abs(rhox-rhoxo)/rhox.gt.0.2d0) then
-c           if (rhox.lt.rhoc*2.d0 .and. rhox.gt.rhoc/2.d0) ierr=1
-c         endif
-c       endif
-
-        if (abs(rhox-rhoy)/rhox.lt.0.01d0) then
-          isame=isame+1
-          if (isame.gt.3 .and. ierr.eq.0) ierr=1
-        else
-          isame=0
-        endif
-
-        if (ierr.gt.0) then
-          if (iex.lt.15 .and. n.gt.20) then
-            iex=iex+1
-          else
-            iex=0
+        if (ierr.lt.100) then
+          if (P.gt.Pold) Pold=P
+c  Check for a possible bad point.
+          if (ABS(T-Tnext)/Tnext.gt.0.2d0 .and. D.gt.Dc*1.2d0) then
+            k=1
+            dlg=XLOG(D)
+            do i=1,7
+              j=n-i-5+1
+              if (j.gt.0) then
+                xPnts(1:6)=xArr(j:6,0)
+                yPnts(1:6)=xArr(j:6,nc+1)
+                call FITL(6,3,10,xPnts,yPnts,dlg,yval,cmatrix,ierr,herr)       !Fit a polynomial to 6 data points.
+                Tn=EXP(yval)
+                if (ABS(T-Tn)/Tn.gt.0.2d0) k=k+1
+              endif
+            enddo
+            if (k.gt.5) ierr=999       !If more than 5 bad hits out of 7, then the point is probably bad.
           endif
-          if (d.gt.rhoc*4.d0) goto 30
-          if (t.gt.tmin*0.999d0 .and. n.lt.narm) goto 20
+
+c  Solution failed, look for other ways to get next root.
+        else
+          if (itt.eq.2) then
+            D=0.11d0
+            goto 30
+          elseif (itt.eq.3) then
+            D=0.13d0
+            goto 30
+          endif
+          if (iex.gt.3 .and. P.gt.500000d0) EXIT           !Once it starts failing for Type III mixtures at high pressures, just exit.
+          if (iex.gt.30) EXIT
+          iex=iex+1                                        !Increment the error counter
+          if (iex.gt.4 .and. idir.eq.1) then
+            T=EXP(xArr(nb,nc+1))
+            ifl=2
+            iNxt=1
+            do j=1,10
+              if (D.gt.Dc) ifl=1
+              if (ifl.eq.2) T=T+DBLE(idir)*30d0
+              if (ifl.eq.1) T=T-DBLE(idir)*30d0
+              if (ifl.eq.2) then
+                call SATTP (T,P,z,ifl,0,Ds,Dx,Dy,x,y,q,ierr,herr)
+              else
+                call SATTP (T,P,z,ifl,0,Ds,Dy,Dx,y,x,q,ierr,herr)
+              endif
+              if (ierr.lt.100 .and. Ds.le.D) ierr=999
+              if (ierr.ge.100 .and. ifl.eq.2) T=T+20d0
+              if (ierr.ge.100 .and. j.eq.3) ifl=1
+              if (ierr.lt.100) D=Ds
+              ijmp=0
+              if (ierr.lt.100 .and. XLOG(D).gt.xArr(n,0)) goto 10
+            enddo
+            if (ierr.ge.100 .and. D.gt.Dc*2.5d0) EXIT
+          endif
+          if (D.le.Dinc*2d0+0.000001d0 .and. idir.eq.-1) EXIT
+          ijmp=1
+          if (D.lt.Dc*4d0 .and. T.gt.Tmin*0.999d0) goto 10
+          if (D/Dc.lt.0.3d0) goto 10
+          EXIT
         endif
-      if (t.gt.tmin*0.999d0 .and. n.lt.narm) goto 10
-
-
-
- 30   continue
-      narr=n
-      if (narr.lt.20) then
-        ierr=2
-        herr='[SATSPLN error 2] saturation routine failed'
-        narr=0
-        goto 999
+        if (D.le.Dinc-0.000001d0 .and. idir.eq.-1) EXIT
+        if (P.gt.1d7) EXIT   !For Type III mixtures, quit at 10 GPa.
+        if (D.gt.Dlimit .and. Dlimit.gt.0.) EXIT
+        if (P.gt.Plimit .and. Plimit.gt.0.) EXIT
+        ijmp=0
+      enddo
+ 40   if (idir.eq.1 .and. n.gt.10) then
+        idir=-1
+        nb=n-1
+        D=EXP(xArr(nb,0))
+        ijmp=1
+        goto 10
       endif
 
 
-c  Create splines
-      xPnts(1:narr)=xarr(0,1:narr)
+
+
+
+
+c  Routine is finished, finalize splines and calculate fixed points.
+      nArr=n
+      if (nArr.lt.20) goto 355
+
+c  Update first few points created for low densities.
+      if (n1.gt.0) then
+        if (xArr(n1,nc+1).eq.0) n1=n1+1
+        dvs=xArr(n1+1,0)-xArr(n1+2,0)
+        dvs=xEq0(dvs)
+        dldv2=(xArr(n1+1,nc+3)-xArr(n1+2,nc+3))/dvs
+        tdv =(xArr(n1+1,nc+1)-xArr(n1+2,nc+1))/dvs
+        do j=n1,1,-1
+          dvs0=xArr(j,0)-xArr(j+1,0)
+          xArr(j,nc+1)=xArr(j+1,nc+1)+tdv*dvs0
+          xArr(j,nc+3)=xArr(j+1,nc+3)+dldv2*dvs0
+          D0=EXP1(xArr(j,0))
+          T0=EXP3(xArr(j,nc+1))
+          call THERM1 (T0,D0,z,pp,e,h,s,g)
+          xArr(j,nc+2)=XLOG(pp)
+          xArr(j,nc+4)=h
+          xArr(j,nc+5)=s
+          do i=1,nc
+            xdv=(xArr(n1+1,i)-xArr(n1+2,i))/dvs
+            xnew=xArr(j+1,i)+xdv*dvs0
+            xArr(j,i)=xnew
+            if (xnew.ge.0.) xArr(j,i)=xArr(j+1,i)*0.3d0
+          enddo
+        enddo
+      endif
+
+c  Go backwards through the points to search for ones that appear to be
+c    wrong and delete them.
+      do j=nArr-5,12,-1
+        dif1=ABS(xArr(j+1,nc+2)-xArr(j,nc+2))    !Differences between the middle point and
+        dif2=ABS(xArr(j-1,nc+2)-xArr(j,nc+2))    ! the ones right next to it.
+        dif0=0
+        do i=-5,4
+          if (i.ne.0 .and. i.ne.-1)
+     &        dif0=dif0+ABS(xArr(j+i,nc+2)-xArr(j+i+1,nc+2))         !Get average of the deviations between adjacent points of the 5 points to the left and the 5 to the right.
+        enddo
+        if (dif1.gt.dif0 .or. dif2.gt.dif0) then           !Determine if the middle point has a difference 8 times larger than the ones around it.
+          D=EXP(xArr(j,0))
+c         call NEXTPNT (j+3,0,3,0,D,T,P,Dx,x)    !Use points at higher densities to estimate the bad middle point.
+c         call SATGV (T,P,z,vf,D,1,6,0,Dx,Dy,x,y,ierr,herr)          !Try to replace that point with a good one by calling SATGV again.
+c         if (ierr.gt.0) then
+            xArr(j:nArr-1,0:nc+4)=xArr(j+1:nArr,0:nc+4)    !Delete the bad point.
+            nArr=nArr-1
+c         endif
+        endif
+      enddo
+
+c  Create splines.
+      xPnts(1:nArr)=xArr(1:nArr,0)
       do k=1,nc+5
-        yPnts(1:narr)=xarr(k,1:narr)
-        call CSPLINE (narr-1,xPnts,yPnts,coefs)
-        carr(k,1:narr)=coefs(1:narr)
+        yPnts(1:nArr)=xArr(1:nArr,k)
+        call CSPLINE (nArr,xPnts,yPnts,coefs)
+        cArr(1:nArr,k)=coefs(1:nArr)
       enddo
       iSpline=1
-      xspln(1:nc)=z(1:nc)
+      zSpln(1:nc)=z(1:nc)
 
-c  cricondentherm (search for dtdx=0)
-      dtdx=0.d0
-      d=rhoc/4.d0
-      call SPLNROOT (nc+1,1,dtdx,d,ierr,herr)
-      call SPLNVAL  (nc+1,0,d,tmxt,ierr1,herr)
-      call SPLNVAL  (nc+2,0,d,tmxp,ierr1,herr)
-      tmxd=d
-      ierrtmx=0
-      if (ierr.gt.0) then
-        ierrtmx=1
-        tmxt=300
-        tmxp=0
-        tmxd=0
+c  Find maximum and minimum of T vs. D.
+      T1=0d0
+      T2=0d0
+      DatTmaxSpln=0d0
+      DatTminSpln=0d0
+      call SPLNVAL (nc+1,-2,z,0d0,Dmax,ierr,herr)          !Density upper limit of the spline curves.
+      do id=0,INT(Dmax*10),1
+        D=DBLE(id)/10d0
+        call SPLNVAL (nc+1,0,z,D,T,ierr,herr)
+        if (T.lt.T1 .and. T1.lt.T2 .and. DatTmaxSpln.le.0.) then
+          DatTmaxSpln=D
+          call SPLNROOT (nc+1,1,z,0d0,DatTmaxSpln,ierr,herr)         !Density at the maximum value of the temperature.
+        elseif (T.gt.T1 .and. T1.gt.T2 .and. DatTmaxSpln.gt.0.) then
+          DatTminSpln=D
+          call SPLNROOT (nc+1,1,z,0d0,DatTminSpln,ierr,herr)         !Density at minimum value of the temperature.
+          EXIT                                                       !dtmax is often less than dtmin, so don't get confused!
+        endif
+        T2=T1
+        T1=T
+      enddo
+
+c  Determine the type of phase envelope.
+      if (nArr.gt.30) then
+        ip1=0
+        ip2=0
+        itt=0
+        i100=0
+        p1=-1d20
+        p2=-1d20
+        t1=-1d20
+        t2=-1d20
+        do i=1,nArr
+          t=EXP(xArr(i,nc+1))
+          p=EXP(xArr(i,nc+2))
+          if (p.gt.1d5) i100=1
+          if (p.lt.1d6) then
+            if (t.lt.t1 .and. t1.lt.t2) itt=itt+1                    !Count the number of times that the temperature goes down.
+            if (p.lt.p1 .and. p1.lt.p2 .and. p.lt.1d6) ip1=ip1+1     !Count the number of times that the pressure goes down.
+            if (p.gt.p1 .and. p1.gt.p2 .and. ip1.gt.3) ip2=ip2+1     !Count the number of times that the pressure goes up after it has started going down.
+          endif
+          p2=p1
+          p1=p
+          t2=t1
+          t1=t
+        enddo
+
+        iTflg=1
+        iPflg=1
+        n2=5
+        if (p.gt.1d5) n2=25
+        do i=nArr,nArr-n2,-1
+          if (xArr(i,nc+1).gt.xArr(i-1,nc+1)) iTflg=0
+          if (xArr(i,nc+2).gt.xArr(i-1,nc+2)) iPflg=0
+        enddo
+        if (iTflg.eq.1 .and. iPflg.eq.1) then
+          if (itt.ge.1 .and. ip1.ge.1 .and. ip2.eq.0) MixTyp=1       !Regular, boring mixture.
+        endif
+        if (iTflg.eq.0 .and. iPflg.eq.0) then
+          if (itt.ge.1 .and. ip1.ge.1 .and. ip2.ge.1) MixTyp=2       !Starts off like a regular mixture in the vapor, crossing through a critical point, and dipping down in the liquid as normal, but then turns and goes to high pressures at low liquid temperatures.
+        endif
+        if (iTflg.eq.0 .and. iPflg.eq.0) then
+          if (itt.ge.1 .and. ip1.le.3 .and. ip2.eq.0) MixTyp=3       !Similar to a 2, but does not have a minimum in the liquid after it crosses the critical point.  Looks like an S curve.
+        endif
+        if (iTflg.eq.0 .and. iPflg.eq.0) then
+          if (itt.eq.0 .and. ip1.eq.0 .and. ip2.eq.0) MixTyp=4       !Regular type III mixture with no negative slope anywhere on a P-T diagram.
+        endif
+        if (iTflg.eq.1 .and. iPflg.eq.0 .and. i100.eq.0) then
+          if (itt.ge.1 .and. ip1.ge.1 .and. ip2.ge.1) MixTyp=5       !Somewhere between a MixTyp=1 and =2 mixture, but where it goes to much lower pressures than a 2 before starting to curve up very deep in the liquid phase.
+        endif
+        if (iTflg.eq.1 .and. iPflg.eq.0) then
+          if (itt.ge.1 .and. ip1.eq.0 .and. ip2.eq.0) MixTyp=6       !Like a MixTyp=3 mixture, but does not complete the upper end of the S at high pressures.
+        endif
+        if (iTflg.eq.1 .and. iPflg.eq.0 .and. i100.eq.1) then
+          if (itt.ge.1 .and. ip1.ge.1 .and. ip2.ge.1) MixTyp=2       !Similar to a 2, except that the temperature keeps dropping as the pressures rises.  Only happens with a few, see methane/octane.
+        endif
+        if (iTflg.eq.0 .and. iPflg.eq.1 .and. i100.eq.1) then
+          if (itt.ge.1 .and. ip1.ge.1 .and. ip2.eq.0) MixTyp=3       !Similar to a 3, but the end wraps back on itself with the pressure decreasing.  Only happens with R152a/nitrogen and R22/oxygen.
+        endif
+        if (iTflg.eq.1 .and. iPflg.eq.1 .and. i100.eq.0) then
+          if (itt.ge.1 .and. ip1.ge.1 .and. ip2.ge.1) MixTyp=1       !Similar to a 1, but with a funny bump in the critical region.  Only happens with a few, see toluene/cyclohexane.
+        endif
+        if (iTflg.eq.1 .and. iPflg.eq.0 .and. i100.eq.0) then
+          if (itt.ge.1 .and. ip1.ge.1 .and. ip2.eq.0) MixTyp=5       !The pressure just barely starts to increase at low T, only happens with about 10 binaries.
+        endif
+        if (iTflg.eq.0 .and. iPflg.eq.0 .and. i100.eq.1) then
+          if (itt.ge.1 .and. ip1.ge.1 .and. ip2.eq.0) MixTyp=2       !An oddball, but similar to a 2.   (R22/CO, R13/mlinolea)
+        endif
+        if (iTflg.eq.0 .and. iPflg.eq.0 .and. i100.eq.1) then
+          if (itt.eq.0 .and. ip1.ge.1 .and. ip2.eq.0) MixTyp=4       !Similar to a 4, but eventually the pressure starts to drop.  See nitrogen and Gao's new ammonia equation.
+        endif
+      else
+        MixTyp=-1
+      endif
+      if (MixTyp.eq.0) MixTyp=111
+
+c  Calculate cricondentherm (maximum temperature) (search for dtdx=0).
+      dtdx=0d0
+      D=Dc/4d0
+      call SPLNROOT (nc+1,1,z,dtdx,D,ierr,herr)
+      call SPLNVAL  (nc+1,0,z,D,TmxT,ierr1,herr)
+      call SPLNVAL  (nc+2,0,z,D,TmxP,ierr1,herr)
+      Tmxd=D
+      ierrTmx=0
+      if (ierr.gt.0 .or. TmxT.lt.1. .or. TmxT.gt.5000.) then
+        ierrTmx=992
+        call REDLINEAR (1,z,TmxT,TmxP,Tmxd,ierr1,herr)
       endif
 
-c  cricondenbar (search for dpdx=0)
-      dpdx=0.d0
-      d=rhoc
-      call SPLNROOT (nc+2,1,dpdx,d,ierr,herr)
+c  Calculate cricondenbar (maximum pressure) (search for dpdx=0).
+      dpdx=0d0
+      D=Dc
+      call SPLNROOT (nc+2,1,z,dpdx,D,ierr,herr)
       if (ierr.gt.0) then
-        d=rhoc/2.d0
-        call SPLNROOT (nc+2,1,dpdx,d,ierr,herr)
+        D=Dc/2d0
+        call SPLNROOT (nc+2,1,z,dpdx,D,ierr,herr)
       endif
-      call SPLNVAL  (nc+1,0,d,pmxt,ierr1,herr)
-      call SPLNVAL  (nc+2,0,d,pmxp,ierr1,herr)
-      pmxd=d
-      ierrpmx=0
-      if (ierr.gt.0) then
-        ierrpmx=1
-        pmxt=300
-        pmxp=0
-        pmxd=0
+      call SPLNVAL (nc+1,0,z,D,PmxT,ierr1,herr)
+      call SPLNVAL (nc+2,0,z,D,PmxP,ierr1,herr)
+      Pmxd=D
+      ierrPmx=0
+      if (ierr.gt.0 .or. PmxT.lt.1. .or. PmxT.gt.5000.) then
+        ierrPmx=993
+        call REDLINEAR (1,z,PmxT,PmxP,Pmxd,ierr1,herr)
       endif
 
-c  critical point [the point at which x(i)=y(i) where i is the fluid with max x]
+c  Calculate the true critical point [the point at which x(i)=y(i) where i is the fluid with max x].
       i=1
       do j=1,nc
         if (z(j).gt.z(i)) i=j
       enddo
       y1=z(i)
-      d=rhoc
-      call SPLNROOT (   i,0,y1,d,ierr,herr)
+      D=Dc
+      call SPLNROOT (i,0,z,y1,D,ierr,herr)
       if (ierr.gt.0) then
-        d=rhoc/2.d0
-        call SPLNROOT (   i,0,y1,d,ierr,herr)
+        D=Dc/2d0
+        call SPLNROOT (i,0,z,y1,D,ierr,herr)
       endif
-      call SPLNVAL  (nc+1,0,d,crtt,ierr1,herr)
-      call SPLNVAL  (nc+2,0,d,crtp,ierr1,herr)
-      crtd=d
-      ierrcrt=0
-      if (ierr.gt.0 .or. crtp.gt.50000) then
-        ierrcrt=1
-        crtt=tc
-        crtp=pc
-        crtd=rhoc
+      call SPLNVAL (nc+1,0,z,D,crtT,ierr1,herr)
+      call SPLNVAL (nc+2,0,z,D,crtP,ierr1,herr)
+      crtD=D
+      if (crtP.lt.1.d-10) crtP=1000d0
+      ierrCrt=0
+      if (ierr.gt.0.or.crtP.gt.50000.or.crtT.lt.1..or.crtT.gt.5000.)then
+        ierrCrt=999
+        call REDLINEAR (1,z,crtT,crtP,crtD,ierr1,herr)
       endif
 
       ierr=0
       herr=' '
- 999  continue
+      goto 500
+
+ 355  call ERRNUM (355,0,' ',' ',0d0,0d0,0d0,ierr,herr)
+      nArr=0
+
+c  Finish and exit routine.
+ 500  iSatFlg=0
       iSatFlg2=0
+      iErrNum=iErrNum-1
+      call ERRMSG (ierr,herr)
       RETURN
-      end                                            !subroutine SATSPLN
+
+      end                                            subroutine SATSPLN2
 c
 c ======================================================================
 c
-      subroutine GETXY (z,vf,philn,phi,x,y)
+      subroutine SATGV (T,P,z,vf,b,ipv,ityp,isp,Dx,Dy,x,y,ierr,herr)
 c
-c  calculate the liquid and vapor compositions with the known values
-c  of the overall composition, the vapor fraction, and the log of the
-c  fugacity coefficients.
+c  Calculates the bubble or dew point state with the entropy or density method
+c  of GV.  The calculation method is similar to the volume based algorithm of GERG.
+c  The cricondenbar and cricondentherm are estimated with the method in
+c  Michelsen, Saturation Point Calculations, Fluid Phase Equilibria, 23:181, 1985.
 c
-c  inputs:
-c         z--overall composition [array of mol frac]
-c        vf--vapor fraction (0>=vf>=1)
-c            set vf=0 for liquid and vf=1 for vapor
-c     philn--natural log of the fugacity coefficients [-]
+c  Equations to be solved simultaneously are
 c
-c  outputs:
-c       phi--fugacity coefficients [-]
-c         x--liquid composition [array of mol frac]
-c         y--vapor composition [array of mol frac]
+c  Pressure based:
+c
+c  * f(1:n) - LOG(y/x)-LOG((fxi/nxi)/(fyi/nyi))=0
+c  * f(n+1) - SUM(y(i)-x(i))=0
+c  * f(n+2) - b/binput-1=0, where b = P, T, D, or s
+c
+c  Volume based:
+c
+c  * f(1:n) - LOG(y/x)-LOG((fxi/nxi)/(fyi/nyi))=0
+c  * f(n+1) - SUM(y(i)-x(i))=0
+c  * f(n+2) - py=px
+c  * f(n+3) - b/binput-1=0, where b = P, T, D, or s
+c
+c  Variables:
+c
+c  * 1 to nc - LOG(k(i))
+c  * nc+1    - LOG(T)
+c  * nc+2    - LOG(P) or LOG(Dx)
+c  * nc+3    -           LOG(Dy)
+c
+c  Inputs:
+c        T--Temperature [K]
+c        P--Pressure [kPa]
+c        z--Overall composition (array of mole fractions)
+c       vf--Vapor fraction (0>=vf>=1; the input value of density can be in either state and does not affect the outputs in Dx, Dy, x, and y):
+c              vf=0,ityp=0,1 - Dew phase inputs, state in equilibrium returned in Dy and y
+c              vf=1,ityp=0,1 - Liquid phase inputs, state in equilibrium returned in Dx and x
+c              vf=0,ityp=6 - Inputs are returned in Dx and the x array
+c                            Outputs are returned in Dy and the y array
+c              vf=1,ityp=6 - Inputs are returned in Dy and the y array
+c                            Outputs are returned in Dx and the x array
+c        b--Input value, either entropy [J/mol-K] or density [mol/L]
+c      ipv--Pressure or volume based algorithm:
+c            1 - Pressure based
+c            2 - Volume based
+c     ityp--Input values:
+c            0 - Given P, calculate T
+c            1 - Given T, calculate P
+c            2 - Cricondentherm condition, calculate T,P (ipv=1 only)
+c            3 - Cricondenbar condition, calculate T,P (ipv=1 only)
+c            5 - Given entropy, calculate T,P
+c            6 - Given density, calculate T,P
+c      isp--Use values from Splines as initial guesses if set to 1
+c
+c  Outputs:
+c        (initial guesses must be sent in all variables (unless isp=1))
+c        T--Temperature [K]
+c        P--Pressure [kPa]
+c       Dx--Density of x phase [mol/L]
+c       Dy--Density of y phase [mol/L]
+c        x--Composition of the x array (array of mole fractions)
+c        y--Composition of the y array (array of mole fractions)
+c     ierr--Error flag:  0 - Successful
+c                        2 - Input D<=0
+c                      151 - No convergence
+c                      172 - vf<0 or vf>1
+c                      191 - Derivatives are not available in PR or RDXHMX
+c                      321 - Trivial solution
+c                      200 - Density out of range
+c                      (See subroutine LIMITX for other possible error numbers.)
+c     herr--Error string (character*255)
+c
+c
 c
 c  written by G. Venkatarathnam, Indian Institute of Technology Madras
 c  00-00-12  GV, original version
-c  10-29-12 EWL, adapt code for use in REFPROP
-c
-      include 'commons.for'
-      dimension z(ncmax),x(ncmax),y(ncmax),philn(ncmax+3),phi(ncmax)
-      do i=1,nc
-        phi(i)=EXP(philn(i))
-        x(i)=z(i)
-        xdiv=1.d0-vf+vf*phi(i)
-        if (ABS(xdiv).gt.1.d-10 .and. xdiv.lt.1.d+10) x(i)=z(i)/xdiv
-        y(i)=x(i)*phi(i)
-      enddo
-      sumx=SUM(x(1:nc))
-      sumy=SUM(y(1:nc))
-      if (ABS(sumx).gt.1.d-10) x(1:nc)=x(1:nc)/sumx
-      if (ABS(sumy).gt.1.d-10) y(1:nc)=y(1:nc)/sumy
-      RETURN
-      end                                              !subroutine GETXY
-c
-c ======================================================================
-c
-      subroutine LGPHI (iderv,iphase,t,rho,p,x,philn,dpt,dpdrho,ddt,cp,
-     &                  ierr,herr)
-c
-c  inputs:
-c     iderv--set to 1 for calculation of fugacity coefficient (philn) only
-c            set to 2 for full calculations (when calling PHIDERV) for use in other places
-c            set to 3 to calculate p as function of t and rho,
-c                     and for full calculations of everything else
-c         t--temperature [K]
-c       rho--density [mol/l] (if iderv=3)
-c         p--pressure [kPa] (if iderv<>3)
-c         x--composition [array of mol frac]
-c    iphase--input phase, 1: liquid, 2: vapor,
-c                         0: phase with minimum gibbs energy
-c
-c  outputs:
-c    iphase--correct phase, computed using GV's pi criteria [2:vap,1:liq]
-c       rho--density [mol/l] (input value should be an initial guess)
-c         p--pressure [kPa] (if iderv=3)
-c     philn--ln of fugacity coefficient [-]
-c      ierr--error flag
-c      herr--error string (character*255 variable if ierr<>0)
-c
-c  written by G. Venkatarathnam, Indian Institute of Technology Madras
-c  00-00-12  GV, original version
-c  10-29-12 EWL, adapt code for use in REFPROP
-c
-      include 'commons.for'
-      dimension x(ncmax),philn(ncmax),phi(ncmax)
-      dimension dadn(ncmax),dnadn(ncmax)
-      character herr*255
+c  10-29-12 EWL, adapt code for use in Refprop
+c  03-12-15 EWL, change calculation of f(nvars) for ityp=6
 
-      call CRITP (x,tc,pc,rhoc,ierr,herr)
-      if (iderv.eq.3) then
-        call PRESS (t,rho,x,p)
-      else
-        if (iphase.ne.0) then
-          call TPRHO (t,p,x,iphase,1,rho,ierr,herr)
-          if (ierr.ne.0) call TPRHO (t,p,x,3-iphase,0,rho,ierr,herr)
-          if (rho.eq.0.d0) rho=1.d-20
-        else  ! phase with minimum gibbs energy
-          grv=1.d36  !no convergence
-          grl=1.d36
-          call TPRHO (t,p,x,1,0,rhol,ierr,herr)
-          if (ierr.le.0) call GIBBS (t,rhol,x,arl,grl)
-          call TPRHO (t,p,x,2,0,rhov,ierr,herr)
-          if (ierr.le.0) call GIBBS (t,rhov,x,arv,grv)
-          rho=rhol
-          if (grv.le.grl) rho=rhov
-          if (rho.eq.0.d0) rho=1.d-20
-        endif
-      endif
-      if (rho.lt.0.d0) rho=rhoc+1.d-20
-
-      call THERM2 (t,rho,x,pp,e,h,s,cv,cp,w,z,hjt,a,g,
-     &                   xkappa,beta,dpdrho,d2pdd2,dpt,ddt,drhodp,
-     &                   d2pt2,d2pdtd,spare3,spare4)
-      if (iderv.eq.1) then
-        call FUGCOF (t,rho,x,phi,ierr,herr)
-        philn(1:nc)=log(phi(1:nc))
-      else
-        call PHIDERV (iderv,t,rho,x,dadn,dnadn,ierr,herr)
-        if (ierr.gt.0) RETURN
-        RTrho=R*t*rho
-        do i=1,nc
-          phi(i)=1.d0
-          if (ABS(dnadn(i)).lt.100.0d0) then
-c  Correct calculation of log(phi) is:
-c           if (p.gt.0) philn(i)=DLOG(RTrho/p)+dnadn(i)
-c  but use this instead since p can be negative, and in the solution
-c  of VLE the p's must be equal, so they cancel out.  The 1.d3 keeps the
-c  value of RTrho on the same scale as dnadn (and also cancels out),
-            philn(i)=DLOG(RTrho/1.d3)+dnadn(i)
-          endif
-        enddo
-      endif
-      if (dpt.ne.0.d0 .and. dpdrho.ne.0.d0)
-     &    pifactor=2.d0-rho*(d2pdtd/dpt-d2pdd2/dpdrho)
-      iphase=2
-      if (pifactor.gt.1.d0) iphase=1
-      if (rho.gt.rhoc*2.d0) iphase=1  !Special case for mixtures with water where pifactor<0 in the liquid
-      RETURN
-      end                                              !subroutine LGPHI
-c
-c ======================================================================
-c
-      subroutine CRTPNT (z,tc,pc,rhoc,ierr,herr)
-c
-c     Subroutine for the determination of true critical point of a
-c     mixture using the Method of Michelsen (1984)
-c
-c     The routine requires good initial guess values of pc and tc.
-c     On convergence, the values of bb and cc should be close to zero
-c     and dd > 0 for a two-phase critical point.
-c     bb=0, cc=0 and dd <= 0 for an unstable critical point.
-c
-c  inputs:
-c         z--composition [array of mol frac]
-c
-c  outputs:
-c        tc--critical temperature [K]
-c        pc--critical pressure [kPa]
-c      rhoc--critical density [mol/l]
-c      ierr--error flag
-c      herr--error string (character*255 variable if ierr<>0)
-c
-c  written by G. Venkatarathnam, Indian Institute of Technology Madras
-c  10-15-11  GV, original version
-c  01-07-13 EWL, adapt code for use in REFPROP
-c
-      include 'commons.for'
-      dimension z(ncmax),y(ncmax),yn(ncmax),v(ncmax),g(ncmax),u(ncmax)
-      dimension a(ncmax,ncmax),dfds(2),dpht(ncmax),dphp(ncmax)
-      dimension phy(ncmax),phz(ncmax),dft2(2),dfp2(2)
+      include 'COMMONS.INC'
+      include 'COMFEQ.INC'
       character*255 herr
-
-      ierr=0
-      herr=' '
-      eps=1.d-4        ! Numerical perturbation of z
-      call ISPURE (z,icomp)
-      if (icomp.ne.0) then
-        call CRITP (z,tc,pc,rhoc,ierr,herr)
-        RETURN
-      endif
-
- 10   continue
-      v(1:nc)=DSQRT(z(1:nc))
-      pc=abs(pc)
-      tol=1.d-8
-      iz=1
-      do k=1,20
-        call LGPHI (2,iz,tc,rhoc,pc,z,phz,a1,a2,a3,a4,ierr,herr)
-        if (ierr.gt.0) RETURN
-        if (k.gt.1 .and. ABS(bb)+abs(cc).lt.tol) then
-c  convergence obtained, return
-c           write (*,*) k
-          RETURN
-        endif
-
-        do i=1,nc
-          do j=i,nc
-            a(i,j)=v(i)*v(j)*dphidnj(i,j)
-            a(j,i)=a(i,j)
-          enddo
-          a(i,i)=a(i,i)+1.d0
-        enddo
-        xlamda=0.d0
-        call MINEIGEN (nc,a,u,xlamda,ierr,herr)
-
-        if (k.eq.10) tol=tol*100
-        dpht(1:nc)=dphidt(1:nc)
-        dphp(1:nc)=dphidp(1:nc)
-        do j=1,2
-          rhoy=rhoc
-          s=eps
-          if (j.eq.1) s=-s
-          y(1:nc)=ABS(s*u(1:nc)*v(1:nc)+z(1:nc))
-          sumy=SUM(y(1:nc))
-          if (ABS(sumy).gt.1.d-10) yn(1:nc)=y(1:nc)/sumy
-          call LGPHI (2,iz,tc,rhoy,pc,yn,phy,a1,a2,a3,a4,ierr,herr)
-          g(1:nc)=DLOG(y(1:nc)/z(1:nc))+phy(1:nc)-phz(1:nc)
-          dfds(j)=SUM(v(1:nc)*u(1:nc)*g(1:nc))
-          dft2(j)=SUM(v(1:nc)*u(1:nc)*(dpht(1:nc)-dphidt(1:nc)))
-          dfp2(j)=SUM(v(1:nc)*u(1:nc)*(dphp(1:nc)-dphidp(1:nc)))
-        enddo
-
-        bb=xlamda/2.d0
-        bp=(dfp2(2)-dfp2(1))/eps/4.d0
-        bt=(dft2(2)-dft2(1))/eps/4.d0
-        cc=(dfds(2)+dfds(1))/eps**2/6.d0
-        cp=(dfp2(2)+dfp2(1))/eps**2/6.d0
-        ct=(dft2(2)+dft2(1))/eps**2/6.d0
-
-        denom=(bp*ct-bt*cp)
-        if (abs(denom).lt.1.d-20) then
-          ierr=1
-          herr='dp, dt -> infinity. Provide better p, t guess values'
-          RETURN
-        endif
-        dp=(cc*bt-bb*ct)/denom
-        dt=(cp*bb-cc*bp)/denom
-c       write (*,*) dt,dp
-c       write (*,*) bb,cc
-        do i=1,25
-          if (ABS(dt).gt.2 .or. ABS(dp).gt.1000) then
-            dt=dt/10.d0
-            dp=dp/2.d0
-          else
-            EXIT
-          endif
-        enddo
-        tc=tc-dt
-        pc=pc-dp
-        if (k.ge.20 .or. pc.lt.0.d0 .or. tc.lt.0.d0 .or.
-     &      pc.gt.100.d3 .or. tc.gt.1.d3) then
-          if (eps.lt.0.099d0) then
-            call CRITP (z,tc,pc,rhoc,ierr,herr)
-            eps=eps*10.d0
-c           write (*,*) eps
-            goto 10
-          endif
-          ierr=1
-          herr='No convergence. Provide better p, t guess values'
-          RETURN
-        endif
-      enddo
-      end                                             !subroutine CRTPNT
-c
-c ======================================================================
-c
-      subroutine SATGV (t,p,z,vf,b,ipv,ityp,isp,rhox,rhoy,x,y,ierr,herr)
-c
-c  Calculates the bubble or dew point state using the entropy or density method
-c  of GV.  The caculation method is similar to the volume based algorithm of GERG.
-c  The cricondenbar and cricondentherm are estimated using the method in:  M.L.
-c  Michelsen, Saturation point calculations, Fluid Phase Equilibria, 23:181, 1985.
-c
-c  inputs:
-c         t--temperature [K]
-c         p--pressure [kPa]
-c         z--overall composition [array of mol frac]
-c        vf--vapor fraction (0>=vf>=1)
-c            set vf=0 for liquid and vf=1 for vapor
-c            for ityp=6, vf=1 assumes x is liquid and y is vapor,
-c                    and vf=0 assumes y is liquid and x is vapor
-c         b--input value, either entropy [J/mol-K] or density [mol/l]
-c       ipv--pressure or volume based algorithm
-c            1 -> pressure based
-c            2 -> volume based
-c      ityp--input values
-c            0 -> given p, calculate t
-c            1 -> given t, calculate p
-c            2 -> cricondentherm condition, calculate t,p (ipv=1 only)
-c            3 -> cricondenbar condition, calculate t,p (ipv=1 only)
-c            5 -> given entropy, calculate t,p
-c            6 -> given density, calculate t,p
-c       isp--use values from Splines as initial guesses if set to 1
-c
-c  outputs: (initial guesses must be sent in all variables (unless isp=1))
-c         t--temperature [K]
-c         p--pressure [kPa]
-c      rhox--density of x phase [mol/l]
-c      rhoy--density of y phase [mol/l]
-c         x--composition of x array [array of mol frac]
-c         y--composition of y array [array of mol frac]
-c      ierr--error flag:  0 = successful
-c                         1 = LUdecomp failed
-c                         2 = derivatives are not available in RDXHMX
-c                        71 = no convergence
-c                        72 = log values too large
-c                        73 = p or T out of range
-c                        74 = trival solution
-c                        75 = unacceptable F
-c                        76 = False roots
-c                        77 = density out of range
-c                        80 = vf < 0 or vf > 1
-c                        81 = sum(z)<>1
-c                        82 = input rho<=0
-c      herr--error string (character*255 variable if ierr<>0)
-c
-c
-c  equations to be solved simultaneously are:
-c  --pressure based:
-c      f(1:n)=log(y/x)-log((fxi/nxi)/(fyi/nyi))=0
-c      f(n+1)=sum(y(i)-x(i))=0
-c      f(n+2)=b/binput-1=0, where b = p, t, d, or s
-c
-c  --volume based:
-c      f(1:n) - log(y/x)-log((fxi/nxi)/(fyi/nyi))=0
-c      f(n+1) - sum(y(i)-x(i))=0
-c      f(n+2) - py=px
-c      f(n+3) - b/binput-1=0, where b = p, t, d, or s
-c
-c  variables:
-c     1 to nc - log(k(i))
-c     nc+1    - log(t)
-c     nc+2    - log(p) or log(rhox)
-c     nc+3    -           log(rhoy)
-c
-c  written by G. Venkatarathnam, Indian Institute of Technology Madras
-c  00-00-12  GV, original version
-c  10-29-12 EWL, adapt code for use in REFPROP
-c
-      include 'commons.for'
-      character*255 herr,hr
       dimension xjacob(50,50),f(50)
-      dimension phx(ncmax),phy(ncmax),phz(ncmax),vrb(ncmax+3)
+      dimension phx(ncmax),phy(ncmax),vrb(ncmax+3)
       dimension x(ncmax),y(ncmax),z(ncmax),phi(ncmax),vrb0(ncmax+3)
-      dimension xo(ncmax),yo(ncmax)
+      dimension xo(ncmax),yo(ncmax),drhoydnj(ncmax)
       dimension dfxdp(ncmax),dfxdt(ncmax),dfxdnj(ncmax,ncmax)
       dimension dfydp(ncmax),dfydt(ncmax),dfydnj(ncmax,ncmax)
       dimension dfxdv(ncmax),dfydv(ncmax)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SATGV
+
 
 c     dimension x2(ncmax),y2(ncmax),tjcb(10,10)
 c     dimension xincr(ncmax+3),phz1(ncmax),phx1(ncmax),phy1(ncmax)
 
-      common /GVcom/ ixp,iyp,izp
-      common /GVtemp/iters
+c  Check for pure fluids.
+      call ISPURE (z,icomp)
+      if (icomp.ne.0) then
+        if (ityp.eq.0) then
+          call SATP (P,z,1,T,Dx,Dy,x,y,ierr,herr)
+        elseif (ityp.eq.1) then
+          call SATT (T,z,1,P,Dx,Dy,x,y,ierr,herr)
+        elseif (ityp.eq.5) then
+          call ERRNUM (175,0,'SATGV','entropy',0d0,0d0,0d0,ierr,herr)
+        elseif (ityp.eq.6) then
+          call SATD (b,z,0,kr,T,P,Dx,Dy,x,y,ierr,herr)
+        endif
+        if (vf.eq.0.) call SWAPV(Dx,Dy)
+        RETURN
+      endif
 
-
+      iErrNum=iErrNum+1
       ierr=0
+      iters=0
       herr=' '
       xo(1:nc)=x(1:nc)
       yo(1:nc)=y(1:nc)
-      nvars=nc+2                ! Number of variables
+      sum0=0d0
+      nvars=nc+2                       ! Number of variables
       il=2
       if (ipv.eq.2) then
         il=3
         nvars=nc+3
       endif
-      cf=1.d0-vf
-      error2=1.d-12
-      p1=1.d0
-!c  use less strict convergence tolerance for cricondenbar and cricondentherm calculations
-!      if (ityp.eq.2) error2=1.d-12
-!      if (ityp.eq.2) error3=1.d-5
-!c  cricondenbar can occur very close to critical point. Lower convergence criteria is therefore used.
-!      if (ityp.eq.3) error2=1.d-12
-!      if (ityp.eq.3) error3=1.d-4
+      cf=1d0-vf
+      error2=1d-12
+      P1=1d0
+!c  Use less strict convergence tolerance for cricondenbar and cricondentherm calculations.
+!      if (ityp.eq.2) error2=1d-12
+!      if (ityp.eq.2) error3=1d-5
+!c  Cricondenbar can occur very close to critical point. Lower convergence criteria is therefore used.
+!      if (ityp.eq.3) error2=1d-12
+!      if (ityp.eq.3) error3=1d-4
 
-c  get values from splines if already set up
+c  Get values from splines if already set up.
       if (iSpline.ne.0 .and. isp.ne.0) then
-        rhoin=0.1d0
-        if (vf.eq.0) then
-          call SPLNVAL(0,-2,t,rhoin,ierr,herr)
-          rhoin=rhoin*0.9d0
-        endif
-        if (ityp.eq.0) call SPLNROOT (nc+2,0,p,rhoin,ierr,herr)
-        if (ityp.eq.1) call SPLNROOT (nc+1,0,t,rhoin,ierr,herr)
-        if (ityp.eq.5) call SPLNROOT (nc+5,0,b,rhoin,ierr,herr)
-        if (ityp.eq.6) rhoin=b
-        if (vf.eq.1) y(1:nc)=z(1:nc)
-        if (vf.eq.0) x(1:nc)=z(1:nc)
-        if (vf.eq.1) rhoy=rhoin
-        if (vf.eq.0) rhox=rhoin
-        do j=1,nc+3
-          call SPLNVAL (j,0,rhoin,vout,ierr,herr)
-          if (ierr.eq.0) then
-            vout=abs(vout)
-            if (j.le.nc) then
-              if (vout.lt.1.d-100) vout=0.d0
-              if (vf.eq.1) x(j)=vout
-              if (vf.eq.0) y(j)=vout
-            elseif (j.eq.nc+1) then
-              if (ityp.ne.1) t=vout
-            elseif (j.eq.nc+2) then
-              if (ityp.ne.0) p=vout
-            elseif (j.eq.nc+3) then
-              if (vf.eq.1) rhox=vout
-              if (vf.eq.0) rhoy=vout
-            endif
-          endif
-        enddo
-        sumx=sum(x(1:nc))
-        sumy=sum(y(1:nc))
-        if (abs(sumx).gt.1.d-10) then
-          x(1:nc)=x(1:nc)/sumx
-        else
-          x=y
-        endif
-        if (abs(sumy).gt.1.d-10) then
-          y(1:nc)=y(1:nc)/sumy
-        else
-          y=x
+        iprop=ityp
+        if (ityp.eq.0) iprop=2
+        if (ityp.eq.6) iprop=3
+        x(1:nc)=z(1:nc)
+        y(1:nc)=z(1:nc)
+        Dx=b
+        Dy=b
+        if (vf.eq.0.) then
+          call SATGUESS (1,iprop,0,0,x,T,P,Dx,h,s,Dy,y,ierr,herr)
+        elseif (vf.eq.1.) then
+          call SATGUESS (2,iprop,0,0,y,T,P,Dy,h,s,Dx,x,ierr,herr)
         endif
       endif
 
-c  check input for errors
-      sumz=sum(z(1:nc))
-      if (vf.gt.1.d0 .or. vf.lt.0.d0) then
-        ierr=80
-        herr='[SATGV error 80] vf greater than 1 or less than 0'
-      elseif (dabs(sumz-1.d0).ge.1.d-8) then
-        ierr=81
-        herr='[SATGV error 81] Sum of feed composition not equal to 1.0'
-      elseif (rhox.le.0.d0 .or. rhoy.le.0.d0) then
-        ierr=82
-        herr='[SATGV error 82] Input density less than or equal to 0.0'
+c  Check input for errors.
+      sumz=SUM(z(1:nc))
+      if (vf.gt.1. .or. vf.lt.0.)  goto 172
+      if (ABS(sumz-1d0).ge.1d-4) then
+        if (sumz.lt.1.d-10) goto 312
+        goto 805
       endif
-      if (ierr.gt.0) goto 999
+      if (Dx.le.0.) goto 102
+      if (Dy.le.0.) goto 103
 
-c  use values for ixyzphase from previous call, unless rho is >2*rhoc or <rhoc/10
-      call CRITP (y,tc,pc,rhoc,ierr,herr)
-      if (vf.eq.0) call CRITP (x,tc,pc,rhoc,ierr,herr)
-      rho=vf*rhoy+cf*rhox
-      if (rhox.gt.rhoc*2.d0 .or. rhoy.lt.0.1d0)  ixp=1
-      if (rhoy.gt.rhoc*2.d0 .or. rhox.lt.0.1d0)  iyp=1
-      if (rho .gt.rhoc*2.d0) izp=1
-      if (rho .lt.rhoc/5.d0) izp=2
-      if (rhox.lt.rhoc/5.d0) ixp=2
-      if (rhoy.lt.rhoc/5.d0) iyp=2
+c  Use values for ixyzphase from previous call, unless D is >2*Dc or <Dc/10.
+      if (vf.eq.0.) then
+        call CRITP (x,Tc,Pc,Dc,ierr,herr)
+      else
+        call CRITP (y,Tc,Pc,Dc,ierr,herr)
+      endif
+      D=vf*Dy+cf*Dx
+      if (Dx.gt.Dc*2d0 .or. Dy.lt.0.1d0)  ixpg=1
+      if (Dy.gt.Dc*2d0 .or. Dx.lt.0.1d0)  iypg=1
+      if (D .gt.Dc*2d0) izpg=1
+      if (D .lt.Dc/5d0) izpg=2
+      if (Dx.lt.Dc/5d0) ixpg=2
+      if (Dy.lt.Dc/5d0) iypg=2
 
-c  set up variables in equations to be solved
-c  calculate initial log of K values from input x and y
+c  Set up variables in equations to be solved.
+c  Calculate initial log of K values from input x and y.
       do i=1,nc
-        vrb(i)=1.d0
-        if (x(i).gt.0.d0 .and. y(i).gt.0.d0) vrb(i)=log(y(i)/x(i))
+        vrb(i)=XLOG(XDIV(y(i),x(i)))
       enddo
-      vrb(nc+1)=log(t)
-      vrb(nc+2)=log(p)
-      rhox1=rhox
-      rhoy1=rhoy
+      vrb(nc+1)=XLOG(T)
+      vrb(nc+2)=XLOG(P)
+      if (p.le.1d-10) goto 151
+      Dx1=Dx
+      Dy1=Dy
       if (ipv.eq.2) then
-        vrb(nc+2)=log(rhox1)
-        vrb(nc+3)=log(rhoy1)
+        vrb(nc+2)=XLOG(Dx1)
+        vrb(nc+3)=XLOG(Dy1)
       endif
-      if (ityp.eq.0) s=log(p)   !log(P)
-      if (ityp.eq.0 .and. ipv.eq.2) s=p    !P
-      if (ityp.eq.1) s=log(t)   !log(T)
-      if (ityp.eq.5) s=b        !entropy
-      if (ityp.eq.6) s=log(b)   !log(rho)
+      if (ityp.eq.0) s=XLOG(P)              !LOG P
+      if (ityp.eq.0 .and. ipv.eq.2) s=P     !P
+      if (ityp.eq.1) s=XLOG(T)              !LOG T
+      if (ityp.eq.5) s=b                    !Entropy
+      if (ityp.eq.6) s=XLOG(b)              !LOG D (of y phase)
+      if (s.eq.0) s=1d-10
 
       iters=0
+      if (ABS(vrb(nc+1)).gt.1.d15) goto 151
+      if (ABS(vrb(nc+1)).gt.1.d15) goto 151
       do while (iters.lt.20)
         iters=iters+1
-        t1=exp(vrb(nc+1))
+        T1=EXP3(vrb(nc+1))
+        if (T1.le.0.01d0) T1=Tc*0.8d0
         if (ipv.ne.2) then
-          p1=exp(vrb(nc+2))
+          P1=EXP5(vrb(nc+2))
+          if (P1.lt.1d-100) goto 151
         elseif (ipv.eq.2) then
-          rhox1=exp(vrb(nc+2))
-          rhoy1=exp(vrb(nc+3))
+          Dx1=EXP4(vrb(nc+2))
+          Dy1=EXP4(vrb(nc+3))
         endif
 
-c  check if the guess values for the next iteration are reasonable
+c  Check if the guess values for the next iteration are reasonable.
         do i=1,nc
-          if (dabs(vrb(i)).gt.100) then
-            ierr=72
-            write (herr,1072) ierr,i,vrb(i)
-          endif
+          if (vrb(i).gt.100 .or. vrb(i).lt.-200) goto 151
         enddo
-        if (t1.gt.2000 .or. t1.lt.2) then !Temperature
-          ierr=73
-          write (herr,1073) ierr,p1,t1
-        elseif (p1.gt.500000 .and. ipv.eq.1) then  !Pressure
-          ierr=73
-          write (herr,1073) ierr,p1,t1
-        elseif (rhox1.gt.100 .and. ipv.eq.2) then  !Density
-          ierr=77
-          write (herr,1077) ierr,rhox1,t1
-        elseif (rhoy1.gt.100 .and. ipv.eq.2) then  !Density
-          ierr=77
-          write (herr,1077) ierr,rhoy1,t1
-        endif
-        if (ierr.gt.0) goto 999
+        if (T1.gt.2000. .or. T1.lt.2.)    goto 151         !Temperature
+        if (P1.gt.500000. .and. ipv.eq.1) goto 151         !Pressure
+        if (Dx1.gt.100. .and. ipv.eq.2)   goto 151         !Density
+        if (Dy1.gt.100. .and. ipv.eq.2)   goto 151         !Density
 
-c  call routine to analytically get all derivatives (including A with respect to n and x)
+c  Call routine to analytically get all derivatives (including A with respect to n and x).
         call GETXY (z,vf,vrb,phi,x,y)
-        call LGPHI(il,ixp,t1,rhox1,p1,x,phx,dpxt,dpxd,dtx,cpx,ierr,herr)
-        if (ierr.gt.0) RETURN
+        call LGPHI (il,ixpg,T1,Dx1,P1,x,phx,dpxt,dpxd,dtx,ierr,herr)
+        if (ierr.gt.0) goto 500
         if (ipv.ne.2) then
           dfxdnj(1:nc,1:nc)=dphidnj(1:nc,1:nc)
-          dfxdt(1:nc)=t1*dphidt(1:nc)
-          dfxdp(1:nc)=p1*dphidp(1:nc)
+          dfxdt(1:nc)=T1*dphidt(1:nc)
+          dfxdp(1:nc)=0d0
+          if (P1.gt.1d-8) dfxdp(1:nc)=P1*dphidp(1:nc)
         else
-          if (heos.eq.'PR') then
-            ierr=99
-            herr='Derivatives not yet available for PR'
-            RETURN
-          endif
+          if (iEOSmx.eq.iEOSPR .or. iEOSmx.eq.iEOSPR3) goto 191
           dfxdnj(1:nc,1:nc)=d2adnn(1:nc,1:nc)
-          dfxdt(1:nc)=t1*dlnfinidt(1:nc)
+          dfxdt(1:nc)=T1*dlnfinidt(1:nc)
           dfxdv(1:nc)=   dlnfinidv(1:nc)
-          px1=p1
+          px1=P1
         endif
-        call LGPHI (il,iyp,t1,rhoy1,p1,y,phy,dpyt,dpyd,dty,cpy,i,herr)
+        call LGPHI (il,iypg,T1,Dy1,P1,y,phy,dpyt,dpyd,dty,i,herr)
         if (ipv.ne.2) then
           dfydnj(1:nc,1:nc)=dphidnj(1:nc,1:nc)
-          dfydt(1:nc)=t1*dphidt(1:nc)
-          dfydp(1:nc)=p1*dphidp(1:nc)
+          dfydt(1:nc)=T1*dphidt(1:nc)
+          dfydp(1:nc)=0d0
+          if (P1.gt.1d-8) dfydp(1:nc)=P1*dphidp(1:nc)
+          drhoydnj(1:nc)=dDdn(1:nc)
         else
           dfydnj(1:nc,1:nc)=d2adnn(1:nc,1:nc)
-          dfydt(1:nc)=t1*dlnfinidt(1:nc)
+          dfydt(1:nc)=T1*dlnfinidt(1:nc)
           dfydv(1:nc)=   dlnfinidv(1:nc)
-          py1=p1
+          py1=P1
         endif
 
-c  set up f matrix with variables in equations to be solved
-        f(1:nc)=phy(1:nc)-phx(1:nc)+vrb(1:nc)                          !ln(fugacity coefficients)=log(y/x) [which equals: ln(x*phix/(y*phiy))=0]
-        f(nc+1)=sum(z(1:nc)*(phi(1:nc)-1.d0)/(cf+vf*phi(1:nc)))            !sum(y-x)=0
-        if (ipv.eq.2) f(nc+2)=(px1-py1)/1000.d0
-        if (ityp.eq.0) then      !pressure input
-          if (p1.gt.0.) f(nvars)=log(p1)/s-1.d0       !****works with vf=0,1 for volume based?
+c  Set up f matrix with variables in equations to be solved.
+        f(1:nc)=phy(1:nc)-phx(1:nc)+vrb(1:nc)                                  !ln(fugacity coefficients)=LOG (y/x) [which equals: ln(x*phix/(y*phiy))=0]
+        f(nc+1)=SUM(z(1:nc)*(phi(1:nc)-1d0)/(cf+vf*phi(1:nc)))                 !SUM(y-x)=0
+        if (ipv.eq.2) f(nc+2)=(px1-py1)/1000d0
+        if (ityp.eq.0) then            !Pressure input
+          f(nvars)=XLOG(P1)/s-1d0
           if (ipv.eq.2) f(nvars)=s-(vf*px1+cf*py1)
-        elseif (ityp.eq.1) then  !temperature input
-          f(nvars)=log(t1)/s-1.d0
-        elseif (ityp.eq.5) then  !entropy input
-          call ENTRO (t1,rhox1,x,sx)
-          call ENTRO (t1,rhoy1,y,sy)
-          f(nvars)=(vf*sy+cf*sx)/s-1.d0
-        elseif (ityp.eq.6) then  !density input
-          s1=vf*rhoy1+cf*rhox1
-          f(nvars)=log(s1)/s-1.d0
-!        elseif (ityp.eq.2 .or. ityp.eq.3) then  !cricondentherm/bar input
-!          izp=0
-!          call LGPHI (2,izp,t1,rhoz1,p1,z,phz,d1,d2,d3,d4,ierr,herr)
-!          term1=0.d0
-!          term2=0.d0
-!          do i=1,nc
-!            if (ityp.eq.2) then
-!              term1=term1+x(i)*(dfxdp(i)/p1-dphidP(i))
-!              term2=term2+y(i)*(dfydp(i)/p1-dphidP(i))
-!            else
-!              term1=term1+x(i)*(dfxdt(i)/t1-dphidT(i))
-!              term2=term2+y(i)*(dfydt(i)/t1-dphidT(i))
-!            endif
-!          enddo
-!          f(nvars)=cf*term2+vf*term1
+        elseif (ityp.eq.1) then        !Temperature input
+          f(nvars)=XLOG(T1)/s-1d0
+        elseif (ityp.eq.5) then        !Entropy input
+          call ENTRO (T1,Dx1,x,sx)
+          call ENTRO (T1,Dy1,y,sy)
+          f(nvars)=(vf*sy+cf*sx)/s-1d0
+        elseif (ityp.eq.6) then        !Density input
+          s1=vf*Dy1+cf*Dx1
+          f(nvars)=XLOG(s1)/s-1d0
+c       elseif (ityp.eq.2 .or. ityp.eq.3) then   !cricondentherm/bar input
+c         izpg=0
+c         call LGPHI (2,izpg,T1,Dz1,P1,z,phz,d1,d2,d3,ierr,herr)
+c         term1=0d0
+c         term2=0d0
+c         do i=1,nc
+c           if (ityp.eq.2) then
+c             term1=term1+x(i)*(dfxdp(i)/P1-dphidP(i))
+c             term2=term2+y(i)*(dfydp(i)/P1-dphidP(i))
+c           else
+c             term1=term1+x(i)*(dfxdt(i)/T1-dphidT(i))
+c             term2=term2+y(i)*(dfydt(i)/T1-dphidT(i))
+c           endif
+c         enddo
+c         f(nvars)=cf*term2+vf*term1
         endif
 
-c  Determine Jacobian of funtions f(1) to f(n+3) using analytical derivatives
-        xjacob(1:nvars,1:nvars)=0.d0
+c  Determine Jacobian of functions f(1) to f(n+3) with analytical derivatives.
+        xjacob(1:nvars,1:nvars)=0d0
         if (ipv.eq.2) then
-          xjacob(nc+2,nc+1)=t1*(dpxt-dpyt)/1000.d0
-          xjacob(nc+2,nc+2)= rhox1*dpxd/1000.d0
-          xjacob(nc+2,nc+3)=-rhoy1*dpyd/1000.d0
+          xjacob(nc+2,nc+1)=T1*(dpxt-dpyt)/1000d0
+          xjacob(nc+2,nc+2)= Dx1*dpxd/1000d0
+          xjacob(nc+2,nc+3)=-Dy1*dpyd/1000d0
         endif
         do i=1,nc
-          zeta=z(i)*phi(i)/(cf+vf*phi(i))**2                             !=y(i) for vf=0 and x(i) for vf=1
-          xjacob(nc+1,i)=zeta                                          !d(sum(y-x))/d(ln(Ki))
-          xjacob(1:nc,i)=zeta*(cf*dfydnj(1:nc,i)+vf*dfxdnj(1:nc,i))    !d(ln(fy/fx))/d(ln(Ki))
-          xjacob(i,i)   =1.d0+xjacob(i,i)
-          xjacob(i,nc+1)=dfydt(i)-dfxdt(i)                     !d(ln(fy/fx))/d(ln(T))
-          if (ipv.ne.2) xjacob(i,nc+2)=dfydp(i)-dfxdp(i)                     !d(ln(fy/fx))/d(ln(P))
+          zeta=z(i)*phi(i)/(cf+vf*phi(i))**2                         !=y(i) for vf=0 and x(i) for vf=1
+          if (zeta.gt.1d20) goto 151
+          xjacob(nc+1,i)=zeta                                        !d(sum(y-x))/d(ln(Ki))
+          xjacob(1:nc,i)=zeta*(cf*dfydnj(1:nc,i)+vf*dfxdnj(1:nc,i))  !d(ln(fy/fx))/d(ln(Ki))
+          xjacob(i,i)   =1d0+xjacob(i,i)
+          xjacob(i,nc+1)=dfydt(i)-dfxdt(i)                           !d(ln(fy/fx))/d(ln(T))
+          if (ipv.ne.2) xjacob(i,nc+2)=dfydp(i)-dfxdp(i)             !d(ln(fy/fx))/d(ln(P))
           if (ipv.eq.2) then
-            xjacob(nc+2,i)=R*t1*zeta*(cf*dfydv(i)+vf*dfxdv(i))/1000.d0
+           xjacob(nc+2,i)=Rxgas*T1*zeta*(cf*dfydv(i)+vf*dfxdv(i))/1000d0
             if (ityp.eq.0)
-     &      xjacob(nc+3,i)=R*t1*zeta*(cf*dfydv(i)-vf*dfxdv(i))
-            xjacob(i,nc+2)= dfxdv(i)/rhox1                             !d(ln(fy/fx))/d(ln(rhox))
-            xjacob(i,nc+3)=-dfydv(i)/rhoy1                             !d(ln(fy/fx))/d(ln(rhoy))
+     &      xjacob(nc+3,i)=Rxgas*T1*zeta*(cf*dfydv(i)-vf*dfxdv(i))
+            xjacob(i,nc+2)= dfxdv(i)/Dx1                             !d(ln(fy/fx))/d(ln(Dx))
+            xjacob(i,nc+3)=-dfydv(i)/Dy1                             !d(ln(fy/fx))/d(ln(Dy))
           endif
         enddo
 
-c  set up the last section in the Jacobian for the input variables
-        if (ityp.eq.1) then          !temperature
-          xjacob(nvars,nc+1)=1.d0/s
-        elseif (ipv.ne.2) then       !pressure based method
-          if (ityp.eq.0) then        !pressure
-            xjacob(nvars,nvars)=1.d0/s
-          elseif (ityp.eq.5) then    !entropy
-            xjacob(nvars,nc+1)=(vf*cpy+cf*cpx)/s   !d(ln(s))/d(ln(T))
-            xjacob(nvars,nc+2)=p1*(vf*dty/rhoy1**2+cf*dtx/rhox1**2)/s    !d(ln(s))/d(ln(P))
-            if (vf.gt.0.d0 .and. vf.lt.1.d0) then
+c  Set up the last section in the Jacobian for the input variables.
+        if (ityp.eq.1) then            !Temperature
+          xjacob(nvars,nc+1)=1d0/s
+        elseif (ipv.ne.2) then         !Pressure based method
+          if (ityp.eq.0) then          !Pressure
+            xjacob(nvars,nvars)=1d0/s
+          elseif (ityp.eq.5) then      !Entropy
+            call THERM (T,Dx1,x,pp,ee,hh,ss,Cv,Cpx,w,hjt)
+            call THERM (T,Dy1,y,pp,ee,hh,ss,Cv,Cpy,w,hjt)
+            xjacob(nvars,nc+1)=(vf*Cpy+cf*Cpx)/s                     !d(ln(s))/d(ln(T))
+            xjacob(nvars,nc+2)=P1*(vf*dty/Dy1**2+cf*dtx/Dx1**2)/s    !d(ln(s))/d(ln(P))
+            if (vf.gt.0. .and. vf.lt.1.) then
               do j=1,nc
                 zeta=z(j)*phi(j)*cf*vf/(cf+vf*phi(j))**2
-                dsdyi=-R*(log(y(j))+phy(j)+dfydt(j))
-                dsdxi= R*(log(x(j))+phx(j)+dfxdt(j))
+                dsdyi=-Rxgas*(XLOG(y(j))+phy(j)+dfydt(j))
+                dsdxi= Rxgas*(XLOG(x(j))+phx(j)+dfxdt(j))
                 xjacob(nvars,j)=zeta*(dsdyi+dsdxi)/s
               enddo
             endif
-          elseif (ityp.eq.6) then     !density
-            xjacob(nvars,nc+1)=t1*(cf* dtx/rhox1+vf* dty/rhoy1)/s      !d(ln(rho))/d(ln(T))
-            xjacob(nvars,nc+2)=p1*(cf/dpxd/rhox1+vf/dpyd/rhoy1)/s      !d(ln(rho))/d(ln(P))
-            if (vf.gt.0.d0 .and. vf.lt.1.d0) then
-              ierr=81
-              herr='SATGV not set up for vf>0 and vf<1 with ityp=6'
-              goto 999
-            endif
+          elseif (ityp.eq.6) then      !Density
+            xjacob(nvars,nc+1)=T1*(cf* dtx/Dx1+vf* dty/Dy1)/s        !d(ln(D))/d(ln(T))
+            xjacob(nvars,nc+2)=P1*(cf/dpxd/Dx1+vf/dpyd/Dy1)/s        !d(ln(D))/d(ln(P))
+c  added by GV 2/18/2014
+c  SATGV works at vf between 0 and 1 when the density of one of the phases
+c   is specified instead of the feed density.
+c           do i=1,nc
+c             zeta=z(i)*phi(i)/(cf+vf*phi(i))**2
+c             xjacob(nvars,i)=zeta*vf*cf*drhoydnj(i)/Dy1/s
+c           enddo
+c           xjacob(nvars,nc+1)=T1*dty/Dy1/s
+c           xjacob(nvars,nc+2)=P1/dpyd/Dy1/s
           endif
         else
-          if (ityp.eq.0) then        !pressure
-            xjacob(nvars,nc+1)=-t1*(vf*dpxt+cf*dpyt)
-            xjacob(nvars,nc+2)=-vf*rhox1*dpxd
-            xjacob(nvars,nc+3)=-cf*rhoy1*dpyd
-          elseif (ityp.eq.5) then    !Not implemented for entropy
-          elseif (ityp.eq.6) then    !density
-            xjacob(nvars,nc+3)=vf*1.d0/s
-            xjacob(nvars,nc+2)=cf*1.d0/s
+          if (ityp.eq.0) then          !Pressure
+            xjacob(nvars,nc+1)=-T1*(vf*dpxt+cf*dpyt)
+            xjacob(nvars,nc+2)=-vf*Dx1*dpxd
+            xjacob(nvars,nc+3)=-cf*Dy1*dpyd
+          elseif (ityp.eq.5) then      !Not implemented for entropy
+          elseif (ityp.eq.6) then      !Density
+            xjacob(nvars,nc+3)=vf*1d0/s
+            xjacob(nvars,nc+2)=cf*1d0/s
           endif
         endif
 
-c  uncomment the following lines to test the calculation of Jacobian elements
-c  by numerical perturbation of variables vrb on the functions:  d(f(1..nc+3))/d(vrb)
-!        do i = 1,nc
-!          xincr(i)=1.d-4          ! delta ln(Ki)
+c  Uncomment the following lines to test the calculation of Jacobian elements
+c   by numerical perturbation of variables vrb on the functions - d(f(1..nc+3))/d(vrb)
+!        do i=1,nc
+!          xincr(i)=1d-4               ! delta ln(Ki)
 !        enddo
-!        xincr(nc+1)=1.d-4         ! delta t
-!        xincr(nc+2)=1.d-4         ! delta p or delta rhox
-!        xincr(nc+3)=1.d-4         !            delta rhoy
+!        xincr(nc+1)=1d-4              ! delta T
+!        xincr(nc+2)=1d-4              ! delta P or delta Dx
+!        xincr(nc+3)=1d-4              !            delta Dy
 !        do i=1,nvars
-!          phio=exp(vrb(i))  !old value of fugacity coef.
+!          phio=EXP4(vrb(i))           !old value of fugacity coef.
 !          vrb(i)=vrb(i)+xincr(i)
-!          t2=exp(vrb(nc+1))
-!          p2=exp(vrb(nc+2))
+!          T2=EXP3(vrb(nc+1))
+!          P2=EXP4(vrb(nc+2))
 !          if (ipv.ne.2) then
 !            call GETXY (z,vf,vrb,phi,x2,y2)
-!            rhox2=rhox1
-!            rhoy2=rhoy1
-!            call LGPHI(2,iyp,t2,rhoy2,p2,y2,phy,d1,d2,d3,d4,ierr,herr)
-!            call LGPHI(2,ixp,t2,rhox2,p2,x2,phx,d1,d2,d3,d4,ierr,herr)
+!            rhox2=Dx1
+!            rhoy2=Dy1
+!            call LGPHI(2,iypg,T2,rhoy2,P2,y2,phy,d1,d2,d3,ierr,herr)
+!            call LGPHI(2,ixpg,T2,rhox2,P2,x2,phx,d1,d2,d3,ierr,herr)
 !          else
 !            call GETXY (z,vf,vrb,phi,x2,y2)
-!            rhox2=exp(vrb(nc+2))
-!            rhoy2=exp(vrb(nc+3))
+!            rhox2=EXP1(vrb(nc+2))
+!            rhoy2=EXP1(vrb(nc+3))
 !            if (i.le.nc) then
-!c             phi(1:nc)=exp(vrb(1:nc))
-!c             x2(1:nc)=z(1:nc)/(1.d0-vf+vf*phi(1:nc))
+!c             phi(1:nc)=EXP4(vrb(1:nc))
+!c             x2(1:nc)=z(1:nc)/(1d0-vf+vf*phi(1:nc))
 !c             y2(1:nc)=x2(1:nc)*phi(1:nc)
 !              dxki=phi(i)-phio
 !              if (vf.eq.1) then
-!c               dnxdn=-dxki*x(i)/(1.d0-x(i))/phio
-!                dnxdn=-x(i)**2/y(i)*dxki  !This is not working quite right
-!                rhox2=(1.d0+dnxdn)*rhox2
+!c               dnxdn=-dxki*x(i)/(1d0-x(i))/phio
+!                dnxdn=-x(i)**2/y(i)*dxki        !This is not working quite right
+!                rhox2=(1d0+dnxdn)*rhox2
 !              else
-!                dnydn=dxki*x(i)/(1.d0-y(i))
-!                rhoy2=(1.d0+dnydn)*rhoy2
+!                dnydn=dxki*x(i)/(1d0-y(i))
+!                rhoy2=(1d0+dnydn)*rhoy2
 !              endif
 !            endif
-!           call LGPHI(3,iyp,t2,rhoy2,py2,y2,phy,d1,d2,d3,d4,ierr,herr)
-!           call LGPHI(3,ixp,t2,rhox2,px2,x2,phx,d1,d2,d3,d4,ierr,herr)
+!           call LGPHI(3,iypg,T2,rhoy2,py2,y2,phy,d1,d2,d3,ierr,herr)
+!           call LGPHI(3,ixpg,T2,rhox2,px2,x2,phx,d1,d2,d3,ierr,herr)
 !          endif
 !          do j=1,nvars
 !            if (j.le.nc) then
 !              tjcb(j,i)=(phy(j)-phx(j)+vrb(j)-f(j))/xincr(i)
 !            elseif (j.eq.nc+1) then
-!              sumx=sum(z(1:nc)*(phi(1:nc)-1.d0)/(cf+vf*phi(1:nc)))
+!              sumx=SUM(z(1:nc)*(phi(1:nc)-1d0)/(cf+vf*phi(1:nc)))
 !              tjcb(j,i)=(sumx-f(j))/xincr(i)
 !            elseif (j.eq.nvars) then
 !              if (ipv.eq.2) then
-!                p2=px2
-!                if (i.eq.nvars .and. j.eq.nvars) p2=py2
+!                P2=px2
+!                if (i.eq.nvars .and. j.eq.nvars) P2=py2
 !              endif
-!              if (ityp.eq.0) tjcb(j,i)=(p2/s-1.d0-f(j))/xincr(i)
+!              if (ityp.eq.0) tjcb(j,i)=(P2/s-1d0-f(j))/xincr(i)
 !              if (ityp.eq.0 .and. ipv.eq.2)
-!     &                       tjcb(j,i)=(s-p2-f(j))/xincr(i)
-!              if (ityp.eq.1) tjcb(j,i)=(log(t2)/s-1.d0-f(j))/xincr(i)
+!     &                       tjcb(j,i)=(s-P2-f(j))/xincr(i)
+!              if (ityp.eq.1) tjcb(j,i)=(XLOG(T2)/s-1d0-f(j))/xincr(i)
 !              if (ityp.eq.5) then
-!                call ENTRO (t2,rhox2,x2,sx)
-!                call ENTRO (t2,rhoy2,y2,sy)
-!                tjcb(j,i)=((vf*sy+cf*sx)/s-1.d0-f(j))/xincr(i)
+!                call ENTRO (T2,rhox2,x2,sx)
+!                call ENTRO (T2,rhoy2,y2,sy)
+!                tjcb(j,i)=((vf*sy+cf*sx)/s-1d0-f(j))/xincr(i)
 !              elseif (ityp.eq.6) then
-!                tjcb(j,i)=((vf*log(rhoy2)+cf*log(rhox2))/s
-!     &                   -1.d0-f(j))/xincr(i)
+!                tjcb(j,i)=((vf*XLOG(rhoy2)+cf*XLOG(rhox2))/s-
+!     &                    1d0-f(j))/xincr(i)
 !              endif
 !            elseif (j.eq.nc+2) then
-!              tjcb(j,i)=((px2-py2)/1000.d0-f(j))/xincr(i)
-!            endif
-!            if (ipv.eq.2 .and. rhoy.gt.5.6 .and. rhoy.lt.5.65) then
-!              abc=1    !Use for break points
+!              tjcb(j,i)=((px2-py2)/1000d0-f(j))/xincr(i)
 !            endif
 !          enddo
 !          vrb(i)=vrb(i)-xincr(i)
 !        enddo
 
-
-
-
-
-!c  calculation of jacobian by numerical perturbation of
-!c  variables (x,t) of functions f(x,t)
+!c  Calculation of Jacobian by numerical perturbation of
+!c   variables (x,T) of functions f(x,T).
 !        if (ityp.eq.2 .or. ityp.eq.3) then
 !          dt=0
 !          dp=0
-!          if (ityp.eq.3) dt=1.d-4
-!          if (ityp.eq.2) dp=1.d-4
+!          if (ityp.eq.3) dt=1d-4
+!          if (ityp.eq.2) dp=1d-4
 !          dd=dt+dp
-!          xincr(1:nc)=1.d-5
-!          xincr(nc+1)=1.d-4          ! K
-!          xincr(nc+2)=1.d-4          ! kPa
+!          xincr(1:nc)=1d-5
+!          xincr(nc+1)=1d-4            ! K
+!          xincr(nc+2)=1d-4            ! kPa
 !          do i=1,nvars
 !            vrb(i)=vrb(i)+xincr(i)
 !            call GETXY (z,vf,vrb,phi,x,y)
-!            p1=exp(vrb(nc+2))
-!            t1=exp(vrb(nc+1))
-!            rhox2=rhox1
-!            rhoy2=rhoy1
+!            P1=EXP4(vrb(nc+2))
+!            T1=EXP3(vrb(nc+1))
+!            rhox2=Dx1
+!            rhoy2=Dy1
 !            iz=0
-!            call LGPHI (1,ixp,t1,rhox2,p1,x,phx,d1,d2,d3,d4,j,herr)
-!            call LGPHI (1,iyp,t1,rhoy2,p1,y,phy,d1,d2,d3,d4,j,herr)
-!            call LGPHI (1,iz,   t1,rhoz2,p1,z,phz,d1,d2,d3,d4,j,herr)
+!            call LGPHI (1,ixpg,T1,rhox2,P1,x,phx,d1,d2,d3,j,herr)
+!            call LGPHI (1,iypg,T1,rhoy2,P1,y,phy,d1,d2,d3,j,herr)
+!            call LGPHI (1,iz,   T1,Dz2,P1,z,phz,d1,d2,d3,j,herr)
 !            iz=0
-!           call LGPHI(1,ixp,t1+dt,rhox2,p1+dp,x,phx1,d1,d2,d3,d4,j,hr)
-!           call LGPHI(1,iyp,t1+dt,rhoy2,p1+dp,y,phy1,d1,d2,d3,d4,j,hr)
-!           call LGPHI(1,iz,   t1+dt,rhoz2,p1+dp,z,phz1,d1,d2,d3,d4,j,hr)
-!            sumx=0.d0
+!           call LGPHI(1,ixpg,T1+dt,rhox2,P1+dp,x,phx1,d1,d2,d3,j,hr)
+!           call LGPHI(1,iypg,T1+dt,rhoy2,P1+dp,y,phy1,d1,d2,d3,j,hr)
+!           call LGPHI(1,iz,   T1+dt,Dz2,P1+dp,z,phz1,d1,d2,d3,j,hr)
+!            sumx=0d0
 !            do k=1,nc
 !              fuggy=(phy1(k)-phy(k))/dd
 !              fuggx=(phx1(k)-phx(k))/dd
@@ -6239,118 +3227,2037 @@ c  by numerical perturbation of variables vrb on the functions:  d(f(1..nc+3))/d
 !          enddo
 !        endif
 
-c  check for trivial solution
+c  Check for trivial solution.
         itest=0
         do i=1,nc
-          if (dabs(vrb(i)).le.1.d-6) itest=itest+1
+          if (ABS(vrb(i)).le.1d-6) itest=itest+1
         enddo
-        if (itest.eq.nc) then
-          ierr=74
-          write (herr,1074) ierr,(vrb(i),i=1,nc)
-          goto 999
-        endif
+        if (itest.eq.nc) goto 321
 
-c  solve linearized equations by LU decomposition
-c  f is the solution vector [xnew-xold]
+c  Solve linearized equations by LU decomposition.
+c  f is the solution vector [xnew-xold].
         f(1:nvars)=-f(1:nvars)
-        call LUdecomp (nvars,50,xjacob,f,ierr,herr)
-        if (ierr.ne.0) goto 999
+        call LUDECOMP (nvars,50,xjacob,f,ierr,herr)
+        if (ierr.gt.0) goto 500
         vrb0(1:nvars)=vrb(1:nvars)
         vrb(1:nvars)=vrb(1:nvars)+f(1:nvars)
         sum0=DOT_PRODUCT(f(1:nvars),f(1:nvars))/nvars
 
-
-
-
-
         if (ipv.eq.2) then
           iter1=0
-11        continue
-          tt=t1
-          t1=exp(vrb(nc+1))
-          rhox1=exp(vrb(nc+2))
-          rhoy1=exp(vrb(nc+3))
+11        tt=T1
+          if (vrb(nc+1).gt.100 .or. vrb(nc+2).gt.100
+     &        .or. vrb(nc+3).gt.100) goto 151
+          T1=T
+          Dx1=Dx
+          Dy1=Dy
+          T1=EXP3(vrb(nc+1))
+          if (T1.le.0.01d0) T1=Tc*0.7d0
+          Dx1=EXP1(vrb(nc+2))
+          Dy1=EXP1(vrb(nc+3))
           call GETXY (z,vf,vrb,phi,x,y)
-          call PRESS (t1,rhox1,x,px2)
-          call PRESS (t1,rhoy1,y,py2)
+          call PRESS (T1,Dx1,x,px2)
+          call PRESS (T1,Dy1,y,py2)
           pp=(cf*py2+vf*px2)
           pp1=(cf*py1+vf*px1)
           if (pp.le.0 .or. pp/pp1.gt.100 .or. pp/pp1.lt.0.01 .or.
-     &        t1/tt.lt.0.9 .or. t1/tt.gt.1.1) then
-            f(1:nvars)=f(1:nvars)/2.d0
+     &        T1/tt.lt.0.9 .or. T1/tt.gt.1.1) then
+            f(1:nvars)=f(1:nvars)/2d0
             vrb(1:nvars)=vrb0(1:nvars)+f(1:nvars)
             iter1=iter1+1
             if (iter1.lt.10) goto 11
           endif
         endif
 
-
         lconv=sum0.le.error2
-!        if (ityp.eq.2 .or. ityp.eq.3) then
-!          sum1=DOT_PRODUCT(f(1:nc+1),f(1:nc+1))/(nc+1)
-!          lconv=sum1.le.error2 .and. dabs(f(nvars)).le.error3
-!        endif
+c       if (ityp.eq.2 .or. ityp.eq.3) then
+c         sum1=DOT_PRODUCT(f(1:nc+1),f(1:nc+1))/(nc+1)
+c         lconv=sum1.le.error2 .and. ABS(f(nvars)).le.error3
+c       endif
+
+c  Iteration has converged.
         if ((lconv).and.iters.ne.1) then
-          if (ityp.ne.1) t=exp(vrb(nc+1))
-          if (ityp.ne.0) p=exp(vrb(nc+2))
+          if (ityp.ne.1) T=EXP3(vrb(nc+1))
+          if (ityp.ne.0) P=EXP4(vrb(nc+2))
+          if (p.le.1d-10) goto 151
           call GETXY (z,vf,vrb,phi,x,y)
           if (ipv.ne.2) then
-            rhox=rhox1
-            rhoy=rhoy1
-            call TPRHO (t,p,x,ixp,1,rhox,ierr,herr)
-            if (ierr.ne.0) call TPRHO (t,p,x,3-ixp,0,rhox,ierr,herr)
-            call TPRHO (t,p,y,iyp,1,rhoy,ierr,herr)
-            if (ierr.ne.0) call TPRHO (t,p,y,3-iyp,0,rhoy,ierr,herr)
+            Dx=Dx1
+            Dy=Dy1
+            call TPRHO (T,P,x,ixpg,1,Dx,ierr,herr)
+            if (ierr.ne.0) call TPRHO (T,P,x,3-ixpg,0,Dx,ierr,herr)
+            call TPRHO (T,P,y,iypg,1,Dy,ierr,herr)
+            if (ierr.ne.0) call TPRHO (T,P,y,3-iypg,0,Dy,ierr,herr)
           else
-            rhox=exp(vrb(nc+2))
-            rhoy=exp(vrb(nc+3))
+            Dx=EXP1(vrb(nc+2))
+            Dy=EXP1(vrb(nc+3))
             if (ityp.ne.0) then
-              call PRESS (t,rhox,x,px1)
-              call PRESS (t,rhoy,y,py1)
-              p=(px1+py1)/2.d0
+              call PRESS (T,Dx,x,px1)
+              call PRESS (T,Dy,y,py1)
+              P=ABS((px1+py1)/2d0)
             endif
           endif
           itest=0
           do i=1,nc+1
-            if (dabs(f(i)).le.1.d-5) itest=itest+1
+            if (ABS(f(i)).le.1d-5) itest=itest+1
           enddo
-          if (itest.ne.nc+1) then
-            ierr=75
-            write (herr,1075) ierr,iters,(f(i),i=1,nvars)
+          if (itest.ne.nc+1) goto 151
+          if (ixpg.eq.2 .and. iypg.eq.2) goto 151
+          goto 550
+        endif
+      enddo
+      goto 151
+
+ 500  x(1:nc)=xo(1:nc)
+      y(1:nc)=yo(1:nc)
+ 550  iErrNum=iErrNum-1
+      call ERRMSG (ierr,herr)
+      RETURN
+
+ 102  call ERRNUM (2,1,'SATGV',' ',Dx,0d0,0d0,ierr,herr)
+      goto 500
+ 103  call ERRNUM (2,1,'SATGV',' ',Dy,0d0,0d0,ierr,herr)
+      goto 500
+ 151  call ERRNUM (151,0,'SATGV',' ',0d0,0d0,0d0,ierr,herr)
+      goto 500
+ 172  call ERRNUM (172,0,' ',' ',0d0,0d0,0d0,ierr,herr)
+      goto 500
+ 191  call ERRNUM (191,0,'SATGV',' ',0d0,0d0,0d0,ierr,herr)
+      goto 500
+ 312  call ERRNUM (312,0,'SATGV',' ',0d0,0d0,0d0,ierr,herr)
+      goto 500
+ 321  call ERRNUM (321,0,'SATGV',' ',0d0,0d0,0d0,ierr,herr)
+      goto 500
+ 805  call ERRNUM (805,0,'SATGV',' ',0d0,0d0,0d0,ierr,herr)
+      goto 500
+
+      end                                               subroutine SATGV
+c
+c ======================================================================
+c
+      subroutine DLDV (T,x,y,P,Dl,Dv,ierr,herr)
+c
+c  Find a state where the pressures at the liquid and vapor densities
+c  (calculated at the x and y input compositions) are equal.
+c  T, x, and y are inputs, P, Dl, and Dv are outputs.
+c  This is an internal routine to the subroutine SATT, but could be
+c  used elsewhere.
+
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension x(ncmax),y(ncmax)
+
+
+      iErrNum=iErrNum+1
+      tolr=1d-4
+      call ISPURE (x,icomp)
+      call SATMAX (icomp,x,Tc,Pc,Dc,ierr,herr)
+      Dl=Dc*1.1d0
+      Dv=Dc*0.95d0
+      do it=1,30
+
+c  Check liquid density for valid state.
+        do it2=1,100
+          call PRESS (T,Dl,x,Pl)
+          call DPDDX (T,Dl,x,dPdDl)
+          call DPDD2 (T,Dl,x,dPdDl2)
+          if (Dl.gt.Dc*5d0) then
+            if (it2.gt.10 .and. Pl.gt.100000d0) EXIT
+            Dl=Dl/3d0
+          elseif (dPdDl.gt.1d4 .and. ABS(Pl).gt.Pc*1.5d0) then
+            Dl=Dl*1.3d0
+          elseif (dPdDl2.lt.0. .or. dPdDl.lt.0.) then      !Check for proper curvature in the liquid (should be positive).
+            Dl=Dl*1.05d0
+          else
+            EXIT
           endif
-          if (ixp.eq.2 .and. iyp.eq.2) then
-            ierr=76
-            herr='[SATGV error 76] False roots. ixphase=iyphase=2'
+        enddo
+
+c  Check vapor density for valid state.
+        do it3=1,100
+          call PRESS (T,Dv,y,Pv)
+          call DPDDX (T,Dv,y,dPdDv)
+          call DPDD2 (T,Dv,y,dPdDv2)
+          if (ABS(dPdDv).gt.1d5 .and. ABS(Pv).gt.Pc*1.5d0) then
+            Dv=Dv/1.6d0
+          elseif (dPdDv2.gt.0. .or. dPdDv.lt.0.) then      !Check for proper curvature in the vapor (should be negative).
+            Dv=Dv*0.95d0
+          else
+            EXIT
           endif
-          if (ierr.gt.0) goto 999
-          RETURN
+        enddo
+
+c  Get deltas for Dl and Dv, update the densities, and check new pressures for convergence.
+        P=(Pl+Pv)/2d0
+        if (XDIV(ABS(Pl-Pv),P).lt.tolr) goto 500
+        delDv=Dv/10d0
+        delDl=Dl/20d0
+        if (ABS(Pv-P).gt.1d-10 .and. ABS(dPdDv).gt.1d-10)
+     &      delDv=1d0/(-dPdDv/(Pv-P)+dPdDv2/2d0/dPdDv)
+        if (ABS(Pl-P).gt.1d-10 .and. ABS(dPdDl).gt.1d-10)
+     &      delDl=1d0/(-dPdDl/(Pl-P)+dPdDl2/2d0/dPdDl)
+        if (ABS(XDIV(delDv,Dv)).gt.0.5d0) delDv=SIGN(0.2d0,delDv)
+        if (ABS(XDIV(delDl,Dl)).gt.1.)    delDl=SIGN(1d0,delDl)
+        Dv=Dv+delDv
+        Dl=Dl+delDl
+        if (it.eq.10 .and. ABS(Dl-Dv).lt.0.1d0) then
+          Dv=Dv/2d0
+          Dl=Dl*2d0
+        endif
+        if (it.gt.10 .and. P.gt.1d5 .and. ABS(Pl-Pv).gt.1d4) EXIT
+      enddo
+      ierr=151
+ 500  iErrNum=iErrNum-1
+      RETURN
+
+      end                                                subroutine DLDV
+c
+c ======================================================================
+c
+      subroutine HEMAXX (z,ieflag,hemax,Themax,Dhemax,ierr,herr)
+c
+c  Find the maximum enthalpy or energy on the saturated vapor line.
+c
+c  Inputs:
+c        z--Composition (array of mole fractions)
+c   ieflag--Set to 0 for enthalpy, 1 for energy
+c
+c  Outputs:
+c    hemax--Maximum enthalpy or energy [J/mol]
+c   Themax--Temperature at maximum enthalpy or energy [K]
+c   Dhemax--Density at maximum enthalpy or energy [mol/L]
+c     ierr--Error flag:  0 - Successful
+c                        (See subroutine LIMITX for other possible error numbers.)
+c     herr--Error string (character*255)
+c
+c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  06-15-11 EWL, original version, remove piece from SATH and place here
+c  12-12-16 EWL, rewrite code for better efficiency and reading.
+
+      include 'COMMONS.INC'
+      character herr*255
+      dimension x(ncmax),y(ncmax),z(ncmax),v(20),f(20)
+
+
+c  Check if values have already been calculated.  If so, load them and return.
+      ierr=0
+      herr=' '
+      hemax=0d0
+      Themax=300d0
+      Dhemax=0d0
+      if (ieflag.eq.0 .and. ABS(Hhmax).gt.1d-15) goto 500
+      if (ieflag.eq.1 .and. ABS(Eemax).gt.1d-15) goto 500
+
+      T=300d0
+      ibt=iLetterH
+      if (ieflag.eq.1) ibt=iLetterE
+      call ISPURE (z,icomp)
+      call SATMAX (icomp,z,Tc,Pc,Dc,ierr,herr)             !Get pure fluid critical point or mixture maximum T and P (but labeled here simply as Tc and Pc).
+      call ROOTSEARCH (0,0,0,v,f,T,0,ib,lneg,lpos)         !Initialize root finding variables.
+      call LIMITS  ('EOS',z,Tmin,Tmax,Dmax,Pmax)
+      jr=1
+      T=Tc*0.9d0
+      dt=0.1d0
+
+c  Use values from Splines if set up by call to SATSPLN.
+      if (iSpline.ne.0 .and. ieflag.eq.0) then
+        call SATGUESS (2,-4,0,0,z,T,P,D,h,s,Dv,y,ierr,herr)
+        if (T.lt.Tmin) T=Tc*0.8d0
+      endif
+
+c  ---Start of main loop---
+      Thigh=0
+      iercnt=0
+      Told=T
+      do it=1,40
+        if (it.eq.20 .or. it.eq.25 .or. it.eq.30) then
+          if (.not.lneg .or. .not.lpos) T=(Thigh+Tc)/2d0   !If not converging, go half way between highest T and Tc to look for root.
+        endif
+        T1=T+dt
+        T2=T-dt
+        call SATT (T1,z,2,P,D,Dvp,x,y,ierr,herr)
+        if (ierr.lt.100) then
+          call SATT (T2,z,2,P,D,Dvn,x,y,ierr,herr)
+          if (ierr.lt.100) then
+            Told=T
+            if (T.gt.Thigh) Thigh=T
+            call HESCALC (ibt,T1,Dvp,z,hp)
+            call HESCALC (ibt,T2,Dvn,z,hn)
+            v(2)=T
+            f(2)=hp-hn                           !Search for the location where the difference in enthalpy (i.e., slope) is zero.
+            call ROOTSEARCH (jr,0,0,v,f,T,it,ib,lneg,lpos)
+            jr=1234
+            if (it.eq.1 .or. it-1.le.iercnt) T=T+Tc/100d0
+            if (ABS(f(2)).lt.1d-5 .and. f(2).ne.0.) EXIT   !Check for convergence.
+            iercnt=0
+          endif
+        endif
+        if (ierr.ge.100) then
+          iercnt=iercnt+1
+          if (MOD(iercnt,2).eq.0) T=Told*(1d0+0.01d0*DBLE(iercnt))
+          if (MOD(iercnt,2).ne.0) T=Told*(1d0-0.02d0*DBLE(iercnt))
+          if (T.gt.Tc .and. icomp.ne.0) T=T-50d0
+          if (T.gt.Tc+50 .and. icomp.eq.0) T=T-50d0
         endif
       enddo
 
-      ierr=71
-      write (herr,1071) ierr,iters,sum0
- 999  continue
-      call ERRMSG (ierr,herr)
-      x(1:nc)=xo(1:nc)
-      y(1:nc)=yo(1:nc)
+      if (ierr.le.0 .and. ABS(f(2)).lt.1d-3) then
+        if (ieflag.eq.0) then
+          Thmax=T
+          Dhmax=(Dvp+Dvn)/2d0
+          Hhmax=(hp+hn)/2d0*1.00001d0  !Increase slightly due to numerical calculations.
+        elseif (ieflag.eq.1) then
+          Temax=T
+          Demax=(Dvp+Dvn)/2d0
+          Eemax=(hp+hn)/2d0*1.00001d0
+        endif
+      endif
+
+ 500  if (ieflag.eq.0 .and. ABS(Hhmax).gt.1d-15) then
+        hemax=Hhmax
+        Themax=Thmax
+        Dhemax=Dhmax
+      elseif (ieflag.eq.1 .and. ABS(Eemax).gt.1d-15) then
+        hemax=Eemax
+        Themax=Temax
+        Dhemax=Demax
+      endif
+
+      end                                              subroutine HEMAXX
+
+c
+c ======================================================================
+c
+      subroutine SMAXX (z,ierr,herr)
+c
+c  Find the maximum and minimum entropy along the saturated vapor dome, and
+c  the minimum entropy along the melting line.
+c
+c  Inputs:
+c        z--Composition (array of mole fractions)
+c
+c  Outputs:
+c    All outputs are stored in the common blocks except ierr and herr.
+c    Tsmax--Temperature at maximum entropy [K]
+c    Dsmax--Density at maximum entropy [mol/L]
+c    Ssmax--Maximum entropy [J/mol-K]
+c    Tsmin--Temperature at minimum entropy [K]
+c    Dsmix--Density at minimum entropy [mol/L]
+c    Ssmin--Minimum entropy [J/mol-K]
+c   Tsmin2--Temperature at minimum entropy along melting line [K]
+c   Dsmin2--Density at minimum entropy along melting line [mol/L]
+c   Ssmin2--Minimum entropy along melting line [J/mol-K]
+c  Values of -1 for the temperatures will be returned if no root exists.
+c
+c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  06-15-11 EWL, original version, remove piece from SATS and place here
+c  12-12-16 EWL, rewrite code for better efficiency and reading.
+
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension x(ncmax),y(ncmax),z(ncmax),v(20),f(20)
+
+
+      ierr=0
+      herr=' '
+      if (Tsmax.gt.0.) RETURN
+
+c  Check if values have already been calculated.  If so, load them and return.
+      iSatFlg=0
+      call ISPURE (z,icomp)
+      call SATMAX (icomp,z,Tc,Pc,Dc,ierr,herr)             !Get pure fluid critical point or mixture maximum T and P (but labeled here simply as Tc and Pc).
+      call LIMITS  ('EOS',z,Tmin,Tmax,Dmax,Pmax)
+
+c  Check first to see if melting line is double valued.
+      istart=1
+      if (icomp.ne.0) then
+        if (iFluidID(icomp).eq.1 .or. iFluidID(icomp).eq.3) then     !Check for water or heavy water.
+          T=-998d0
+          call MLTH2O (T,p,D)
+          call ENTRO (T,D,z,s)
+          Tsmin2=T           !Save to common blocks.
+          Dsmin2=D
+          Ssmin2=s
+        else
+          T=Ttpn(icomp)
+          call SATT (T,z,1,P,Dl,Dv,x,y,ierr,herr)
+          if (ierr.le.0) then
+            call ENTRO (T,Dl,z,s1)
+            T1=T+1d0
+            call SATT (T1,z,3,P,Dl,Dv,x,y,ierr,herr)
+            call ENTRO (T1,Dl,z,s2)
+            if (s2.lt.s1 .and. ABS(P).gt.1d-10) istart=0             !Melting line is doubled valued if s2<s1.
+          endif
+        endif
+      endif
+
+c  ---Start of main loop---
+      do i=istart,2
+        k=2
+        jr=1
+        dt=0.1d0
+        if (i.eq.0) k=3
+        T=Tmin+Tmin/20d0                         !Starting points for roots.
+        if (i.eq.1) T=Tc-Tc/20d0
+        if (i.eq.2) T=0.7*Tmin+0.3*Tc
+        call ROOTSEARCH (0,0,0,v,f,T,0,ib,lneg,lpos)       !Initialize root finding variables.
+        do it=1,15
+          T1=T+dt
+          T2=T-dt
+          call SATT (T1,z,k,P,D,Dvp,x,y,ierr,herr)
+          if (ierr.le.0) then
+            call SATT (T2,z,k,P,D,Dvn,x,y,ierr,herr)
+            if (ierr.le.0) then
+              call ENTRO (T1,Dvp,z,sp)
+              call ENTRO (T2,Dvn,z,sn)
+              v(2)=T
+              f(2)=sp-sn               !Search for the location where the difference in entropy (i.e., slope) is zero.
+              call ROOTSEARCH (jr,0,0,v,f,T,it,ib,lneg,lpos)
+              jr=1234
+              if (it.eq.1) T=T+Tc/100d0
+              if (ABS(f(2)).lt.1d-7) EXIT        !Check for convergence.
+            endif
+          endif
+          if (ierr.gt.0) T=T+Tc/100d0
+          if (T.gt.Tc) T=T-50d0
+          if (T.le.0.) T=Tc/2d0
+        enddo
+
+        if (ierr.le.0 .and. ABS(f(2)).lt.1d-5) then        !If the iteration failed, then generally there are no roots in the vapor.
+          if (i.eq.1) then
+            Ssmax=(sp+sn)/2d0*1.00001d0          !Increase slightly due to numerical calculations.
+            Tsmax=T
+            Dsmax=(Dvp+Dvn)/2d0
+          elseif (i.eq.2) then
+            Ssmin=(sp+sn)/2d0*0.99999d0
+            Tsmin=T
+            Dsmin=(Dvp+Dvn)/2d0
+          elseif (i.eq.0) then
+            Ssmin2=(sp+sn)/2d0
+            Tsmin2=T
+            Dsmin2=(Dvp+Dvn)/2d0
+          endif
+        endif
+      enddo
+
+      end                                               subroutine SMAXX
+c
+c ======================================================================
+c
+      subroutine HVAPZTN (T,P,z,iTP,hvap,hvap0,ierr,herr)
+c
+c  Compute the heat of vaporization as a function of temperature or
+c  pressure, and composition.  For a mixture, the calculation can be
+c  done at either constant temperature or constant pressure through
+c  the 2-phase, resulting in different values.  The enthalpy change
+c  from liquid to zero pressure is returned in hvap0.
+c
+c  Inputs:
+c        T--Temperature [K]
+c        P--Pressure [kPa]
+c        z--Composition (array of mole fractions)
+c      iTP--If set to 1, hvap is calculated at constant temperature for a mixture.
+c           If set to 2, hvap is calculated at constant pressure for a mixture.
+c
+c  Outputs:
+c     hvap--Heat of vaporization [J/mol]
+c    hvap0--Heat of vaporization plus enthalpy change to zero pressure [J/mol]
+c     ierr--Error flag:  0 - Successful
+c                      151 - Saturation routine failed to converge
+c     herr--Error string (character*255)
+c
+c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  03-20-17 EWL, original version
+
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension x(ncmax),y(ncmax),z(ncmax),xy(ncmax)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::HVAPZTN
+
+
+      hvap=0d0
+      hvap0=0d0
+      ierr2=0
+      call ISPURE (z,icomp)
+      if (iTP.ne.2) then
+                        call SATT (T,z,1,pp,Dl,Dv,x,y ,ierr1,herr)
+        if (icomp.eq.0) call SATT (T,z,2,pp,dd,Dv,x,xy,ierr2,herr)
+      else
+                        call SATP (P,z,1,tt,Dl,Dv,x,y ,ierr1,herr)
+        if (icomp.eq.0) call SATP (P,z,2,tt,dd,Dv,x,xy,ierr2,herr)
+      endif
+      if (ierr1.gt.0 .or. ierr2.gt.0) then
+        call ERRNUM (151,0,'HVAPZTN',' ',0d0,0d0,0d0,ierr,herr)
+        RETURN
+      endif
+      call HESCALC (iLetterH,T,Dl,z,hl)
+      call HESCALC (iLetterH,T,Dv,z,hv)
+      call HESCALC (iLetterH,T,0d0,z,h0)
+      hvap =hv-hl
+      hvap0=h0-hl
+
+      end                                             subroutine HVAPZTN
+c
+c ======================================================================
+c
+      subroutine CSATK (icomp,T,kph,P,D,Csat,ierr,herr)
+c
+c  Compute the heat capacity along the saturation line as a function of
+c  temperature for a given component.
+c
+c  Csat can be calculated in several ways
+c  Csat = T*(dS/dT[sat])
+c  Csat = Cp - T*(dV/dT)(dP/dT[sat]) with dVdT at constant pressure
+c  Csat = Cp - beta/D*hvap/(vliq - vvap)
+c  where beta is the volume expansivity
+c
+c  Inputs:
+c    icomp--Component number in mixture (1..nc); 1 for pure fluid
+c        T--Temperature [K]
+c      kph--Phase flag:  1 - Liquid calculation
+c                        2 - Vapor calculation
+c
+c  Outputs:
+c        P--Saturated pressure [kPa]
+c        D--Saturated molar density [mol/L]
+c     Csat--Saturated heat capacity [J/mol-K]
+c
+c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  09-30-98 EWL, original version
+
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension x(ncmax),y(ncmax),z(ncmax)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::CSATK
+
+
+      Csat=0d0
+      z(1:nc)=0d0
+      z(icomp)=1d0
+      call SATT (T,z,kph,P,Dl,Dv,x,y,ierr,herr)
+      if (ABS(Dl-Dv).lt.1.d-5) ierr=999
+      if (ierr.gt.0 .or. Dl.le.0.) then
+        call ERRNUM (151,0,'CSATK',' ',0d0,0d0,0d0,ierr,herr)
+        P=0d0
+        D=0d0
+        RETURN
+      endif
+      D=Dl
+      if (kph.eq.2) D=Dv
+      call DPDTX (T,D,z,dPdT)
+      call DPDDX (T,D,z,dPdD)
+      call THERM (T,Dv,z,pp,e,hv,s,Cv,Cp,w,hjt)
+      call THERM (T,Dl,z,pp,e,hl,s,Cv,Cp,w,hjt)
+      call THERM (T,D ,z,pp,e,h ,s,Cv,Cp,w,hjt)
+      beta=dPdT/dPdD/D
+      Csat=Cp-beta/D*(hl-hv)/(1d0/Dl-1d0/Dv)
+
+      end                                               subroutine CSATK
+c
+c ======================================================================
+c
+      subroutine DPTSATK (icomp,T,kph,P,D,Csat,dPdT,ierr,herr)
+c
+c  Compute the heat capacity and dP/dT along the saturation line as a
+c  function of temperature for a given component.  See also subroutine CSATK.
+c
+c  Inputs:
+c    icomp--Component number in mixture (1..nc); 1 for pure fluid
+c        T--Temperature [K]
+c      kph--Phase flag:  1 - Liquid calculation
+c                        2 - Vapor calculation
+c
+c  Outputs:
+c        P--Saturated pressure [kPa]
+c        D--Saturated molar density [mol/L]
+c     Csat--Saturated heat capacity [J/mol-K] (same as that called from CSATK)
+c     dPdT--dP/dT along the saturation line [kPa/K]
+c           (this is not dP/dT at the saturation line for the single phase
+c            state, but the change in saturated vapor pressure as the
+c            saturation temperature changes.)
+c
+c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  09-25-06 EWL, original version
+
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension x(ncmax),y(ncmax),z(ncmax)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::DPTSATK
+
+
+      Csat=0d0
+      dPdT=0d0
+      z(1:nc)=0d0
+      z(icomp)=1d0
+      call SATT (T,z,kph,P,Dl,Dv,x,y,ierr,herr)
+      if (ABS(Dl-Dv).lt.1.d-5) ierr=999
+      if (ierr.gt.0 .or. Dl.le.0. .or. Dv.le.0.) then
+        call ERRNUM (151,0,'DPTSATK',' ',0d0,0d0,0d0,ierr,herr)
+        P=0d0
+        D=0d0
+        RETURN
+      endif
+      D=Dl
+      if (kph.eq.2) D=Dv
+      call DPDTX (T,D,z,dPdT)
+      call DPDDX (T,D,z,dPdD)
+      call THERM (T,Dv,z,pp,e,hv,s,Cv,Cp,w,hjt)
+      call THERM (T,Dl,z,pp,e,hl,s,Cv,Cp,w,hjt)
+      call THERM (T,D ,z,pp,e,h ,s,Cv,Cp,w,hjt)
+      beta=dPdT/dPdD/D
+      Csat=Cp-beta/D*(hl-hv)/(1d0/Dl-1d0/Dv)
+      dPdT=          (hl-hv)/(1d0/Dl-1d0/Dv)/T
+
+      end                                             subroutine DPTSATK
+c
+c ======================================================================
+c
+      subroutine CV2PK (icomp,T,D,Cv2p,Csat,ierr,herr)
+c
+c  Compute the isochoric heat capacity in the two phase (liquid+vapor) region.
+c
+c  Inputs:
+c    icomp--Component number in mixture (1..nc); 1 for pure fluid
+c        T--Temperature [K]
+c        D--Density [mol/L] if known
+c           If D=0, then a saturated liquid state is assumed.
+c
+c  Outputs:
+c     Cv2p--Isochoric two-phase heat capacity [J/mol-K]
+c     Csat--Saturation heat capacity [J/mol-K]
+c           (Although there is already a Csat routine in Refprop,
+c            it is also returned here.  However, the calculation
+c            speed is slower than Csat.)
+c
+c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  03-30-05 EWL, original version
+
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension x(ncmax),y(ncmax),z(ncmax)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::CV2PK
+
+
+      Cv2p=0d0
+      dT=0.01d0
+      i=1
+      T1=T+dT
+      T2=T-dT
+      z(1:nc)=0d0
+      z(icomp)=1d0
+      call SATT (T ,z,i,P ,Dl ,Dv ,x,y,ierr,herr)
+      if (ierr.ge.100) goto 151
+      call SATT (T1,z,i,P1,Dl1,Dv1,x,y,ierr,herr)
+      if (ierr.ge.100) goto 151
+      call SATT (T2,z,i,P2,Dl2,Dv2,x,y,ierr,herr)
+      if (ierr.ge.100) goto 151
+      if (D.le.0.) D=Dl
+      if (ABS(Dl-Dv).lt.1.d-5) goto 151
+      if (Dl.le.0. .or. Dv.le.0.) goto 151
+      call DPDTX (T,Dl,z,dPdT)
+      call DPDDX (T,Dl,z,dPdD)
+      call THERM (T,Dv,z,pp,e,hv,s,Cv,Cp,w,hjt)
+      call THERM (T,Dl,z,pp,e,hl,s,Cv,Cp,w,hjt)
+      beta=dPdT/dPdD/Dl
+      dPdTsat=(hv-hl)/T/(1d0/Dv-1d0/Dl)          ! d(P)/d(T) at sat. liq.
+      dDdTsat=(Dl1-Dl2)/2d0/dT                   ! d(D)/d(T) at sat. liq.
+      d2PdTsat=(P2+P1-2d0*P)/dT**2               ! d^2(P)/d(T)^2 at sat. liq.
+      Csat=Cp-beta/Dl*dPdTsat*T
+      Cv2p=Csat+T/Dl**2*dDdTsat*dPdTsat+T*(1d0/D-1d0/Dl)*d2PdTsat
       RETURN
 
- 1071 format('[SATGV error ',i2,'] Routine did not converge in ',i2,
-     &       ' iterations.  Sum = ',e11.4)
- 1072 format('[SATGV error ',i2,'] ln(',i1,') value too high: ',e11.4)
- 1073 format('[SATGV error ',i2,'] Pressure or Temperature outside ',
-     &       'bounds.  Pressure = ',e11.4,' Temperature = ',e11.4)
- 1074 format('[SATGV error ',i2,'] Trivial solution.  ',
-     &       'ln(ki) = ',20(e9.2,1x))
- 1075 format('[SATGV error ',i2,'] Converged in ',i2,' iterations.  ',
-     &       'But F < acceptable. ', 20(e9.2,1x))
- 1077 format('[SATGV error ',i2,'] Density outside ',
-     &       'bounds.  Density = ',e11.4,' Temperature = ',e11.4)
-      end                                              !subroutine SATGV
+ 151  call ERRNUM (151,0,'CV2PK',' ',0d0,0d0,0d0,ierr,herr)
+
+      end                                               subroutine CV2PK
 c
+c ======================================================================
+c
+      subroutine TPRHOB (T,P,rho1,rho2,z,D,ierr,herr)
+c
+c  Iterate for density given temperature, pressure, and an upper and lower
+c  bound for the density.  This routine is only meant to replace TPRHO
+c  in special cases near the critical point (and is only used by SATT).
+c
+c  Inputs:
+c        T--Temperature [K]
+c        P--Pressure [kPa]
+c     rho1--First bound on density [mol/L]
+c     rho2--Second bound on density [mol/L]
+c        z--Composition (array of mole fractions)
+c
+c  Outputs:
+c        D--Molar density [mol/L]
+c     ierr--Error flag:  0 - Successful
+c                      151 - Failed to converge (no error message returned)
+c     herr--Error string (character*255)
+c
+c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  11-08-01 EWL, original version
+
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension z(ncmax)
+
+
+      ierr=0
+      herr=' '
+      tolr=1d-9
+      D1=rho1
+      D2=rho2
+      if (D1.gt.D2) call SWAPV (D1,D2)
+      D=(D1+D2)/2d0
+      do it=1,25
+        call PRESS (T,D,z,P1)
+        call DPDDX (T,D,z,dPdD)
+        D0=D
+        if (dPdD.gt.1d-20) then
+          D=D+(P-P1)/dPdD              !Use false position to get next root.
+        else
+          D=(D0+D1+D2)/3d0
+        endif
+        if (D.lt.D1) D=(D0+D1)/2d0     !Keep root within bounds.
+        if (D.gt.D2) D=(D0+D2)/2d0
+        if (ABS(P1-P).lt.tolr) RETURN
+        call TOLRNC (tolr,it,10,15,0,0,0)        !Loosen tolerance if not converging.
+      enddo
+
+      ierr=151
+      end                                              subroutine TPRHOB
+c
+c ======================================================================
+c
+      subroutine GETXY (z,vf,philn,phi,x,y)
+c
+c  Calculate the liquid and vapor compositions with the known values
+c  of the overall composition, the vapor fraction, and the log of the
+c  fugacity coefficients.
+c
+c  Inputs:
+c        z--Overall composition (array of mole fractions)
+c       vf--Vapor fraction (0>=vf>=1)
+c           Set vf=0 for liquid and vf=1 for vapor.
+c    philn--Natural log of the fugacity coefficients [-]
+c
+c  Outputs:
+c      phi--Fugacity coefficients [-]
+c        x--Liquid composition (array of mole fractions)
+c        y--Vapor composition (array of mole fractions)
+c
+c  written by G. Venkatarathnam, Indian Institute of Technology Madras
+c  00-00-12  GV, original version
+c  10-29-12 EWL, adapt code for use in Refprop
+c  07-28-14 EWL, add check for y calculation with large philn
+
+      include 'COMMONS.INC'
+      dimension x(ncmax),y(ncmax),z(ncmax),philn(ncmax+3),phi(ncmax)
+
+      x(1:nc)=z(1:nc)
+      y(1:nc)=z(1:nc)
+      do i=1,nc
+        phi(i)=1d10
+        phi(i)=EXP4(philn(i))
+        xdiv=1d0-vf+vf*phi(i)
+        if (ABS(xdiv).gt.1d-10 .and. xdiv.lt.1d+20) then
+          x(i)=z(i)/xdiv
+          y(i)=x(i)*phi(i)
+        endif
+      enddo
+      sumx=SUM(x(1:nc))
+      sumy=SUM(y(1:nc))
+      if (ABS(sumx).gt.0.) x(1:nc)=x(1:nc)/sumx
+      if (ABS(sumy).gt.0.) y(1:nc)=y(1:nc)/sumy
+      end                                               subroutine GETXY
+c
+c ======================================================================
+c
+      subroutine XYFUG (y,f1,f2,tolr,sum1,sumx,iconvrg,ierr,herr)
+c
+c  Internal routine to SATT and SATP, not meant to be called elsewhere.
+
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension x(ncmax),y(ncmax),f1(ncmax),f2(ncmax)
+
+      iconvrg=0
+      ierr=0
+      herr=' '
+      x(1:nc)=0d0
+      do i=1,nc              !Calculate new y's with ratio of fugacities; inner loop has converged when y's change by less than a convergence tolerance.
+        if (y(i).gt.0.) then           !Check for components not in use.
+          if (f2(i).gt.1d-20 .and. f1(i).gt.0.) then
+            x(i)=y(i)*f1(i)/f2(i)
+          else
+            x(i)=x(i)+0.0001d0         !Add a little to keep sum<>1.
+          endif
+        endif
+      enddo
+      sumx=xEq0(SUM(x(1:nc)))
+      if (sumx.le.0. .or. sumx.gt.1d6) ierr=999
+      x(1:nc)=x(1:nc)/sumx             !Normalize the y compositions.
+      sum0=SUM(ABS(y(1:nc)-x(1:nc)))   !Calculate change in compositions.
+      y(1:nc)=x(1:nc)
+      if (sum0.lt.tolr .or. ABS(sum0-sum1).lt.tolr*100d0) iconvrg=1            !Compositions and fugacities are in agreement.
+      sum1=sum0
+      end                                               subroutine XYFUG
+c
+c ======================================================================
+c
+      subroutine LGPHI (iderv,iphase,T,D,P,z,philn,dPdT,dPdD,dDdT,
+     &                  ierr,herr)
+c
+c  Internal routine to calculate various properties needed by the
+c  VLE iterative routines.
+c
+c  Inputs:
+c    iderv--Set to 1 for calculation of fugacity coefficient (philn) only.
+c           Set to 2 for full calculations (when calling PHIDERV) for use in other places.
+c           Set to 3 to calculate P as function of T and D,
+c                     and for full calculations of everything else.
+c        T--Temperature [K]
+c        D--Density [mol/L] (if iderv=3)
+c        P--Pressure [kPa] (if iderv<>3)
+c        z--Composition (array of mole fractions)
+c   iphase--Input phase: 1 - Liquid
+c                        2 - Vapor
+c                        0 - Phase with minimum gibbs energy
+c
+c  Outputs:
+c   iphase--Correct phase, computed with GV's PIP criteria [2 for vapor, 1 for liquid]
+c        D--Density [mol/L] (input value should be an initial guess)
+c        P--Pressure [kPa] (if iderv=3)
+c    philn--ln of fugacity coefficient [-]
+c     ierr--Error flag:  0 - Successful
+c     herr--Error string (character*255)
+c
+c  written by G. Venkatarathnam, Indian Institute of Technology Madras
+c  00-00-12  GV, original version
+c  10-29-12 EWL, adapt code for use in Refprop
+c  10-17-13  GV, change phi(i)=1 to philn(i)=1
+c  01-10-14  GV, change philn for iderv=1 to avoid errors with LOG(phi) for negative or zero phi
+
+      include 'COMMONS.INC'
+      dimension z(ncmax),philn(ncmax)
+      dimension dadn(ncmax),dnadn(ncmax)
+      character herr*255
+
+
+      philn(1:nc)=1d0
+      if (D.le.0d0) then
+        ierr=999
+        RETURN
+      endif
+      iErrNum=iErrNum+1
+      call CRITP (z,Tc,Pc,Dc,ierr1,herr)
+      if (iderv.eq.3) then
+        call PRESS (T,D,z,P)
+      else
+        if (iphase.ne.0 .and. iphase.ne.999) then
+          call TPRHO (T,P,z,iphase,1,D,ierr,herr)
+          if (ierr.ne.0) call TPRHO (T,P,z,3-iphase,0,D,ierr,herr)
+          if (D.eq.0.) D=1d-20
+        else       !Phase with minimum gibbs energy.
+          grv=1d36           !No convergence
+          grl=1d36
+          call TPRHO (T,P,z,1,0,Dl,ierr,herr)
+          if (ierr.le.0) call GIBBS (T,Dl,z,arl,grl)
+          call TPRHO (T,P,z,2,0,Dv,ierr,herr)
+          if (ierr.le.0) call GIBBS (T,Dv,z,arv,grv)
+          D=Dl
+          if (grv.le.grl) D=Dv
+          if (D.eq.0.) D=1d-20
+        endif
+      endif
+      if (D.lt.1d-20) D=Dc+1d-20
+
+      zz=P/D/Rxgas/T
+      if (ABS(zz).gt.100.) goto 500
+      if (iderv.eq.1) then
+        call PHIDERV (iderv,T,D,z,dadn,dnadn,ierr,herr)
+        philn(1:nc)=dnadn(1:nc)-LOG(zz)          !(5.43 of GERG)
+      else
+        call PHIDERV (iderv,T,D,z,dadn,dnadn,ierr,herr)
+        if (ierr.gt.0) goto 500
+        RTrho=Rxgas*T*D
+        do i=1,nc
+          philn(i)=1d0
+          if (ABS(dnadn(i)).lt.100.) then
+c  Correct calculation of LOG(phi) is
+c           if (P.gt.0) philn(i)=LOG(RTrho/P)+dnadn(i)
+c  But use this instead since P can be negative, and in the solution
+c  of VLE the P's must be equal, so they cancel out.  The 1d3 keeps the
+c  value of RTrho on the same scale as dnadn (and also cancels out).
+            philn(i)=LOG(RTrho/1d3)+dnadn(i)
+          endif
+        enddo
+      endif
+
+      if (D.gt.Dc*2d0) then
+        iphase=1
+        call DERVPVT1 (T,D,z,P,dPdD,dPdT,dDdP,dDdT,dTdP,dTdD)
+      elseif (D.lt.Dc/5d0) then
+        iphase=2
+        call DERVPVT1 (T,D,z,P,dPdD,dPdT,dDdP,dDdT,dTdP,dTdD)
+      else
+        call DERVPVT (T,D,z,dPdD,dPdT,d2PdD2,d2PdT2,d2PdTD,
+     &                    dDdP,dDdT,d2DdP2,d2DdT2,d2DdPT,
+     &                    dTdP,dTdD,d2TdP2,d2TdD2,d2TdPD)
+        pifactor=2d0
+        if (dPdT.ne.0. .and. dPdD.ne.0.)
+     &    pifactor=2d0-D*(d2pdtd/dPdT-d2PdD2/dPdD)
+        iphase=2
+        if (pifactor.gt.1.) iphase=1
+        if (D.gt.Dc*2d0) iphase=1      !Special case for mixtures with water where pifactor<0 in the liquid
+      endif
+ 500  iErrNum=iErrNum-1
+      call ERRMSG (ierr,herr)
+      RETURN
+
+      end                                               subroutine LGPHI
+c
+c ======================================================================
+c
+      subroutine SATGUESS (kph,iprop,iFlag,ispl,
+     &                     x,T,P,D,h,s,Dy,y,ierr,herr)
+c
+c  For a pure fluid, call the ancillary equations to obtain close
+c  estimates for the saturation boundaries.  The difference between
+c  these values and those from SATT, SATP, etc., depend on how well
+c  the ancillary equation was fitted, but generally they are within
+c  0.1%, except for the saturation densities within several degrees
+c  of the critical temperature.
+c
+c  For a mixture, calculate approximate values from the spline curves for
+c  the saturation boundary.  Subroutine SATSPLN must be called in order
+c  for this to work.
+c
+c  The input property should be placed in the corresponding variable
+c  for T, P, D, h, or s.  Inputs of h and s only work for mixtures
+c  when SATSPLN has been called.
+c
+c  Inputs:
+c      kph--Input phase; 1-liquid, 2-vapor
+c           When maximum in the property does not occur near the critical point,
+c           then kph=1 returns the root at the higher density and kph=2
+c           returns the root at the lower density.
+c    iprop--Input property:
+c           1 - Temperature
+c           2 - Pressure
+c           3 - Density
+c           4 - Enthalpy
+c           5 - Entropy
+c           6 - Energy (currently only working for pure fluids)
+c           11 to 15 - 1st derivative of the property (for iprop-10)
+c                      returned in Dy with respect to density (only for iFlag=0)
+c           21 to 25 - 2nd derivative of the property (for iprop-20)
+c                      returned in Dy with respect to density (only for iFlag=0)
+c           101 - Check if the x array is identical to those sent to SATSPLN (only for iFlag=0)
+c                 (for negative values of 1 to 5, find the location of zero slope
+c                 of the property with respect to D) (only for iFlag=0)
+c    iFlag--Flag indicating which method to use to obtain the outputs:
+c           0 - Use default and best methods, generally ancillary equations for
+c               pure fluids and splines (calculated from call to SATSPLN) for mixtures
+c          11 - Use Rackett technique to get density from T and P
+c               (value of kph and iprop ignored)
+c          12 - Use initial guess equations of Lemmon
+c     ispl--Dummy flag
+c        x--Composition (array of mole fractions)
+c
+c  Outputs:
+c        T--Temperature [K]
+c        P--Pressure [kPa]
+c        D--Density [mol/L]
+c        h--Enthalpy or energy [J/mol] (not returned for a pure fluid)
+c        s--Entropy [J/mol-K] (not returned for a pure fluid)
+c       Dy--Equilibrium phase density [mol/L]
+c        y--Equilibrium phase composition (array of mole fractions)
+c        (h, s, and y are only returned when splines are used to calculate values.)
+c     ierr--Error flag:  0 - Successful
+c                      331 - Splines not available for saturation calculations
+c                      332 - Initialize variable d72l first before calling SATGUESS
+c                     -311 - Compositions not identical to that used in the call to SATSPLN
+c     herr--Error string (character*255)
+c
+c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  10-28-13 EWL, original version
+
+      include 'COMMONS.INC'
+      character*255 herr,herr1,hes*3
+      dimension x(ncmax),y(ncmax),z(ncmax)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SATGUESS
+
+
+      if (T.lt.1 .and. iprop.eq.1) RETURN
+      iErrNum=iErrNum+1
+      if (ispl.eq.0) ierr=0            !ispln is not yet used, this line keeps the compiler happy.
+      ierr=0
+      ierrpv=0
+      iTPrho=0
+      herr=' '
+      iFlg=iFlag
+      iphase=ABS(kph)
+      iFlash=-1
+      if (kph.eq.1 .and. iprop.eq.1) iFlash=1
+      if (kph.eq.2 .and. iprop.eq.1) iFlash=2
+      if (kph.eq.1 .and. iprop.eq.2) iFlash=3
+      if (kph.eq.2 .and. iprop.eq.2) iFlash=4
+
+c  Check for composition called from SATSPLN (kph is used to pass the spline array number).
+      if (iprop.eq.101) then
+        zSum=SUM(ABS(x(1:nc)-zSpln(1:nc)))
+        if (.not.lEQ0(zSum))
+     &    call ERRNUM(-311,0,'SATGUESS',' ',0d0,0d0,0d0,ierr,herr)
+        goto 500
+      endif
+
+      call ISPURE (x,icomp)
+      if (.not.lRcnst .or. .not.lRcnstWag) call RMIX (x)
+      call CRITP (x,Tc,Pc,Dc,ierr1,herr)
+      if (iprop.ne.1) T=Tc
+      if (iprop.ne.2) P=Pc
+      if (iprop.ne.3) D=Dc
+      if (iprop.ne.4 .and. iprop.ne.6) h=0d0
+      if (iprop.ne.5) s=0d0
+      Dy=0d0
+      y(1:nc)=x(1:nc)
+      if (T.gt.Tc .and. icomp.ne.0) goto 500
+
+c  Calculate guess from ancillary equations for pure fluids.
+      if (icomp.ne.0 .and. iFlg.eq.0) then
+        if (iprop.eq.1) then
+          if (T.lt.Ttpn(icomp) .and. kph.eq.2) then
+            call SUBLT (T,x,P,ierr,herr)         !Sublimation state
+            if (ierr.ge.100) call PSATK (icomp,T,P,ierr,herr)        !Vapor pressure
+          elseif (iAnc(icomp).ne.0 .and. iphase.eq.1) then
+            call PSATK (-icomp,T,P,ierr,herr)    !Liquid pressure for pseudo-pure fluids
+          else
+            call PSATK (icomp,T,P,ierrpv,herr)   !Vapor pressure
+          endif
+        elseif (iprop.eq.2) then
+          if (P.lt.Ptpn(icomp)) then
+            call SUBLP (P,x,T,ierr,herr)         !Sublimation state
+            if (ierr.ge.100) call TSATP (P,x,T,ierr,herr)            !Vapor pressure
+          elseif (iAnc(icomp).ne.0 .and. iphase.eq.1) then
+            call TSATP (-P,x,T,ierr,herr)        !Liquid pressure for pseudo-pure fluids
+          else
+            call TSATP (P,x,T,ierr,herr)         !Vapor pressure
+          endif
+        elseif (iprop.eq.3) then
+          call TSATD (D,x,T,ierr,herr)
+          if (ierr.gt.0) then
+            iFlg=13          !Ancillary equation for density not available, goto method 13 below.
+            goto 50
+          endif
+          call PSATK (icomp,T,P,ierr1,herr1)
+        elseif (iprop.ge.4 .and. iprop.le.6) then
+          if (iprop.eq.4) then
+            hes='HLA'
+            hs=h
+            j=iLetterH
+          elseif (iprop.eq.5) then
+            hes='SLA'
+            hs=s
+            j=iLetterS
+          else
+            hes='ELA'
+            hs=h
+            j=iLetterE
+          endif
+          call ROOTFIND(hes,j,0,hs,x,kph,0,1,21,0,0,T,D,hh,ierr,herr)
+          goto 500
+        endif
+        if (iAnc(icomp).eq.1) then
+          itprho=1
+          goto 100
+        endif
+        call DLSATK (icomp,T,Dx,ierr1,herr1)
+        call DVSATK (icomp,T,Dy,ierr2,herr1)
+        if (ierr1.gt.0 .or. ierr2.gt.0) goto 100
+        goto 450
+      endif
+ 50   continue
+
+
+
+c  Initial guess for sub-critical liquid density based on modified
+c   Rackett technique, except that Zra = Zc. See
+c   Reid, Prausnitz, and Poling (1987), Properties of Gases and Liquids, 4th edition.
+      if (iFlg.eq.11) then
+        Rtp=Rxgas*Tc/Pc
+        Zc=Pc/(Tc*Dc*Rxgas)
+        D=1d0/(Rtp*Zc**(1d0+(ABS(1d0-T/Tc))**(2d0/7d0)))
+        call LIMITS ('EOS',x,Tmin,Tmax,Dmax,Pmax)
+        if (D.gt.Dmax) D=Dmax
+        do i=1,8
+          call DERVPVT (T,D,x,dPdD,dPdT,d2PdD2,d2PdT2,d2PdTD,
+     &                        dDdP,  dDdT,d2DdP2,d2DdT2,d2DdPT,
+     &                        dTdP,  dTdD,d2TdP2,d2TdD2,d2TdPD)
+          if (dPdD.lt.0. .or.
+     &       (d2PdD2.lt.0. .and. T.lt.Tc) .or.
+     &       (d2PdTD.lt.0. .and. ABS(d2PdTD+9999990d0).gt..1d0)) then
+            D=1.1d0*D        !Initial guess is in two-phase region, set to higher density.
+          else
+            EXIT
+          endif
+        enddo
+        if (D.gt.Dmax) D=Dmax
+        goto 500
+      endif
+
+      if (iFlg.eq.12) then
+        acf=accen(icomp)
+        if (icomp.eq.0) acf=SUM(x(1:nc)*accen(1:nc))
+        P=Pc*10d0**(-2.333333d0*(1d0+acf)*(Tc/T-1d0))
+
+c  For near-critical states, generate initial guesses for density with correlation developed by E.W. Lemmon, NIST.
+        theta=(ABS(1d0-T/Tc))**(1d0/3d0)*(1.5d0+acf)
+        D=Dc*(1d0+1.113614d0*theta+0.080400d0*theta**2)
+        Dy=Dc*(1d0-1.078683d0*theta+5.014057d-2*theta**2)
+        if (Dy.lt.0.) Dy=1d-6
+        goto 500
+      endif
+
+
+      if (iFlg.eq.13) then
+        Dy=0d0
+        if (d72l.lt.1d-8) then
+          call ERRNUM (332,0,' ',' ',0d0,0d0,0d0,ierr,herr)
+          goto 500
+        endif
+        if (iphase.eq.1) then
+          dd=D/Dc+(1.2d0-d72l/Dc)*(D-Dc)/(d72l-Dc)-1d0
+          T=9.272d0*XLOG(dd+1d0)-5.195d0*dd
+          T=Tc*(1d0-ABS(T)**(1d0/0.337d0))
+        elseif (iphase.eq.2) then
+          T=Tc
+          if (d72v.gt.0.) then
+            dx=XLOG(d72v/Dc)
+            del=XLOG(D/Dc)
+            dd=(3.5d0+dx)*(del/dx)**1.3d0-del
+            T=XLOG(dd+1d0)/2d0-0.026d0*SQRT(dd)
+            if (T.le.0d0) T=Tc/2d0
+          endif
+          T=Tc/(1d0+T**(1d0/0.37d0))
+        endif
+        if (T.le.0.) T=Tc/2d0
+        call PRESS (T,D,x,P)
+        goto 500
+      endif
+
+
+
+
+c  Get estimates from spline curves setup during the call to SATSPLN.
+      if (iSpline.ne.0) then
+        if (iprop.eq.1) prop=T
+        if (iprop.eq.2) prop=P
+        if (iprop.eq.4 .or. iprop.eq.6) prop=h
+        if (iprop.eq.5) prop=s
+        if (iprop.ne.3 .and. iprop.le.10) then
+          call SPLNVAL (nc,-2,x,0d0,Dmax,ierr,herr)        !Density upper limit of the spline curves.
+          if (iprop.eq.1 .and. DatTminSpln.gt.0.) Dmax=DatTminSpln
+          if (iprop.eq.1 .and. DatTmaxSpln.gt.0.) then
+            Droot=DatTmaxSpln
+            if (iphase.eq.1 .and. DatTminSpln.gt.Droot)
+     &          Droot=DatTminSpln*0.9d0
+          else
+            Droot=Dmax/3d0
+            call SPLNROOT (nc+ABS(iprop),1,x,0d0,Droot,ierr1,herr)   !Density value at maximum of prop vs. D [e.g., dT/dD=0].
+            if (ierr1.gt.0) Droot=1d0
+          endif
+          if (iprop.lt.0) then
+            D=Droot          !Requested output is for maximum value of prop vs. D
+          else
+            if (Droot.le.0.) Droot=1d0
+            D=Droot/10d0
+            if (iphase.eq.1) D=(Droot+Dmax)/2d0
+            call SPLNROOT (nc+iprop,0,x,prop,D,ierr,herr)  !Get density at input property.
+            if (D.lt.Dc/10 .and. kph.eq.1) ierr=999
+
+c  If spline has failed, move to a much higher density and try again.
+            if (ierr.gt.0) then
+              call SPLNVAL (nc,-2,x,0d0,Dmax,ierr,herr)    !Maximum value of density in the spline curves.
+              D=Dmax*thrd2
+              if (DatTminSpln.gt.0.) D=(Dmax+DatTminSpln)/2d0
+              if (D.lt.Dmax*thrd2) D=Dmax*thrd2
+              call SPLNROOT (nc+ABS(iprop),0,x,prop,D,ierr,herr)
+            endif
+
+c  If spline has two roots and no solution in the liquid phase, use the second root (the one with positive curvature) as the solution.
+            if (D.lt.Droot .and. iphase.eq.1 .and. ierr.gt.0) then
+              D=Dmax
+              call SPLNROOT (nc+ABS(iprop),1,x,0d0,D,ierr,herr)      !Density value at minimum of prop vs. D [e.g., dT/d(D)=0].
+            endif
+
+
+c  If spline has failed for the liquid phase because of an increase in temperature in the phase boundary deep in the liquid, move to a density just below the point of zero slope and try again.
+            if (ierr.gt.0 .and. iphase.eq.1 .and. Droot.gt.Dc) then
+              D=Droot*0.95d0
+              call SPLNROOT (nc+iprop,0,x,prop,D,ierr,herr)          !Get density at input property.
+              if (D.gt.Dc*1.5d0 .and. ierr.le.0) goto 70   !Exit without root checks.
+              ierr=999
+            endif
+            if (ierr.gt.0) goto 500
+
+c  Check for wrong root.
+c  (The 1.1 and 0.9 below are arbitrary and may need to be refined.)
+            if (ierr1.eq.0) then
+              if (iphase.eq.1 .and. D.lt.Droot) then
+                D=Droot*1.1d0
+                call SPLNROOT (nc+iprop,0,x,prop,D,ierr,herr)
+              elseif (iphase.eq.2 .and. D.gt.Droot) then
+                D=Droot*0.9d0
+                call SPLNROOT (nc+iprop,0,x,prop,D,ierr,herr)
+              endif
+            endif
+          endif
+        endif
+
+        if (iprop.ge.11 .and. iprop.lt.15) then
+          call SPLNVAL (nc+iprop-10,1,x,D,Dy,ierr,herr)              !1st derivative
+          goto 500
+        elseif (iprop.ge.21 .and. iprop.lt.25) then
+          call SPLNVAL (nc+iprop-20,2,x,D,Dy,ierr,herr)              !2nd derivative
+          goto 500
+        endif
+
+
+ 70     if (iprop.ne.1) call SPLNVAL (nc+1,0,x,D,T,ierr,herr)
+        if (iprop.ne.2) call SPLNVAL (nc+2,0,x,D,P,ierr,herr)
+        if (iprop.ne.4) call SPLNVAL (nc+4,0,x,D,h,ierr,herr)
+        if (iprop.ne.5) call SPLNVAL (nc+5,0,x,D,s,ierr,herr)
+                        call SPLNVAL (nc+3,0,x,D,Dy,ierr,herr)
+        do i=1,nc
+          y(i)=0d0
+          if (x(i).gt.0) call SPLNVAL (i,0,x,D,y(i),ierr,herr)
+        enddo
+        sumy=xEq0(SUM(y(1:nc)))
+        y(1:nc)=y(1:nc)/sumy
+      else
+        if (iFlash.gt.0) then
+          iTPrho=2
+          call SATEST (iFlash,T,P,x,z,y,ierr,herr)
+          if (kph.eq.2) y(1:nc)=z(1:nc)
+          if (ierr.lt.100) goto 100
+        endif
+        call ERRNUM (331,0,'SATGUESS',' ',0d0,0d0,0d0,ierr,herr)     !Don't change error number, used elsewhere.
+      endif
+      goto 500
+
+c  Saturation densities based off propane liquid ancillary equation but scaled to the critical point of the substance.
+ 100  if ((iprop.eq.1 .and. icomp.ne.0) .or. iAnc(icomp).eq.1 .or.
+     &     iTPrho.eq.2) then
+        Tr=ABS(1d0-T/Tc)
+        Dx=1d0+1.82205d0*Tr**0.345d0+0.65802d0 *Tr**0.74d0+
+     &         0.21109d0*Tr**2.6d0  +0.083973d0*Tr**7.2d0
+        Dy=-2.4887d0*Tr**0.3785d0-5.1069d0*Tr**1.07d0-
+     &      12.174d0*Tr**2.7d0   -30.495d0*Tr**5.5d0-
+     &      52.192d0*Tr**10d0    -134.89d0*Tr**20d0
+        Dx=Dc*Dx*(1d0+accen(icomp))*0.85d0
+        Dy=Dc*EXP1(Dy)
+        if (ierrpv.gt.0) then
+          P=-6.7722*Tr+1.6938*Tr**1.5d0-1.3341*Tr**2.2d0-
+     &       3.1876*Tr**4.8d0+0.94937d0*Tr**6.2
+          P=Pc*EXP4(Tc/T*P)
+        endif
+      endif
+      if (iTPrho.ge.1) then
+        if (iphase.eq.1 .or. iTPrho.eq.2) then
+          call TPRHOB (T,P,Dx*1.5d0,Dx*0.8d0,x,Dxx,ierr,herr)
+          if (ierr.ge.100)call TPRHOB(T,P,Dx*2.5,Dx*0.2,x,Dxx,ierr,herr)
+          if (ierr.lt.100)Dx=Dxx
+        endif
+        if (iphase.eq.2 .or. iTPrho.eq.2) then
+          call TPRHOB (T,P,Dy*2.,Dy/100.,x,Dyy,ierr,herr)
+          if (ierr.ge.100)call TPRHOB(T,P,Dy*3.,Dy/10.,x,Dyy,ierr,herr)        !These values probably need to be changed.
+          if (ierr.lt.100)Dy=Dyy
+        endif
+        ierr=0
+      endif
+
+ 450  if (Dx.gt.100.) Dx=Dc*2d0
+      if (Dy.gt.100.) Dy=Dc/2d0
+      if (iprop.eq.3) then
+        if (D.lt.Dc) Dy=Dx
+      else
+        if (iphase.eq.2) call SWAPV (Dx,Dy)
+        D=Dx
+      endif
+      if (iAnc(icomp).eq.1) Dy=D
+
+ 500  if (iprop.ne.1 .and. (T.lt.1. .or. T.gt.2000.))  T=300d0
+      if (iprop.ne.2 .and. (P.lt.1d-12 .or. P.gt.1d6)) P=0d0
+      if (iprop.ne.3 .and. (D.lt.0. .or. D.gt.100.))   D=0.1d0
+      if (Dy.lt.0. .or. Dy.gt.100.) Dy=0.1d0
+      if (nc.gt.1) then
+        do i=1,nc
+          if ((y(i).lt.1.d-50 .and. y(i).ne.0d0) .or. y(i).gt.1.) then         !Includes negative values of y(i)
+            if (y(i).lt.0) ierr=999
+            y(1:nc)=ABS(y(1:nc))/SUM(ABS(y(1:nc)))
+            EXIT
+          endif
+        enddo
+      endif
+      iErrNum=iErrNum-1
+      call ERRMSG (ierr,herr)
+      RETURN
+
+c  Find a pressure that can be used to indicate a single-phase state.  In nearly
+c  all cases the value could be extremely low based on the conditions.
+c     Psat=0d0
+c     tcex=1d0
+c     pcex=1d0
+c     if (icomp.eq.0) then
+c       tcex=1.5d0           !Extra amount to add to Tc for mixtures
+c       pcex=1.5d0
+c     endif
+c     if (ierrCrt.eq.0 .and. imaxp.eq.1) pcex=100d0        !Possible Type III mixture
+c     if (T.le.Tc) Psat=EXP4(13.85d0*(T/Tc)-14.073d0)*Pc
+c     if (T.le.Tc*0.7d0) Psat=Psat/10d0          !Some fluids have lower pressures than this equation below 70% of Tc.
+c     if (T.le.Tc*0.6d0) Psat=Psat/100d0
+c     if (T.le.Tc*0.5d0) Psat=Psat/100d0
+c     if (T.le.Tc*0.4d0) Psat=Psat/100d0
+c     if (icomp.ne.0 .and. T.le.Tc) then         !Get Psat from ancillaries if they exist.
+c       ierr=999
+c       if (hpsk(icomp).ne.'NBS') call PSATT (T,z,psat2,ierr,herr1)
+c       if (ierr.eq.0) Psat=0.95d0*psat2         !drop by 5% to allow for error
+c     else
+c       Psat=Psat/10d0                           !Drop cutoff for single phase vapor check by factor of 10.
+c       if (nc.gt.1) Psat=Psat/100d0
+c     endif
+
+      end                                            subroutine SATGUESS
+c
+c ======================================================================
+c
+      subroutine SATEST (iFlash,T,P,z,x,y,ierr,herr)
+c
+c  Estimate temperature, pressure, and compositions to be used
+c  as initial guesses to SATTP.
+c
+c  Inputs:
+c   iFlash--Phase flag:  0 - Flash calculation (T and P known)
+c                        1 - T and x known, P and y returned
+c                        2 - T and y known, P and x returned
+c                        3 - P and x known, T and y returned
+c                        4 - P and y known, T and x returned
+c                            If this value is negative, the retrograde point will be returned.
+c        T--Temperature [K] (input or output)
+c        P--Pressure [kPa] (input or output)
+c        z--Composition (array of mole fractions)
+c           The composition for the known x or y array should be sent in this z array,
+c           not in the output arrays shown below.
+c
+c  Outputs:
+c        T--Temperature [K] (input or output)
+c        P--Pressure [kPa] (input or output)
+c        x--Liquid phase composition (array of mole fractions)
+c        y--Vapor phase composition (array of mole fractions)
+c     ierr--Error flag:  0 - Successful
+c                      999 - Unsuccessful
+c     herr--Error string (character*255)
+c
+c  written by Diego Ortiz, NIST Thermophysics Division, Boulder, Colorado
+c  07-01-10 DOO, original version
+c  06-04-15 EWL, optimize and shorten code
+
+      include 'COMMONS.INC'
+      dimension x(ncmax),y(ncmax),z(ncmax),dw(ncmax),v(20),f(20)
+      character herr*255
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SATEST
+
+      ierr=0
+      herr=' '
+      alpha=1d0
+      tol=0.00000001d0
+      y(1:nc)=z(1:nc)
+      x(1:nc)=z(1:nc)
+      if (iFlash.lt.1 .or. iFlash.gt.4) ierr=999
+      if (ierr.eq.999) RETURN
+      if (iFlash.ge.3 .and. T.le.0.) T=300
+      v3=0d0
+      call ROOTSEARCH (0,0,0,v,f,v3,0,ib,lneg,lpos)      !Initialize root finding variables.
+
+
+      if (iFlash.eq.3.or.iFlash.eq.4) then
+        if (P.le.1d-20.or.P.gt.1d6) goto 500
+      endif
+      if ((T.gt.-2000d0.and.T.le.0) .or. iFlash.eq.3.or.iFlash.eq.4)then       !Negative T used later.
+        call PTEST (-3,1d0,(P),alpha,z,P,dw,m,herr)
+        T=SUM(z(1:nc)*dw(1:nc))
+        if (T.lt.1d0 .or. T.gt.2000d0) goto 500
+      else
+        if (T.lt.1d0 .or. T.gt.2000d0) goto 500
+      endif
+
+c  Do not remove parenthesis around P on the calls to PTEST.  It needs to send the value, not the memory location.
+      if (iFlash.eq.1) then
+        call PTEST (1,T,(P),alpha,z,P,y,m,herr)
+        call PTEST (5,T,(P),alpha,z,P,y,m,herr)
+
+      elseif (iFlash.eq.2) then
+        call PTEST (2,T,(P),alpha,z,P,x,m,herr)
+        call PTEST (6,T,(P),alpha,z,P,x,m,herr)
+
+c  Make initial guesses to bound root.
+      elseif (iFlash.eq.3 .or. iFlash.eq.4) then
+        jr=1
+        v(2)=T
+        do it=1,100
+          T=v(2)
+          call PTEST (iFlash,T,P,alpha,z,f(2),y,m,herr)
+          if (ABS(f(2)).gt.1d20) EXIT
+          if (ABS(f(2)).lt.tol) EXIT
+          call ROOTSEARCH (jr,0,0,v,f,v3,it,ib,lneg,lpos)            !Get next guess, except for first iteration, which is given on the line below.
+          if (jr.eq.1) v3=T*0.97d0
+          v(2)=v3
+          jr=1234
+        enddo
+        if (it.gt.100) ierr=999
+
+c  Get equilibrium compositions after iteration converged.
+        if (iFlash.eq.3) then
+          call PTEST (5,T,P,alpha,z,fn,y,m,herr)
+        elseif (iFlash.eq.4) then
+          call PTEST (6,T,P,alpha,z,fn,x,m,herr)
+        endif
+      endif
+
+ 500  if ((T.gt.2000d0 .or. T.lt.1d0) .and. iFlash.ge.3) then
+        T=300d0
+        ierr=999
+      elseif ((P.lt.1d-20 .or. P.gt.1d6) .and. iFlash.le.2) then
+        P=1d0
+        ierr=999
+      elseif (ABS(f(2)).gt.1d20) then
+        ierr=999
+      endif
+      do i=1,nc
+        if ((y(i).lt.1.d-50 .and. y(i).ne.0d0) .or. y(i).gt.1.) then           !Includes negative values of y(i)
+          if (y(i).lt.0) ierr=999
+          y(1:nc)=ABS(y(1:nc))/SUM(ABS(y(1:nc)))
+          EXIT
+        endif
+      enddo
+      do i=1,nc
+        if ((x(i).lt.1.d-50 .and. x(i).ne.0d0) .or. x(i).gt.1.) then           !Includes negative values of x(i)
+          if (x(i).lt.0) ierr=999
+          x(1:nc)=ABS(x(1:nc))/SUM(ABS(x(1:nc)))
+          EXIT
+        endif
+      enddo
+
+      end                                              subroutine SATEST
+c
+c ======================================================================
+c
+      subroutine SAT0EST (T,P,z,x,y,ierr,herr)
+c
+c  Estimate x and y for 2-phase flash calculations.
+c
+c  Inputs:
+c        T--Temperature [K] (input or output)
+c        P--Pressure [kPa] (input or output)
+c        z--Composition (array of mole fractions)
+c
+c  Outputs:
+c        T--Temperature [K] (input or output)
+c        P--Pressure [kPa] (input or output)
+c        x--Liquid phase composition (array of mole fractions)
+c        y--Vapor phase composition (array of mole fractions)
+c     ierr--Error flag:  0 - Successful
+c                      999 - Unsuccessful
+c                      321 - No solution
+c     herr--Error string (character*255)
+c
+c  written by Diego Ortiz, NIST Thermophysics Division, Boulder, Colorado
+c  07-01-10 DOO, original version
+c  06-04-15 EWL, optimize and shorten code
+
+      include 'COMMONS.INC'
+      dimension x(ncmax),y(ncmax),z(ncmax),w(ncmax)
+      character herr*255
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SAT0EST
+
+      ierr=0
+      herr=' '
+      tol=0.00000001d0
+
+c  Check if (T,P) is in the two-phase region.
+      Tb=300d0
+      Td=300d0
+      call SATEST (1,T,Pb,z,x,y,ierr,herr)
+      call SATEST (2,T,Pd,z,x,y,ierr,herr)
+      call SATEST (3,Tb,P,z,x,y,ierr,herr)
+      call SATEST (4,Td,P,z,x,y,ierr,herr)
+      y(1:nc)=z(1:nc)
+      x(1:nc)=z(1:nc)
+      if ((T-Td)*(T-Tb).gt.0. .or. (P-Pb)*(P-Pd).gt.0.) then
+        call ERRNUM (321,0,'SAT0EST',' ',0d0,0d0,0d0,ierr,herr)
+        goto 500
+      endif
+
+      fn1=0d0
+      alpha1=0d0
+      alpha2=0.999999999d0
+      alpha=0.5d0
+      call PTEST (4,T,P,alpha ,z,fn ,y,ierr,herr)
+      call PTEST (4,T,P,alpha2,z,fn2,y,ierr,herr)
+
+c  PTEST routine with iFlash=4 returns fn=0 at alpha=0 and has a maximum (or minimum).
+c  Use bisection to get past maximum so that Newton's method will converge correctly.
+      do i=1,5
+        if (fn*fn2.gt.0.) then
+          alpha2=alpha
+          fn2=fn
+        else
+          alpha1=alpha
+        endif
+        alpha=(alpha1+alpha2)/2d0
+        call PTEST(4,T,P,alpha,z,fn,y,ierr,herr)
+      enddo
+
+c  Use Newton's method to quickly find solution.
+      do j=1,100
+        aold=alpha
+        fnold=fn
+
+c  Calculate derivative.
+        fnprime=0d0
+        call PTEST(-1,T,P,alpha,z,fn,w,ierr,herr)
+        fnprime=SUM(z(1:nc)/(1d0-alpha+alpha*w(1:nc)/P)**2*
+     &          (w(1:nc)/P-1d0))
+
+c  Use slope to get next guess.
+        if (lNE0(fnprime)) alpha=aold-(fn/fnprime)
+        if (alpha.gt.1.) alpha=(1d0+aold)/2d0
+        call PTEST(4,T,P,alpha,z,fn,y,ierr,herr)
+        deva=(ABS(aold-alpha)/aold)*100
+        if (ABS(fn).lt.tol .and. deva.lt.1) EXIT
+      enddo
+      if (j.ge.100) ierr=999
+
+c  Get liquid and vapor compositions.
+      call PTEST (6,T,P,alpha,z,fn,x,ierr,herr)
+      y(1:nc)=(z(1:nc)-x(1:nc)*(1d0-alpha))/alpha
+
+ 500  do i=1,nc
+        if (z(i).gt.0) then
+          if ((y(i).lt.1.d-50 .and. y(i).ne.0d0) .or. y(i).gt.1.) then         !Includes negative values of y(i)
+            if (y(i).lt.0.) ierr=999
+            y(1:nc)=ABS(y(1:nc))/SUM(ABS(y(1:nc)))
+            EXIT
+          endif
+        endif
+      enddo
+      do i=1,nc
+        if (z(i).gt.0) then
+          if ((x(i).lt.1.d-50 .and. x(i).ne.0d0) .or. x(i).gt.1.) then
+            if (x(i).lt.0.) ierr=999
+            x(1:nc)=ABS(x(1:nc))/SUM(ABS(x(1:nc)))
+            EXIT
+          endif
+        endif
+      enddo
+      end                                             subroutine SAT0EST
+c
+c ======================================================================
+c
+      subroutine PTEST (inp,T,P,alpha,z,calc,zout,ierr,herr)
+c
+c  Use the Wilson K-factor approximation to obtain P, x(i), or y(i).
+c  Internal routine for the SATEST or SAT0EST routines.
+c
+c  Inputs:
+c      inp--See comments in code below
+c        T--Temperature [K]
+c        P--Pressure [kPa]
+c    alpha--vapor liquid fraction
+c        z--Composition (array of mole fractions)
+c
+c  Outputs:
+c     calc--See comments below
+c     zout--x(i) or y(i) depending on inp
+c     ierr--Error flag:  0 - Successful
+c     herr--Error string (character*255)
+c
+c  written by Diego Ortiz, NIST Thermophysics Division, Boulder, Colorado
+c  07-01-10 DOO, original version
+
+      include 'COMMONS.INC'
+      dimension z(ncmax),zout(ncmax),P2(ncmax),ac(ncmax)
+      character herr*255
+
+
+      ierr=0
+      herr=' '
+      if (T.le.0.) RETURN
+
+      sum0=0
+      ac(1:nc)=5.373d0*(1d0+accen(1:nc))
+      P2(1:nc)=Pcrit(1:nc)*EXP(ac(1:nc)*(1d0-Tcrit(1:nc)/T))         !=K(i)*P  --  See Eq. 7.130 of GERG-2004
+      do i=1,nc
+        if (P2(i).le.1.d-50) P2(i)=Pcrit(i)
+      enddo
+      if (inp.eq.-1) then
+        zout(1:nc)=P2(1:nc)                      !Wilson factor
+      elseif (inp.eq.-2) then
+        zout(1:nc)=ac(1:nc)*Tcrit(1:nc)/T**2     !Part of derivative of Wilson factor with respect to T.
+      elseif (inp.eq.1) then
+        calc=SUM(z(1:nc)*P2(1:nc))               !=P*SUM(y(i))   [y=vapor, x=liquid]
+      elseif (inp.eq.2) then
+        do i=1,nc
+          if (lNE0(P2(i))) sum0=sum0+z(i)/P2(i)  !=P/SUM(x(i))
+        enddo
+        calc=XDIV(1d0,sum0)
+      elseif (inp.eq.-3 .and. P.gt.0.) then
+        if (P.le.0d0) RETURN
+        zout(1:nc)=Tcrit(1:nc)/(1d0-LOG(P/Pcrit(1:nc))/ac(1:nc))     !Inverse of Wilson factor to get initial T
+      elseif (inp.eq.3) then
+        if (P.le.0d0) RETURN
+c       calc=1d0-P/SUM(z(1:nc)*P2(1:nc))         !=1-1/SUM(y(i))
+        calc=1d0-SUM(z(1:nc)*P2(1:nc))/P         !=1-SUM(y(i))
+      elseif (inp.eq.4) then
+        if (P.le.0d0) RETURN
+        Pinv=1d0/P
+        do i=1,nc
+          if (z(i).gt.0) then
+            divs=1d0-alpha+alpha*P2(i)*Pinv
+            if (divs.gt.0.) sum0=sum0+z(i)/divs
+          endif
+        enddo
+        calc=1d0-sum0                            !=1-SUM(x(i)) when alpha=1
+      elseif (inp.eq.5) then
+        if (P.le.0d0) RETURN
+        zout(1:nc)=z(1:nc)/P*P2(1:nc)                   !=y(i)
+      elseif (inp.eq.6) then
+        if (P.le.0d0) RETURN
+        do i=1,nc
+          h=0d0
+                   !Temporary Henry's constant model
+          if (ixWat.ne.0) then
+            if (z(ixWat).gt.0 .and. z(i).gt.0) then
+              ib=0
+              if (INDEX(hnam80(i),'benzene').ne.0) ib=1    !Check if the name "benzene" is in the fullname, such as "methylbenzene"
+              if (INDEX(hsyn(i),'benzene').ne.0) ib=1
+              dip=dipole(i)
+              if (dip.ne.-1.) then
+                h=4.5d0-2.5d0*dip+0.01d0*wmas(i)
+                if (ib.eq.1) h=h-2.6d0+2.3d0*dip
+                if (iFluidID(i).eq.1 .or. iFluidID(i).eq.3) h=2d0    !Check if the mixture contains water or heavy water.
+              endif
+            endif
+          endif
+          zout(i)=XDIV(z(i),1d0-alpha+alpha*P2(i)/P)/10d0**h      !=x(i)
+c         if (z(i).le.1.d-3 .and. z(i).gt.0.)
+c    &        zout(i)=zout(i)*10**((LOG10(z(i))+3d0)*2d0)
+        enddo
+      endif
+      if (inp.eq.5 .or. inp.eq.6) then
+        s=SUM(zout(1:nc))
+        if (ABS(s).gt.0) zout(1:nc)=zout(1:nc)/s
+        do i=1,nc
+          if (zout(i).lt.0.000001 .and. z(i).gt.0.) zout(i)=0.000001d0
+          if (zout(i).gt.0.999999)                  zout(i)=0.999999d0
+        enddo
+        s=SUM(zout(1:nc))
+        if (ABS(s).gt.0) zout(1:nc)=zout(1:nc)/s
+      endif
+
+      end                                               subroutine PTEST
+c
+c ======================================================================
+c
+      subroutine SATMAX (icomp,z,Tcmax,Pcmax,Dcmax,ierr,herr)
+c
+c  Return the critical point for a pure fluid, or the VLE limits
+c  for a mixture.  When splines are not known, Tcmax and Pcmax
+c  are multiplied by 1.5 to account for VLE states beyond the simple
+c  methods used to calculate the mixture critical point.
+c
+c  The values returned are not those at a single state point, but are
+c  the T and P maximums possible along the saturation line.
+c
+c  Inputs:
+c    icomp--Value from calling ISPURE; set to 1 for a pure fluid
+c        z--Composition (array of mole fractions)
+c
+c  Outputs:
+c    Tcmax--Maximum temperature (i.e., T at the maxcondentherm) [K]
+c    Pcmax--Maximum pressure (i.e., P at the maxcondenbar) [kPa]
+c    Dcmax--Density at the cricondentherm (i.e., the value at Tcmax, but not Pcmax)
+c     ierr--Error flag:  0 - Successful
+c     herr--Error string (character*255)
+
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension z(ncmax)
+
+      ierr=0
+      call MAXP (z,T,PmaxP,D,imaxp,herr)                   !Get maxcondenbar pressure (maximum pressure possible for all saturation states).
+      call MAXT (z,Tcmax,Pcmax,Dcmax,imaxt,herr)           !Get maxcondentherm values (maximum temperature possible for all saturation states).
+      if (imaxt.gt.0) call CRITP (z,Tcmax,Pcmax,Dcmax,ierr1,herr)    !If no splines, get critical point.
+      if (imaxp.le.0 .and. PmaxP.gt.0.) Pcmax=PmaxP        !Replace Pcmax returned from MAXT with that at MAXP.
+      if (ierrCrt.eq.0 .and. imaxp.eq.1) Pcmax=Pcmax*100d0           !Possible Type III mixture
+      if (iSpline.eq.0 .and. icomp.eq.0) then
+        Tcmax=Tcmax*1.5d0    !Increase Tc and Pc for mixtures when splines are not known.
+        Pcmax=Pcmax*1.5d0
+      endif
+      if (Tcmax.eq.300d0 .and. (Pcmax.le.0d0 .or. Dcmax.le.0d0))
+     &    call REDLINEAR (1,z,Tcmax,Pcmax,Dcmax,ierr,herr)
+
+      end                                              subroutine SATMAX
+c
+c ======================================================================
+c
+      subroutine SATSAVE(iFlag,icomp,kph,T,P,D,Dl,Dv,q,x,y,z,ierr,iexit)
+c
+c  Internal routine to the saturation routines to either save a successful
+c  calculation or restore it if the routines are called again with the
+c  same inputs.
+
+      include 'COMMONS.INC'
+      dimension x(ncmax),y(ncmax),z(ncmax)
+
+
+      iexit=0
+      if (.not.lCache2) RETURN
+      if (iAnc(icomp).ne.0) RETURN
+      if (kph.lt.1 .or. kph.gt.4) RETURN
+      if (ierr.gt.0) then
+        lSatTP(kph)=.false.
+        RETURN
+      endif
+
+!$omp single
+      if (iFlag.eq.2) then             !Save saturation calculation for a given input of T or P.
+        Tsav(kph)=T
+        Psav(kph)=P
+        icsav(kph)=icomp
+        Dlsav(kph)=Dl
+        Dvsav(kph)=Dv
+        xsav(1:nc,kph)=x(1:nc)
+        ysav(1:nc,kph)=y(1:nc)
+        zsav(1:nc,kph)=z(1:nc)
+        lSatTP(kph)=.true.
+
+      else                             !Get saved calculation.
+        if (.not.lSatTP(kph)) RETURN
+        if (icomp.ne.icsav(kph)) RETURN
+        if (kph.le.2 .and. ABS(T-Tsav(kph)).gt.1d-9) RETURN
+        if (kph.ge.3 .and. ABS(P-Psav(kph)).gt.1d-9) RETURN
+        if (icomp.eq.0) then
+          do i=1,nc
+            if (ABS(z(i)-zsav(i,kph)).gt.1d-9) RETURN
+          enddo
+        endif
+        if (kph.le.2) P=Psav(kph)
+        if (kph.ge.3) T=Tsav(kph)
+        q=0d0
+        if (kph.eq.2 .or. kph.eq.4) q=1d0
+        Dl=Dlsav(kph)
+        Dv=Dvsav(kph)
+        D=Dl
+        if (q.eq.1d0) D=Dv
+        x(1:nc)=xsav(1:nc,kph)
+        y(1:nc)=ysav(1:nc,kph)
+        iexit=1
+      endif
+
+!$omp end single nowait
+      end                                             subroutine SATSAVE
+c
+c ======================================================================
+c
+      subroutine FNCRPT (z,D,P,T,ierr,herr)
+c
+c  Find the critical point of a pure fluid based on the EOS.
+c  This is only for pure fluids!
+c
+c  Inputs:
+c        z--Composition (array of mole fractions)
+c
+c  Outputs:
+c        T--Temperature [K]
+c        P--Pressure [kPa]
+c        D--Density [mol/L]
+c     ierr--Error flag:  0 - Successful
+c     herr--Error string (character*255)
+c
+c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  01-01-96 EWL, original version taken from code in SATT
+
+      include 'COMMONS.INC'
+      character*255 herr
+      dimension z(ncmax)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::FNCRPT
+
+
+      ierr=0
+      call CRITP (z,T,pc2,D,ierr1,herr)
+      iter=0
+      ac=1d-10
+c     ac=1d-8
+c  Get first point.
+      told=T+.1d0
+      D=CRTDEN(z,told,D)
+      if (D.le.0) goto 30
+      call DPDDX (told,D,z,fold)
+      fold=fold/1000d0
+ 20   D=crtden(z,T,D)
+      if (D.le.0) goto 30
+      call DPDDX (T,D,z,f)
+      f=f/1000d0
+      iter=iter+1
+      if (iter.gt.20) goto 30
+      if (ABS(f).lt.ac) then
+        call PRESS (T,D,z,P)
+        RETURN
+      endif
+c  Get next point with the slope of the previous two points.
+      if (fold.eq.f) goto 30
+      T1=T-f*(told-T)/(fold-f)
+      told=T
+      fold=f
+      T=T1
+      if (T.gt.0) goto 20
+ 30   end                                              subroutine FNCRPT
+      function CRTDEN (z,T,D)
+      include 'COMMONS.INC'
+      dimension z(ncmax)
+      iter=0
+ 10   iter=iter+1
+      call DPDD2 (T,D,z,df0)
+      crtden=D
+      if(ABS(df0).lt.1d-12) RETURN
+      if (iter.gt.30) RETURN
+      call DPDD2 (T,D+0.0001d0,z,df1)
+      call DPDD2 (T,D-0.0001d0,z,df2)
+      fp=(df1-df2)/0.0002d0
+      fpp=(df1+df2-2d0*df0)/0.00000001d0
+      Dinc=XDIV(-fp,df0)+XDIV(fpp/2d0,fp)
+      D=D+XDIV(1d0,Dinc)
+      if (D.le.0) RETURN
+      goto 10
+
+      end                                                function CRTDEN
+c
+c ======================================================================
+c
+      subroutine CRTPNT (z,Tc,Pc,Dc,ierr,herr)
+c
+c  Subroutine for the determination of the true critical point of a
+c  mixture with the use of the method of Michelsen (1984).
+c
+c  The routine requires good initial guess values of Pc and Tc.
+c
+c  On convergence, the values of bb and cc should be close to zero
+c  and dd > 0 for a two-phase critical point.
+c  bb=0, cc=0, and dd <= 0 for an unstable critical point.
+c
+c  Inputs:
+c        z--Composition [array of mole fractions]
+c       Tc--Initial guess for the critical temperature [K]
+c       Pc--Initial guess for the critical pressure [kPa]
+c
+c  Outputs:
+c       Tc--Critical temperature [K]
+c       Pc--Critical pressure [kPa]
+c       Dc--Critical density [mol/l]
+c     ierr--Error flag:  0 - Successful
+c     herr--Error string (character*255)
+c
+c  written by G. Venkatarathnam, Indian Institute of Technology Madras
+c  10-15-11  GV, original version
+c  01-07-13 EWL, adapt code for use in Refprop
+
+      include 'COMMONS.INC'
+      include 'COMFEQ.INC'
+      dimension z(ncmax),y(ncmax),yn(ncmax),v(ncmax),g(ncmax),u(ncmax)
+      dimension a(ncmax,ncmax),dfds(2),dpht(ncmax),dphp(ncmax)
+      dimension phy(ncmax),phz(ncmax),dft2(2),dfp2(2)
+      character*255 herr
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::CRTPNT
+
+
+      ierr=0
+      herr=' '
+      eps=1d-6               !Numerical perturbation of z
+      bb=0
+      cc=0
+      call ISPURE (z,icomp)
+      if (icomp.ne.0) then
+        call CRITP (z,Tc,Pc,Dc,ierr1,herr)        !Exit if a pure fluid.
+        RETURN
+      endif
+      if (Tc.le.0. .or. tc.gt.5000d0) call CRITP (z,Tc,Pc,Dc,ierr1,herr)
+
+ 10   v(1:nc)=SQRT(z(1:nc))
+      Pc=ABS(Pc)
+      Tc=ABS(Tc)
+      Dc=ABS(Dc)
+      if (Tc.lt.0.) Tc=300d0
+      tol=1d-8
+      iz=1
+      do k=1,20
+        call TOLRNC (tolr,k,10,12,15,18,0)
+        call LGPHI (2,iz,Tc,Dc,Pc,z,phz,a1,a2,a3,ierr,herr)
+        if (ierr.gt.0) RETURN
+        if (k.gt.1 .and. ABS(bb)+ABS(cc/100d0).lt.tol) RETURN        !Convergence obtained, return.
+
+        do i=1,nc
+          a(i,1:nc)=v(i)*v(1:nc)*dphidnj(i,1:nc)
+          a(1:nc,i)=a(i,1:nc)
+          a(i,i)=a(i,i)+1d0
+        enddo
+        xlamda=0d0
+        call MINEIGEN (nc,a,u,xlamda,ierr,herr)
+
+        if (k.eq.10) tol=tol*100d0
+        dpht(1:nc)=dphidt(1:nc)
+        dphp(1:nc)=dphidp(1:nc)
+        do j=1,2
+          Dy=Dc
+          s=eps
+          if (j.eq.1) s=-s
+          y(1:nc)=ABS(s*u(1:nc)*v(1:nc)+z(1:nc))
+          sumy=SUM(y(1:nc))
+          if (ABS(sumy).gt.1d-10) yn(1:nc)=y(1:nc)/sumy
+          call LGPHI (2,iz,Tc,Dy,Pc,yn,phy,a1,a2,a3,ierr,herr)
+          do i=1,nc
+            if (z(i).gt.0.) g(i)=XLOG(y(i)/z(i))+phy(i)-phz(i)
+          enddo
+          dfds(j)=SUM(v(1:nc)*u(1:nc)*g(1:nc))
+          dft2(j)=SUM(v(1:nc)*u(1:nc)*(dpht(1:nc)-dphidt(1:nc)))
+          dfp2(j)=SUM(v(1:nc)*u(1:nc)*(dphp(1:nc)-dphidp(1:nc)))
+        enddo
+
+        bb=xlamda/2d0
+        bp=(dfp2(2)-dfp2(1))/eps/4d0
+        bt=(dft2(2)-dft2(1))/eps/4d0
+        cc=(dfds(2)+dfds(1))/eps**2/6d0
+        cp=(dfp2(2)+dfp2(1))/eps**2/6d0
+        ct=(dft2(2)+dft2(1))/eps**2/6d0
+
+        denom=(bp*ct-bt*cp)
+        if (ABS(denom).lt.1d-20) goto 151
+        dp=(cc*bt-bb*ct)/denom
+        dt=(cp*bb-cc*bp)/denom
+        do i=1,25
+          if (ABS(dt).lt.2. .and. ABS(dp).lt.1000.) EXIT
+          xmt=10d0
+          if (tc.lt.100) xmt=1d0
+          dt=dt/Tc*xmt
+          dp=dp/Pc*xmt
+        enddo
+        Tc=Tc-dt
+        Pc=Pc-dp
+        if (k.ge.20 .or. Pc.lt.0d0 .or. Tc.lt.0d0 .or.
+     &      Pc.gt.100d3 .or. Tc.gt.1d3) then
+          if (eps.lt.0.099d0) then
+            call CRITP (z,Tc,Pc,Dc,ierr1,herr)
+            eps=eps*10d0
+            goto 10
+          endif
+          goto 151
+        endif
+      enddo
+      RETURN
+
+ 151  call ERRNUM (151,0,'CRTPNT',' ',0d0,0d0,0d0,ierr,herr)
+      end                                              subroutine CRTPNT
+c
+c ======================================================================
+c
+      subroutine REDLINEAR (iFlag,z,Tred,Pred,Dred,ierr,herr)
+c
+c  Calculate simple reducing functions for either the critical point (iFlag=1)
+c  or the triple point (iFlag=2).  For a pure fluid, these are just
+c  the EOS values.  For a mixture, they are the mole fraction averages
+c  of the temperature, pressure, and density values at either the
+c  critical point or triple point.
+c
+c  Inputs:
+c    iFlag--Set to 1 to calculate a pseudo-critical point with density based on a molar density sum.
+c           Set to 2 to calculate a pseudo-critical point with density based on a mass density sum.
+c           Set to 3 to calculate a pseudo-critical point with density based on a molar volume sum.
+c           Set to 4 to calculate a pseudo-critical point with density based on a mass volume sum.
+c           Set to -1 to calculate a pseudo-triple point.
+c        z--Composition (array of mole fractions)
+c
+c  Outputs:
+c     Tred--Temperature reducing value [K]
+c     Pred--Pressure reducing value [kPa]
+c     Dred--Density reducing value [mol/L]
+c     ierr--Error flag:  0 - Successful
+c     herr--Error string (character*255)
+c
+c  Written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  01-03-17 EWL, original version
+
+      include 'COMMONS.INC'
+      include 'COMANC.INC'
+      character*255 herr
+      dimension z(ncmax)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::REDLINEAR
+
+      ierr=0
+      herr=' '
+      Tred=300d0
+      Dred=1d0
+      Pred=1d3
+      if (nc.le.0) RETURN
+      call ISPURE (z,icomp)
+      if (icomp.ne.0) then             !Pure fluids.
+        if (iFlag.ge.0) then
+          Tred=Tcrit(icomp)            !Critical point
+          Dred=Dcrit(icomp)
+          Pred=Pcrit(icomp)
+        else
+          Tred=Ttpn(icomp)             !Triple point
+          Dred=Dtpn(icomp)
+          Pred=Ptpn(icomp)
+        endif
+      else
+        if (iFlag.ge.0) then
+          Tred=SUM(z(1:nc)*Tcrit(1:nc))          !Use simple mixing rules for critical point.
+          Pred=SUM(z(1:nc)*Pcrit(1:nc))
+          Dred=SUM(z(1:nc)*Dcrit(1:nc))          !The transport properties are based on this one, don't change.
+          if (iFlag.eq.2) then
+            w=SUM(z(1:nc)*wmas(1:nc))
+            Dred=SUM(z(1:nc)*Dcrit(1:nc)*wmas(1:nc))/w               !Mass density based critical density.
+          elseif (iFlag.eq.3) then
+            Dsum=0
+            do i=1,nc
+              if (z(i).gt.0) Dsum=Dsum+XDIV(z(i),Dcrit(i))           !Molar volume based critical density.
+            enddo
+            Dred=XDIV(1d0,Dsum)
+          elseif (iFlag.eq.4) then
+            w=SUM(z(1:nc)*wmas(1:nc))
+            Dsum=0
+            do i=1,nc
+              if (z(i).gt.0) Dsum=Dsum+XDIV(z(i),wmas(i)*Dcrit(i))             !Mass volume based critical density.
+            enddo
+            Dred=XDIV(1d0,Dsum*w)
+          endif
+        else
+          Tred=SUM(z(1:nc)*Ttpn(1:nc))           !Mixture "triple" point - use simple mixing rules.
+          Dred=SUM(z(1:nc)*Dtpn(1:nc))
+          Pred=0d0
+          do i=1,nc
+            Pred=Pred+z(i)*XLOG(Ptpn(i))
+          enddo
+          Pred=EXP4(Pred)
+          if (Tred.le.0.) ierr=999
+        endif
+      endif
+      if (lEQ0(Tred)) Tred=300d0
+      if (lEQ0(Dred)) Dred=1d0
+      if (lEQ0(Pred)) Pred=1d3
+      end                                           subroutine REDLINEAR
+
 c        1         2         3         4         5         6         7
 c23456789012345678901234567890123456789012345678901234567890123456789012
 c
 c ======================================================================
-c                                                     end file sat_sub.f
+c                                                   End file SAT_SUB.FOR
 c ======================================================================

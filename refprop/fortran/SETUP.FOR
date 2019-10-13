@@ -1,2547 +1,1929 @@
-c  begin file setup.for
+c  Begin file SETUP.FOR
 c
-c  This file contains the routines which initialize the models, fluid-
-c  specific parameters and coefficients, etc.  The subroutine SETUP must
-c  be called before any of the other routines (except SETMOD) are called.
-c  Call(s) to SETMOD and SETREF are optional and may be used to specify
-c  non-standard models and reference states.
+c  This file contains the routines that initialize the models, fluid-
+c    specific parameters and coefficients, etc.  The subroutine SETUP must
+c    be called before any of the other routines (except SETMOD).
+c    Call(s) to SETMOD and SETREF are optional and may be used to specify
+c    non-standard models and reference states.
 c
-c  Subroutine SETUP0 calls subroutine SETUP using the same techniques as
-c  those used by the graphical interface and the Excel spreadsheet.
+c  Subroutine SETUP0 calls subroutine SETUP with the same techniques as
+c    those used by the graphical interface and the Excel spreadsheet.
 c
-c  Subroutine SETMIX reads the *.MIX files and makes the appropriate call
-c  to subroutine SETUP.
+c  Subroutine SETMIX reads the *.MIX files and calls SETUP.
 c
-c  Subroutine SETPATH sets the path where the *.fld files can be found
+c  Subroutine SETPATH sets the path where the *.fld files can be found.
 c
 c  Subroutine PUREFLD allows the user to calculate the properties of a pure
-c  fluid when a mixture has been loaded and the fluid is one of the
-c  constituents in the mixture.
+c    fluid when a mixture has been loaded and the fluid is one of the
+c    constituents in the mixture.
 c
-c  contained here are:
-c     subroutine SETUP (ncomp,hfiles,hfmix,hrf,ierr,herr)
-c     subroutine SETUP0 (i,hfld,hfm,hrf,ierr,herr)
-c     subroutine SETFLD (icomp,hfile,ierr,herr)
-c     subroutine SETMOD (ncomp,htype,hmix,hcomp,ierr,herr)
-c     subroutine SETREF (hrf,ixflag,x0,h0,s0,t0,p0,ierr,herr)
-c     subroutine SETMIX (hmxnme,hfmix,hrf,ncc,hfiles,x,ierr,herr)
-c     subroutine SETPATH (hpth)
-c     subroutine SETNC (ncomp)
-c     subroutine RFFILE (hfilei,hflref)
-c     subroutine OPENFL (nread,hfl,idir,ierr,herr)
+c  Description of all common variables (contained in the common blocks)
+c    is in the files COMMONS.INC and COMTRN.INC.
+c
+c  Contained here are:
+c     subroutine SETUP   (ncomp,hFiles,hFmix,hrf,ierr,herr)
+c     subroutine SETUP0  (ncomp,hfld,hFmix,hrf,ierr,herr)
+c     subroutine SETFLD  (icomp,hFile,jFluidID,ierr,herr)
+c     subroutine SETFLD2 (nread,i,hstar,hflag,htype,hcite,heqn,hreff,hetemp,httemp,ierr,herr)
+c     subroutine SETMOD  (ncomp,htype,hmix,hcomp,ierr,herr)
+c     subroutine SETREF  (hrf,ixflag,x0,h0,s0,T0,P0,ierr,herr)
+c     subroutine SETMIX  (hMixNme,hFmix,hrf,ncc,hFiles,z,ierr,herr)
+c     subroutine SETNC   (ncomp)
+c     subroutine GETMOD  (icomp,htype,hcode,hcite)
 c     subroutine PUREFLD (icomp)
-c     subroutine GERG04 (ncomp,iflag,ierr,herr)
-c     subroutine RESETA
+c     subroutine GERG04  (ncomp,iFlag,ierr,herr)
+c     subroutine GERG08  (ncomp,iFlag,ierr,herr)
+c     subroutine RFFILE  (hfilei,hflref)
+c     subroutine OPENFL  (icomp,nread,hflIn,hflOut,idir,ierr,herr)
+c     subroutine OPENFL2 (nread,iFLDarray,iulc,ioerr,hfilei,hFLDarray)
+c     subroutine RESETA  (iFlag)
+c     subroutine SETREFDIR (hpth)
+c     subroutine GETREFDIR (hpth)
 c     block data BDSET
 c
-c  these routines set the values in the following common blocks
-c     common /CCAS/ hcas(n0:nx)
-c     common /CNAM/ hname(n0:nx)
-c     common /EOSMOD/ hpheq,heos,hmxeos(n0:nx),hmodcp(n0:nx)
-c     common /TRNMOD/ hetamx,heta(nrf0:nx),htcxmx,htcx(nrf0:nx)
-c     common /STNMOD/ hsten,hstenk(n0:nx)
-c     common /DEMOD/ hdiel,hdielk(n0:nx)
-c     common /MELTMOD/ hmelt,hmeltk(n0:nx)
-c     common /SUBLMOD/ hsubl,hsublk(n0:nx)
-c     common /PSMOD/ hpsa,hpsk(n0:nx)
-c     common /PLMOD/ hpla,hplk(n0:nx)
-c     common /DLMOD/ hdla,hdlk(n0:nx)
-c     common /DVMOD/ hdva,hdvk(n0:nx)
-c     common /REFST/ hsvrfs,hsvrfd(n0:nx)
-c     common /CREF/ tref(n0:nx),rhoref(n0:nx),href(n0:nx),sref(n0:nx)
-c
-c  various arrays are dimensioned with parameter statements
-c
 c ======================================================================
 c ======================================================================
 c
-      subroutine SETUP (ncomp,hfiles,hfmix,hrf,ierr,herr)
+      subroutine SETUP (ncomp,hFiles,hFmix,hrf,ierr,herr)
 c
-c  define models and initialize arrays
+c  Define models and initialize arrays.
 c
-c  A call to this routine is required.
+c  Inputs:
+c    ncomp--Number of components (1 for pure fluid) (integer)
+c           If called with ncomp=-1, the version number*10000 will be returned in ierr.
+c   hFiles--Array of file names specifying the fluid or the mixture components (character*255);
+c           e.g., 'fluids\r134a.fld' (DOS)
+c                 ':fluids:r134a.fld' (Mac)
+c                 '[full_path]/fluids/r134a.fld' (UNIX)
+c    hFmix--Name of file containing mixture coefficients (character*255);
+c           e.g., 'fluids\HMX.BNC'
+c      hrf--Reference state for thermodynamic calculations (character*3). Other choices are possible, see SETREF:
+c           'DEF' - default reference state as specified in fluid file
+c           'NBP' - h,s = 0 at pure component normal boiling point
+c           'ASH' - h,s = 0 for sat. liquid at -40 C (ASHRAE convention)
+c           'IIR' - h = 200 kJ/kg and s = 1 kJ/kg-K for sat. liquid at 0 C (IIR convention)
 c
-c  inputs:
-c    ncomp--number of components (1 for pure fluid) [integer]
-c           if called with ncomp=-1, the version number*100 will be returned in ierr
-c   hfiles--array of file names specifying fluid/mixture components
-c           [character*255 variable] for each of the ncomp components;
-c           e.g., :fluids:r134a.fld (Mac) or fluids\r134a.fld (DOS) or
-c           [full_path]/fluids/r134a.fld (UNIX)
-c    hfmix--mixture coefficients [character*255]
-c           file name containing coefficients for mixture model,
-c           if applicable
-c           e.g.,  fluids\hmx.bnc
-c      hrf--reference state for thermodynamic calculations [character*3]
-c           'DEF':  default reference state as specified in fluid file
-c                   is applied to each pure component
-c           'NBP':  h,s = 0 at pure component normal boiling point(s)
-c           'ASH':  h,s = 0 for sat liquid at -40 C (ASHRAE convention)
-c           'IIR':  h = 200, s = 1.0 for sat liq at 0 C (IIR convention)
-c           other choices are possible, but these require a separate
-c           call to SETREF
-c  outputs:
-c     ierr--error flag:  0 = successful
-c                      101 = error in opening file
-c                      102 = error in file or premature end of file
-c                     -103 = unknown model encountered in file
-c                      104 = error in setup of model
-c                      105 = specified model not found
-c                      111 = error in opening mixture file
-c                      112 = mixture file of wrong type
-c                      114 = nc<>nc from setmod
-c                     -117 = binary pair not found, all parameters will be estimated
-c                      117 = No mixture data are available, mixture is outside the
-c                            range of the model and calculations will not be made
-c     herr--error string (character*255 variable if ierr<>0)
-c     [fluid parameters, etc. returned via various common blocks]
+c  Outputs:
+c     ierr--Error flag:
+c             0 - Successful
+c            101 - Error in opening file
+c            102 - Error in file or premature end of file
+c           -107 - Unknown model encountered in file
+c            105 - Specified model not found
+c           -105 - Must use routine SETREF for (OTH) reference state choice
+c            111 - Error in opening mixture file
+c            112 - Mixture file of wrong type
+c            114 - nc not equal to the nc sent to SETMOD
+c           -117 - Binary pair not found, all parameters will be estimated
+c            117 - Mixture parameters not available, mixture is outside the
+c                  range of the model and calculations will not be made
+c     herr--Error string (character*255)
 c
-c  explanation of parameters (used to dimension arrays)
-c     ncmax:    maximum number of mixture components
-c        n0:    lower bound on component arrays (-ncmax to accommodate
-c               multiple ECS-thermo reference fluids)
-c        nx:    same as ncmax
-c      nrf0:    lower bound on arrays associated with transport props
-c               (element 0 stores reference fluid information)
-c
-c  explanation of commons
-c    /NCOMP/    nc--number of components
-c
-c    /EOSMOD/   equation of state (thermodynamic) models
-c        hpheq--model for phase equilibria calcs (not currently used)
-c         heos--equation of state model currently loaded (equal to hmxeos(1) if nc=1)
-c       hmxeos--models for mixture components
-c       hmodcp--ideal heat capacity model to use for component i
-c               (set by call to SETeos routine)
-c
-c    /TRNMOD/   transport property models
-c       hetamx--viscosity model for mixture
-c         heta--viscosity models for mixture components
-c       htcxmx--thermal conductivity model for mixture
-c         htcx--conductivity models for mixture components
-c
-c    /STNMOD/   surface tension models
-c        hsten--surface tension model for mixture
-c       hstenk--surface tension models for mixture components
-c
-c    /DEMOD/    dielectric constant models
-c    /MELTMOD/  melting line models
-c    /SUBLMOD/  sublimation line models
-c    /PSMOD/    vapor pressure equations
-c    /PLMOD/    liquid pressure equations
-c    /DLMOD/    saturated liquid density equations
-c    /DVMOD/    saturated vapor density equations
-c
-c    /REFST/
-c       hsvrfs--reference state (as specified by input argument hrf)
-c       hsvrfd--default reference state for each component
-c
-c    /CCON/     constants for each of the NCMAX components; these values
-c               are taken from the coefficients/array of selected model
-c      Tcrit(i):  critical temperature (K)
-c      Pcrit(i):  critical pressure (kPa)
-c      Dcrit(i):  critical density (mol/L)
-c      zcrit(i):  critical compressibility factor (Pc/(R*Tc*rhoc))
-c      ttpn(i):   triple point temperature (K)
-c      ptpn(i):   triple point pressure (kPa)
-c      dtpn(i):   triple point density (mol/L)
-c      tnbp(i):   normal boiling point temperature (K)
-c      wmas(i):   molecular mass (g/mol)
-c      accen(i):  acentric factor
-c      dipole(i): dipole moment (debye) at normal boiling pt
-c
-c    /CREF/     reference state for each of the NCMAX components
-c      tref(i):   reference temperature for enthalpy and entropy
-c      rhoref(i): reference density for enthalpy and entropy
-c      href(i):   enthalpy at tref(i), rhoref(i) for component i
-c      sref(i):   entropy at tref(i), rhoref(i) for component i
-c
-c    /CCAS/     CAS numbers for the n0..ncmax components
-c      hcas(i):   "i" is mixture component number (n0..ncmax)
-c
-c    /CNAM/     short-hand names for the nc components
-c      hname(i):  "i" is mixture component number
-c
-c    /HCHAR/    characters used to delimit/terminate output
-c      htab:      tab (or other character) to delimit output tables
-c      hnull:     ASCII null character to terminate error strings
-c                 (for compatibility with mixed-language DLLs)
-c
-c
-c  written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
+c  Written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
 c  11-19-94  MM, original version
-c  07-21-95  MM, restructure to add subordinate (model-specific)
-c                set-up routines
-c  07-24-95  MM, fluid const (e.g. Tc) set in SETeos rather than here
-c  09-10-95  MM, add common /HCHAR/ and define contents
-c  09-13-95  MM, add ierr, herr to argument list
-c  09-25-95  MM, new argument list to SATT (outputs in order p, rho, x)
-c  10-03-95  MM, read coefficients from files, change argument list
-c  11-02-95  MM, expand to include mixture Helmholtz (HMX) model
-c                add common block CNAM with fluid names
-c  11-08-95  MM, initialize hmxeos array, even if heos not HMX
-c  11-29-95  MM, variable lower limit on coefficient/constant arrays
-c                to accommodate ECS reference fluid
-c                kludge to load R134a as ECS reference fluid
-c  12-08-95  MM, move file read to separate subroutine SETFLD
-c  12-12-95  MM, remove R134a reference fluid kludge
-c  01-09-96  MM, add call to SETHMX (read HMX.bnc file)
-c  01-10-96  MM, add check for inputs same as previous call
-c  01-11-96  MM, move reference state calculation to SETREF
-c  01-19-96  MM, reset flag ksetrf to zero on call to SETUP
-c  01-31-96  MM, implement 'NBS' option for EOS (and transport model)
-c  02-27-96  MM, parameter n0=-ncmax to accommodate ECS-thermo model
-c                add Zcrit to common /CCON/
-c  02-29-96  MM, cover case of pure-fluid model specified for mixture
-c  03-13-96  MM, changes to merge with Klein's transport code,
-c                add common /TRNMOD/
-c  03-19-96  MM, add dipole moment to /CCON/
-c  03-20-96  MM, reduce argument list, move model specification to SETMOD
-c                add mix models to /TRNMOD/
-c  03-21-96  MM, replace /MODEL/ with /EOSMOD/, /STNMOD/, /REFST/
-c  03-27-96  MM, fix bug when nc = 1 but overall model is a mix model
-c  05-08-96  MM, add /MXINFO/ load hfmix into hmfile(0)
-c  05-14-96  MM, add call to SETPH0 model (Helmholtz form)
-c                disable check if inputs same as previous (!temporary)
-c  11-19-96  MM, add commons related to critical lines, print parameters
-c  11-25-96  MM, move debug print of mixture pars to SETHMX
-c  02-20-97  MM, add hsvrfd to /REFST/, new common /CREFDF/ (for default ref st)
-c  02-24-97  MM, add /CREMOD/ (pointer to transport critical enhancement models)
-c  03-25-97  MM, bug fix:  x0 used but not dimensioned
-c  03-28-97  MM, bug:  models initialized to 'NBS' only for first call to SETUP,
-c                subsequent calls find past settings or 'NUL' if ncomp has increased;
-c                add flag in /RESETM/ to fix
-c  05-27-97  MM, reset gas constant when lreset=.true.
-c  07-03-97  MM, use 'DEF' reference state if 'OTH' is specified
-c  10-01-97  MM, add compiler switch to allow access by DLL
-c  03-30-98  MM, initialize ierr1
-c  04-10-98  MM, do not set component models to 'NBS' if mix model is 'NBS'
-c                (this had effect of undoing calls to SETMOD)
-c  12-01-98 EWL, add routine to convert hfiles*80 to hfiles*255 if necessary
-c  12-01-98 EWL, set hfmix2 to hfmix to avoid problems with *80 to *255 change
-c  12-01-98 EWL, add Reos and triple point pressure and density to /CCON/
-c  03-11-99 EWL, reset lsatt and lsatp to .false. when called
-c  06-03-99  MM, change default mixture surface tension model to STH
-c  11-01-99 EWL, return from SETFEQ when ierr>0
-c  11-02-99 EWL, make sure that selected equation of state has been loaded
-c  11-02-99 EWL, set lreset to true before RETURN's
-c  01-26-00  MM, add initialization of models & citations in /CITE/
-c  03-16-00 EWL, initialize variables in FXPNT
-c  12-18-00 MLH, set mixture reference fluid for transport to nitrogen
-c  01-23-02 EWL, split common block CITE into 2 pieces for some compilers
-c  01-23-02 EWL, split common block MXINFO into 2 pieces for some compilers
-c  05-27-02 EWL, check for ammonia/water mixture, adjust R, Href, Sref
-c  07-29-02 EWL, changed third argument of SETREF to x0 instead of 0.d0
-c  08-20-02 EWL, zero out the iamwat flag
-c  09-19-02 EWL, add the ianc flag
-c  09-19-02 EWL, add liquid pressure ancillary setup
-c  10-31-02 EWL, add AGA8 equation of state setup
-c  11-26-02 EWL, add OT0 reference state
-c  10-12-04 MLH, add PR setup
-c  11-19-04 EWL, read UN number
-c  01-03-05 EWL, remove AGA8 equation of state setup, just call setaga after call to setup
-c  07-22-05 MLH, add multiple reference fluids for transport properties model
-c  09-28-05  DT, change occurrences of a backslash to 'char(92)' for compatibility
-c                with some compilers using F77
-c  10-07-05 EWL, only modify ammonia/water reference state if user has not redefined it
-c  06-13-06 EWL, modified most of the fortran files to remove the line numbers
-c                in the do...continue loops.
-c  06-13-06 EWL, modified every fortran file throughout all of Refprop to enable
-c                the user to load multiple fluids (as if it were a mixture) and
-c                then set which pure fluid is being used (though subroutine PureFld)
-c                in the calculations.  Common block NCOMP was modified everywhere
-c                to include the variable ic, which sets the pure fluid currently
-c                in use.  When ic is zero, then mixture calculations are made.
-c  07-18-06 EWL, add linit to set strings to 'NUL' on first call
-c  07-24-06 EWL, rework lreset logic
-c  07-26-06 EWL, remove excess code, rework setup
-c  08-10-06 EWL, add action='READ' to all open statements
-c  09-25-06 EWL, changed all occurrences in every routine from herr(1:1)=hnull to herr=' '
-c  03-30-07 EWL, add dll_export switches to all top level REFPROP subroutines
-c  09-13-09 EWL, change loop to call SETPRCO from icomp=0 to icomp=1
-c  02-04-10 EWL, change the ianc variable into an array
+c  09-28-05  DT, change occurrences of a backslash to 'CHAR(92)' for compatibility with some compilers
 c  03-03-10 EWL, return version number when called with nc=-1
-c  10-28-10 EWL, initialize more variables relating to transport properties
-c  04-04-11 EWL, globally change g11.x to g12.x in format statements to remove error message with Intel compiler
-c  05-11-11 EWL, change nc to ncomp
-c  07-24-12 EWL, change hmxeos to hcomp in call to SETMOD to avoid array size mismatch
-c  11-26-12 EWL, exit subroutine early if only SETREF was called after last call to SETUP (but with a reset call to SETREF)
-c  01-24-13 MLH, add flag for alcohols ialc
-c
-c  Compiler switches to allow access to the routines in the DLL.
-c  The DEC$ switch is for use with Digital Visual Fortran; this should be
-c    treated as a comment by all other compilers.
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SETUP
-c
-      include 'commons.for'
-      include 'comtrn.for'
-      character*3 hrf,hcomp(1:ncmax)
-      character*255 hfiles(ncmax),hfile(n0:nx),hfmix,hfmix2,rflnam
-      character*255 herr,herr1,ucase
+c  01-24-13 MLH, add flag for alcohols ixAlc
+c  04-16-14 EWL, add call to RESETA at beginning
+c  01-04-16 MLH, change default mixture model for surface tension to PAR
+c  07-01-16 EWL, shorten and rework code; remove all unnecessary comments about changes
+
+      include 'COMMONS.INC'
+      include 'COMREFP.INC'
+      include 'COMFEQ.INC'
+      include 'COMANC.INC'
+      include 'COMTRN.INC'
+      character*3 hrf,hrff,hcomp(1:ncmax)
+      character*255 hFiles(ncmax),hFile(nq),hFmix
+      character*255 herr,herr1,herr2,herr3,UCASE
       dimension x0(ncmax)
-c
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SETUP
+
+c  Send back version number.
+
       if (ncomp.eq.-1) then
-        ierr=91000  !Send back version number*10000.
+        ierr=100000               !Send back version number*10000 in ierr.
+        herr='10.0'               !Send back version number in herr.
+c       ierr=94444                !Send back version number*10000 in ierr.
+c       herr='9.4.4.44 (004)'     !Send back version number in herr.
         RETURN
       endif
 
-c      call DATE (herr)   !Lahey
-
-c     herr=' '
-c     call DATE_AND_TIME (herr)
-c     if (herr(7:8).eq.'20' .and. herr(9:9).ne.' ') then
-c       herr=herr(9:10)//herr(1:2)//herr(4:5)
-c     elseif (herr(1:2).eq.'20') then
-c       herr=herr(3:8)
-c     else
-c       herr=herr(7:8)//herr(1:2)//herr(4:5)
-c     endif
-c                   Y M D
-c     if (herr.gt.'140831') then
-c       herr=
-c    & 'The REFPROP DLL you are using has expired (Dec. 31, 2013). '
-c    & //'Please return to the Refprop website and download the latest.'
-c       ierr=1
-c       RETURN
-c     endif
-
-c...to permanetly turn on the full GERG equations, uncomment the following line
-c     call GERG04 (nc,1,ierr,herr)
-
-c  initialize variables upon first call to setup
-      if (linit) then
-        hsveqn='NUL'
-        hsvvis='NUL'
-        hsvcnd='NUL'
-        hsvsrf='NUL'
-        hsvdil='NUL'
-        hsvmix='NUL'
-        hsvrfs='NUL'
-        hsvph ='NUL'
-        do i=1, nx
-          hsveqk(i)='NUL'
-          hsvvik(i)='NUL'
-          hsvcnk(i)='NUL'
-          hsvsrk(i)='NUL'
-          hsvdik(i)='NUL'
-        enddo
-        do i=n0, nx
-          hsvfld(i)='NUL'
-          hrefdf(i)='NUL'
-        enddo
-        linit=.FALSE.
+c  Send back the number of components.
+      if (ncomp.eq.-2) then
+        ierr=nc
+        RETURN
       endif
-c
-c  reset fixed points
-c
-      htab=CHAR(9)         !tab character for output tables
-      hnull=CHAR(0)        !null character to terminate error strings
-      if (n0.gt.0) izero0=1 !n0 is usually negative, but the minimizer can reset the bound to decrease array size
+
+c---To permanently turn on the full GERG equations, uncomment the following line.---
+c     call GERG08 (ncomp,1,ierr,herr)
+
       ierr=0
-      ierr1=0
-      ierrcrt=0
-      iSatFlg=0
+      ierr2=0
+      ierr3=0
+      iersav2=0
       herr=' '
-      hfmix2=hfmix
-      do i=1,ncmax
-        x0(i)=0.d0
-      enddo
-      x0(1)=1.d0
-c  used to check for version 6.0 inputs:
+      x0=0d0
+      x0(1)=1d0
+      T0=0d0
+      P0=0d0
+      h0=0d0
+      s0=0d0
+      iSetup=0
+      hrff=hrf
 
-c     if(hfmix(79:80).eq.'  '.and.hfmix(81:82).ne.'  ')hfmix2=hfmix(1:80)
-c
-c  compare inputs to previous values (stored in /xxxMOD/ and /SETSAV/)
-c  if nothing has changed SETUP can be bypassed
-c
-      lsame=.false.
-      if (nc.eq.ncomp .and. hsvrfs.eq.hrf) then
-c       write (*,*) ' SETUP:  ncomp and ref state same as previous'
-        if((hsveqn.eq.heos  .or. hsveqn.eq.'NBS') .and. !EOS model
-     &     (hsvvis.eq.hetamx  .or. hsvvis.eq.'NBS') .and. !viscosity model
-     &     (hsvcnd.eq.htcxmx  .or. hsvcnd.eq.'NBS') .and. !therm cond model
-     &     (hsvsrf.eq.hsten .or. hsvsrf.eq.'NBS') .and. !surface ten model
-C    &     (hsvdil.eq.hdiel .or. hsvdil.eq.'NBS') .and. !dielectric model
-     &      hsvph.eq.hpheq) then      !phase equil method, not implemented
-          lsame=.true.
-c         write (*,*) ' SETUP:  after check of models lsame =  ',lsame
-          do i=1,nc
-c  check that .fld file and component models are the same as last call
-            if(hfiles(i).ne.hsvfld(i) .or.
-     &        (hsveqk(i).ne.hmxeos(i)  .and. hsveqk(i).ne.'NBS').or.
-     &        (hsvsrk(i).ne.hstenk(i)  .and. hsvsrk(i).ne.'NBS').or.
-C    &        (hsvdik(i).ne.hdielk(i)  .and. hsvdik(i).ne.'NBS').or.
-     &        (hsvvik(i).ne.heta(i)   .and. hsvvik(i).ne.'NBS').or.
-     &        (hsvcnk(i).ne.htcx(i)   .and. hsvcnk(i).ne.'NBS')) then
-              lsame=.false.
-            end if
-c         write (*,*) ' SETUP:  after component models lsame = ',lsame
-          enddo
-c  check for previous call to setref with ixflag=2
-          if (ixfsav.eq.2) then
-            if (hrf.eq.'DEF') then  !Quick check for need to call SETREF only, without reading fluid files
-              ixflag=1
-              call SETREF (hrf,ixflag,x0,h0,s0,t0,p0,ierr,herr)
-              call AMH2OR  !Setup ammonia/water reference state
-            else
-              lsame=.false.
-            end if
-          endif
-          if (hsvmix.ne.hfmix2) lsame=.false.   !mixture coeff file
-c         write (*,*) ' SETUP:  after mixture file lsame =     ',lsame
-        end if
-c  if lrst has been set equal to true, then both SETMOD and SETUP were called
-c  simultaneously earlier, and this call to SETUP must reset the earlier call
-c  to SETMOD.
-        if (lrst) lsame=.false.
-        if (lsame) RETURN
-      end if
-c
-c
-c-------start of main code--------
-c
-c
-      lrst=.false.
-      if (.not.lreset) lrst=.true.  !Flag to indicate that SETMOD was called outside of SETUP
-      hsvmix='x'  !Delete saved input in case setup called with nc=0 to reset system
-c  check state of flag lreset; a value of .true. indicates need to reset
-c  all models to 'NBS'; this occurs when SETUP is called a second time
-c  in a given application
-      if (lreset) then
-        do i=1,ncmax
-          hcomp(i)=hmxeos(i)
-        enddo
-        call SETMOD (ncomp,'NBS',heos,hcomp,ierr,herr)
-      endif
-      iSpline=0
-      lreset=.true.
-      iamwat=0
-      iwat=0
-      ialc=0
-      do i=0,ncmax
-        ianc(i)=0
-      enddo
-      if (ierr.gt.0) RETURN
-      if (ncomp.ne.ncset) then
-        ierr=114
-        herr='[SETUP error 114] number of components does not match '//
-     &  'value sent to SETMOD'//hnull
-        call ERRMSG (ierr,herr)
-        RETURN
-      endif
-c
-      ksetrf=0
-      hsvph='NBS'
-      hsvmix=hfmix2
-      nc=ncomp
-      R=8.314472d0   !gas constant, Mohr and Taylor, JPCRD, 28(6):1713-1852, 1999.
-c     R=8.314510d0   !gas constant, CODATA recommended value
-c
-c     write (*,*)    'Input values'
-c     write (*,1002) heos, (hmxeos(j),j=0,12),
-c    &               hetamx, (heta(j),j=0,12),
-c    &               htcxmx, (htcx(j),j=0,12),
-c    &               hsten,(hstenk(j),j=0,12)
-c     write (*,*)    'Saved values'
-c     write (*,1002) hsveqn,(hsveqk(j),j=0,12),
-c    &               hsvvis,(hsvvik(j),j=0,12),
-c    &               hsvcnd,(hsvcnk(j),j=0,12),
-c    &               hsvsrf,(hsvsrk(j),j=0,12)
-c1002 format ('    heos, hmxeos: ',2(a3,3x),12(a3,1x)/
-c    &        '     visc models: ',2(a3,3x),12(a3,1x)/
-c    &        '      tcx models: ',2(a3,3x),12(a3,1x)/
-c    &        ' surf ten models: ',2(a3,3x),12(a3,1x))
-c
-c  set pointers to models
-c
-c  special case if equation of state is NIST recommendation
-c  only mixture choice at present is the HMX model
-      if (heos.eq.'NBS' .or. heos.eq.'nbs') then
-        heos='HMX'
-        if (nc.eq.1) heos=hmxeos(1)
-      else if (heos.eq.'HMX') then
-c  mixture model is HMX, use component models as set in SETMOD
-      else
-        if (nc.gt.1) then
-c  this condition should not be accessed; a mix model other than HMX
-c  has been specified, but only choice at present is the HMX model
-          ierr=-105
-          herr='[SETUP warning -105] unknown mixture model specified,'
-     &       //' the HMX model will be used.'//hnull
-          call ERRMSG (ierr,herr)
-          heos='HMX'
-          do i=1,nc
-            hmxeos(i)='NBS'
-          enddo
-        end if
-      end if
-c
-c  special case if viscosity model is NIST recommendation
-c  only mixture choice at present is the ECS model
-      if (hetamx.eq.'NBS' .or. hetamx.eq.'nbs') then
-        hetamx='ECS'
-        if (nc.eq.1) hetamx=heta(1)
-      else if (hetamx.eq.'ECS') then
-c  mixture model is ECS, use component models as set in SETMOD
-      else
-        if (nc.gt.1) then
-c  this condition should not be accessed; a mix model other than ECS
-c  has been specified, but only choice at present is the ECS model
-c         write (*,*) ' SETUP--unknown mix viscosity model, ECS used'
-          hetamx='ECS'
-          do i=1,nc
-            heta(i)='NBS'
-          enddo
-        end if
-      end if
-c
-c  special case if thermal conductivity model is NIST recommendation
-c  only mixture choice at present is the ECS model
-      if (htcxmx.eq.'NBS' .or. htcxmx.eq.'nbs') then
-        htcxmx='ECS'
-        if (nc.eq.1) htcxmx=htcx(1)
-      else if (htcxmx.eq.'ECS') then
-c  mixture model is ECS, use component models as set in SETMOD
-      else
-        if (nc.gt.1) then
-c  this condition should not be accessed; a mix model other than ECS
-c  has been specified, but only choice at present is the ECS model
-c         write (*,*) ' SETUP--unknown mix conductivity model, ECS used'
-          htcxmx='ECS'
-          do i=1,nc
-            htcx(i)='NBS'
-          enddo
-        end if
-      end if
-c
-c  special case if surface tension model is NIST recommendation
-      if (hsten.eq.'NBS' .or. hsten.eq.'nbs') then
-        hsten='STH'
-        if (nc.eq.1) hsten=hstenk(1)
-c     else if (hsten.eq.'STM' .or. hsten.eq.'STX') then
-c  mixture model is STM or STX, both are contained in routine STN;
-c  use component models as specified in SETMOD
-      end if
-c
-c  special case if dielectric constant model is NIST recommendation
-      if (hdiel.eq.'NBS' .or. hdiel.eq.'nbs') then
-        hdiel='DEM'
-        if (nc.eq.1) hdiel=hdielk(1)
-c     else if (hdiel.eq.'DEM' .or. hdiel.eq.'DEX') then
-c  mixture model is DEM or DEX, both are contained in routine DE;
-c  use component models as specified in SETMOD
-      end if
-c
-c  old code for compatibility with version 6.0
-c     if (hfiles(1)(79:80).eq.'  ' .and. hfiles(1)(81:82).ne.'  ') then
-c       hfile(1)=hfiles(1)(1:80)
-c       if (nc.ge.2) hfile(2)=hfiles(1)(81:160)
-c       if (nc.ge.3) hfile(3)=hfiles(1)(161:240)
-c       if (nc.ge.4) hfile(4)=hfiles(1)(241:255)//hfiles(2)(1:65)
-c       if (nc.ge.5) hfile(5)=hfiles(2)(66:145)
-c     endif
-c
-c
-c  fill up info arrays for unused/undefined components/reference fluid
-c
-      do i=n0,nc
-        hfile(i)='NUL'
-        hcas(i)='not_defined'
-        hname(i)='not_defined'
-        hieos(i)='NUL'//hnull
-        hicp0(i)='NUL'//hnull
-        histn(i)='NUL'//hnull
-        hidiel(i)='NUL'//hnull
-        himelt(i)='NUL'//hnull
-        hisubl(i)='NUL'//hnull
-        hips(i)='NUL'//hnull
-        hipl(i)='NUL'//hnull
-        hidl(i)='NUL'//hnull
-        hidv(i)='NUL'//hnull
-        hitcx(i)='NUL'//hnull
-        hieta(i)='NUL'//hnull
-        hitcxc(i)='NUL'//hnull
-        hietac(i)='NUL'//hnull
-        tminst(i)=300.d0
-        tmaxst(i)=300.d0
-        tmtcx(i)=300.d0
-        txtcx(i)=300.d0
-        tmeta(i)=300.d0
-        txeta(i)=300.d0
-        tmecst(i)=300.d0
-        txecst(i)=300.d0
-        pxtcx(i)=0.d0
-        Dxtcx(i)=0.d0
-        pxeta(i)=0.d0
-        Dxeta(i)=0.d0
-        pxecst(i)=0.d0
-        Dxecst(i)=0.d0
-      enddo
+c  If lRst is true, then both SETMOD and SETUP were called simultaneously,
+c   and this call to SETUP must reset the earlier call to SETMOD.
+      if (lRst) goto 100
+
+c  Compare inputs to previous values. If nothing has changed, SETUP can be bypassed.
+      if (nc.ne.ncomp .or. ncomp.eq.0) goto 100
+      if (hsveos.ne.heosmx .and. hsveos.ne.'NBS') goto 100  !EOS model
+      if (hsvvis.ne.hvismx .and. hsvvis.ne.'NBS') goto 100  !Viscosity model
+      if (hsvtcx.ne.htcxmx .and. hsvtcx.ne.'NBS') goto 100  !Thermal conductivity model
+      if (hsvstn.ne.hstnmx .and. hsvstn.ne.'NBS') goto 100  !Surface tension model
+c  Check that *.fld file and component models are the same as last call.
       do i=1,nc
-        hfile(i)=hfiles(i)
-        hsvfld(i)=hfiles(i)
+        if (hsvfld (i).ne.hFiles(i)) goto 100
+        if (hsveosk(i).ne.heosk (i) .and. hsveosk(i).ne.'NBS') goto 100 !EOS model
+        if (hsvvisk(i).ne.hetak (i) .and. hsvvisk(i).ne.'NBS') goto 100 !Viscosity model
+        if (hsvtcxk(i).ne.htcxk (i) .and. hsvtcxk(i).ne.'NBS') goto 100 !Thermal conductivity model
+        if (hsvstnk(i).ne.hstnk (i) .and. hsvstnk(i).ne.'NBS') goto 100 !Surface tension model
       enddo
-      if (n0.le.0) then
-        heta(izero0)='NUL'
-        htcx(izero0)='NUL'
-        hmxeos(izero0)='FEQ'     !Set default in case .fld file has no transport model
+
+      if (hsvmix.ne.hFmix) goto 100     !Mixture coefficient file
+
+      if (iGERG08.eq.-1 .or. iGERG08.eq.1) then  !Reset GERG model
+        lReset=.true.
+        goto 100
       endif
-c
-c  store fluid constants for each of the nc components
-c
-      do icomp=1,nc
-        if (INDEX(UCASE(hfile(icomp),255),'PPF').ne.0) ianc(icomp)=1
-        call SETFLD (icomp,hfile,ierr,herr)
-        if (ierr.gt.0) RETURN  !error in opening file--further processing pointless
+
+c  Check for previous call to SETREF with a different reference state.
+      if (iPX0Flg.ne.0) RETURN    !PH0 equations are enabled, no need to check reference states.
+      if (hrff.eq.' '   .and. hsvref.ne.' ')  RETURN  !If blank, exit without changing anything
+      if (hrff.eq.'DEF' .and. hsvref.eq.hrff) RETURN  !Check if reference state is the default, both here and in the previous call.
+      if (hrff.eq.' ') hrff='DEF'
+      if (hrff.ne.hsvref) then
+        call SETREF (hrff,(ixfsav),x0,h0,s0,T0,P0,ierr,herr)  !Don't remove the parenthesis around ixfsav.  It needs to send a value, not the memory location.
+      elseif (ixfsav.eq.2) then
+        call SETREF (hrff,1,x0,h0,s0,T0,P0,ierr,herr)
+      endif
+      RETURN  !Nothing has changed, just exit.
+
+
+c-------Start of main code--------
+
+
+ 100  call RESETA (0)
+      lRst=.false.
+      if (.not.lReset) lRst=.true.          !Flag to indicate that SETMOD was called outside of SETUP.
+
+c  Check state of flag lReset; a value of .true. indicates need to reset all models
+c   to 'NBS'; this occurs when SETUP is called a second time in a given application.
+      if (lReset) then
+        hcomp(1:ncmax)=heosk(1:ncmax)
+        call SETMOD (ncomp,'NBS',heosmx,hcomp,ierr,herr)
+      endif
+      lReset=.true.
+      if (ierr.gt.0 .and. ierr.ne.-912) goto 1000
+      if (ncomp.ne.ncSet .and. .not.lGERG08) then
+        call ERRNUM (114,0,' ',' ',0d0,0d0,0d0,ierr,herr)
+        goto 1000
+      endif
+      lGERG08=.false.
+      if (iGERG08.le.0) then                !If iGERG08 is less than zero, then the GERG was active and waiting to be turned off by a call to SETUP.
+        iGERG08=0                           ! The negative value is just a flag for us humans, and has no impact in the code.
+      else
+        hcomp(1:ncomp)='FEK'
+        call SETMOD (ncomp,'EOS','HMX',hcomp,ierr,herr)
+        iGERG08=2                           !Make iGERG08 equal to 2 to show that the components have actually been loaded.
+        lGERG08=.true.                      !Setting the lGERG08 flag shows that the GERG model is currently in use.
+      endif
+
+c  Set number of components.
+      nc=ncomp
+
+c  Set flags.  Do not add these to RESETA, they should only be reset when SETUP is called.
+      iSetRf=0
+      iAmWat=0
+      ixWat=0
+      ixCO2=0
+      ixAlc=0
+      ixAir=0
+      iAnc=0
+      iV10=0  !Currently not used, available for use.
+      Tctrue=0d0
+      Dctrue=0d0
+      hsavprk =' '
+      hsavpr=' '
+      htcxhc=' '
+      hetahc=' '
+      htcxcr=' '
+      htcxcrecs=' '
+      hDOI=' '
+      hWEB=' '
+      iSpline=0
+      xecsljs=0d0
+      xecslje=0d0
+      lRcnst=.true.
+      lRcnstWag=.true.
+      lWagner=.false.
+      lAGA8sav=.false.
+      lAGA8Flg=.false.
+
+      nFEQterms=0  !Total number of terms
+      nFEQpoly=0   !Number of polynomial only terms
+      nFEQpe  =0   !Number of polynomial and exponential terms
+      nFEQkg  =0   !Number of new terms from Gao
+      nFEQgaus=0   !Number of Gaussian terms
+      nFEQnan =0   !Number of non-analytical terms
+      nFEQcrt =0   !Number of critical region terms (Gaussian and non-analytical)
+
+      nPhiLog =0   !Reset Cp0 and PH0 number of terms
+      nPhiTau =0
+      nPhiExp =0
+      nPhiCosh=0
+      nPhiSinh=0
+      nCp0poly=0
+      nCp0Exp =0
+      nCp0Cosh=0
+      nCp0Sinh=0
+c     iFluidID=0
+      wmas=0
+      Tcrit=300d0
+      Ttpn=0d0
+      Ptpn=0d0
+      Dtpn=0d0
+      Dtpv=0d0
+      h7oper=' '
+      i7oper=0
+      n7oper=0
+      n7cf=0
+      n7st=0
+      n7total=0
+      l7eta=.false.
+      hdir=' '
+      hFldOld=' '
+      nArr=0
+      zSpln=0d0
+      iAltFlg=0
+      iMassOld=-1
+      iMxRule=0
+      xeta0 =0d0
+      xetaB2=0d0
+      xetar =0d0
+      xetac =0d0
+      xtcx0 =0d0
+      xtcxr =0d0
+      xtcxc =0d0
+      PDmixTc=300d0
+      PDmixPc=0d0
+      PDmixDc=0d0
+      zPDmix=0d0
+      ncPDmix=0
+      Reos=xRgas
+      ReosDef=xRgas
+      call FLAGS ('Calorie',0,j,ierr,herr)
+      if (iUUnits(1,0).eq.0) call REFPRPUNITS ()
+
+c  Set pointers to models.
+
+c  Equation of state
+      if (heosmx.eq.'NBS') then
+        call SETEOSMX ('HMX')          !NIST recommended model
+        if (nc.eq.1) call SETEOSMX (heosk(1))
+      elseif (UCASE(heosmx).eq.'HMX') then
+c        Mixture model is HMX, use component models as set in SETMOD.
+      elseif (nc.gt.1) then
+        ierr=999             !This condition should not be accessed; HMX is the only choice at present.
+        call SETEOSMX ('HMX')
+      endif
+
+c  Viscosity
+      if (hvismx.eq.'NBS') then
+        hvismx='ECS'         !NIST recommended model
+        if (nc.eq.1) hvismx=hetak(1)
+      elseif (UCASE(hvismx).eq.'ECS') then
+c        Mixture model is ECS, use component models as set in SETMOD.
+      elseif (nc.gt.1) then
+        hvismx='ECS'
+      endif
+
+c  Thermal conductivity
+      if (htcxmx.eq.'NBS') then
+        htcxmx='ECS'         !NIST recommended model
+        if (nc.eq.1) htcxmx=htcxk(1)
+      elseif (UCASE(htcxmx).eq.'ECS') then
+c        Mixture model is ECS, use component models as set in SETMOD.
+      elseif (nc.gt.1) then
+        htcxmx='ECS'
+      endif
+
+c  Surface tension
+      if (hstnmx.eq.'NBS') then
+        hstnmx='PAR'                   !Jan. 4, 2016: Existing surface tension mixture models give bad results for
+        if (nc.eq.1) hstnmx=hstnk(1)   ! anything other than refrigerants; new default mixture model PAR added.
+      endif
+
+c  Dielectric constant
+      if (hdilmx.eq.'NBS') then
+        hdilmx='DEM'
+        if (nc.eq.1) hdilmx=hdilk(1)
+      endif
+
+c  Fill info arrays for unused, undefined, or reference fluids.
+      hash  =' '
+      hcas  =' '
+      hAltID=' '
+      hname =' '
+      hieos ='NUL'
+      hicp0 ='NUL'
+      hieta ='NUL'
+      hietac='NUL'
+      hitcx ='NUL'
+      hitcxc='NUL'
+      histn ='NUL'
+      hidiel='NUL'
+      himelt='NUL'
+      hisubl='NUL'
+      hips  ='NUL'
+      hipl  ='NUL'
+      hidl  ='NUL'
+      hidv  ='NUL'
+      Tmtcx =0d0
+      Txtcx =0d0
+      Tmeta =0d0
+      Txeta =0d0
+      Tmecst=0d0
+      Txecst=0d0
+      Pxtcx =0d0
+      Dxtcx =0d0
+      Pxeta =0d0
+      Dxeta =0d0
+      Pxecst=0d0
+      Dxecst=0d0
+      hFile='NUL'
+      hFile (1:nc)=hFiles(1:nc)
+      hsvfld(1:nc)=hFiles(1:nc)
+      hetak(ncmax+1:nx)='NUL'
+      htcxk(ncmax+1:nx)='NUL'
+      heosk(ncmax+1:nx)='FEQ'               !Set default in case *.fld file has no transport model.
+      iEOSk(ncmax+1:nx)=iEOSFEQ
+      ihash=0
+      iAlthash=0
+
+c  Read fluid files (*.fld) for main fluids.
+      do i=1,nc
+        call SETFLD (i,hFile,0,ierr,herr)
+        if (INDEX(UCASE(hFile(i)),'.PPF').ne.0) iAnc(i)=1
+        if (ierr.gt.0) goto 1000             !Error in opening file
+        call SWAPERR (ierr3,ierr,herr3,herr)
       enddo
-c
-c  store fluid constants for ECS reference fluids (if any)
-c
-      do icomp=-ncmax,0    !ecs ref fluids from -ncmax to 0 (not n0 to 0)
-        if (icomp.ge.n0) then
-          if (hfile(icomp).ne.'NUL') then
-            if (icomp.eq.0 .and. nc.gt.1) then
-c           no need to call SETFLD here, it gets called below for i=0
-            else
-              call SETFLD (icomp,hfile,ierr,herr)
-              if (ierr.gt.0) RETURN  !error in opening file--further processing pointless
-            endif
-          end if
+
+c  Read ECS fluid files.
+      do i=1,nc
+        if (i.le.mxecs .and. .not.lSkipECS) then
+          j=i+ncmax
+          if (hFile(j).ne.'NUL' .and. hFile(j).ne.' ' .and.
+     &        hFile(j)(1:1).ne.CHAR(0)) then
+            call SETFLD (j,hFile,0,ierr,herr)
+            if (ierr.gt.0) goto 1000         !Error in opening file
+            call SWAPERR (ierr2,ierr,herr2,herr)
+          endif
         endif
       enddo
-c
-c
-c  for a mixture, set reference fluids for mixture calculations; currently
-c  hfile(0) corresponds to ref fluid of last pure fluid loaded; reset to nitrogen.
-c  presently there are 4 possible reference fluids for mixtures
-c  slot      0: nitrogen
-c     -ncmax-1: propane
-c     -ncmax-2: dodecane
-c     -ncmax-3: R134a
-c
-c     write (*,*) 'Reference fluid:  ',hfile(0)(1:60)
-      if (nc.gt.1 .and. n0.lt.0) then
-        ipos=0
-        do ii=1,255
-c  EWL change from hfile(0) to hfile(1)
-          if (hfile(1)(ii:ii).eq.'/' .or. hfile(1)(ii:ii).eq.':'
-     &        .or. hfile(1)(ii:ii).eq.char(92)) then
-            ipos=ii
-          end if
-        enddo
-        do ij=0,nrefluids-1
-          il=-ncmax-ij
-          if (ij.eq.0) then
-            il=0
-            rflnam='nitrogen.fld'
-          elseif (ij.eq.1) then
-            rflnam='propane.fld'
-          elseif (ij.eq.2) then
-            rflnam='c12.fld'
-          elseif (ij.eq.3) then
-            rflnam='r134a.fld'
-          endif
-          if (ipos.eq.0) then
-            hfile(il)=rflnam
-          else
-            hfile(il)=hfile(1)(1:ipos)//rflnam !append ref fluid name
-          endif
-          call SETFLD (il,hfile,ierr,herr)
-          if (ierr.gt.0) RETURN  !error in opening file--further processing pointless
-        enddo
+
+c  Read reference fluid.
+      nref=nr      !Keeps the compiler from reporting an error when ncmax=1
+      if (mxref.gt.0 .and. nref.le.nq .and. .not.lSkipECS) then
+        if (hFile(nref).ne.'NUL') then
+          if (nc.gt.1) hFile(nref)='NITROGEN.FLD'
+          call RFFILE (hFile(1),hFile(nref))
+          call SETFLD (nref,hFile,0,ierr,herr)
+          if (ierr.gt.0) goto 1000           !Error in opening file
+          call SWAPERR (ierr2,ierr,herr2,herr)
+        endif
       endif
-c
-c
-c  set up mixture model, if applicable
-c
-      if (heos.eq.'HMX') then
-        call SETHMX (hfmix2,ierr1,herr1)
-c       write (*,*) 'ierr from SETHMX:  ',ierr1,':  ',herr1
-      end if
-c
-c  set reference state
-c
-      ixflag=1    !only 'pure fluid' reference state can be called here
-      if (hrf(1:2).eq.'OT') then
-        ierr=-105
-        herr='[SETUP warning -105] must use routine SETREF for (OTH) '
-     &      //'reference state choice; will use default (DEF) choice'
-     &      //hnull
-        call ERRMSG (ierr,herr)
-        hrf='DEF'        !use the default reference state
-        if (ierr1.eq.0) then
-          ierr1=ierr
-          herr1=herr
-        end if
-      end if
-      call SETREF (hrf,ixflag,x0,h0,s0,t0,p0,ierr,herr)
-c     write (*,*) ' SETUP--ierr returned from SETREF:  ',ierr
-c  any error from SETREF takes precedence over error from SETHMX
-      if (ierr.eq.0 .and. ierr1.ne.0) then
-        ierr=ierr1
-        herr=herr1
-      end if
-c
-c  save current models into /MODSAV/--check on subsequent calls to
-c  SETUP, if nothing has changed, can bypass call
-c
-      if (ierr.eq.0) then
-        hsvph=hpheq
-        hsveqn=heos
-        hsvvis=hetamx
-        hsvcnd=htcxmx
-        hsvsrf=hsten
-        hsvdil=hdiel
-        do k=1,nc
-          hsveqk(k)=hmxeos(k)
-          hsvvik(k)=heta(k)
-          hsvcnk(k)=htcx(k)
-          hsvsrk(k)=hstenk(k)
-          hsvdik(k)=hdielk(k)
-        enddo
+
+c  Set up mixture model if applicable.
+      ierr=0
+      call RFFILE (hFile(1),hFmix)
+      if (iEOSmx.eq.iEOSHMX) call SETHMX (hFmix,ierr,herr)
+      if (ierr.gt.0 .and. ierr.ne.117) goto 1000  !Error in opening file
+      call SWAPERR (ierr2,ierr,herr2,herr)
+
+c  Set reference state.
+      ixflag=1               !Only 'pure fluid' reference state can be called here.
+      if (hrff(1:2).eq.'OT') then
+        hrff='DEF'           !Use the default reference state.
+        if (ierr.eq.0) call ERRNUM(-105,0,' ',' ',0d0,0d0,0d0,ierr,herr)
       endif
-c
-c     write (*,1442) heos,(hmxeos(j),j=-5,5),
-c    &                    (hmodcp(j),j=-5,5),
-c    &               hetamx,(heta(j),j=0,5),
-c    &                    (hetacr(j),j=0,ncomp)
-c     write (*,1443) htcxmx,(htcx(j),j=0,5),
-c    &                    (htcxcr(j),j=0,ncomp)
-c     write (*,1444) hsten,(hstenk(j),j=-5,5)
-c1442 format ('   SETUP--heos, hmxeos: ',a3,3x,5(a3,1x),a5,3x,5(a3,1x)/
-c    &        '   (exit)     Cp0 mods: ',3x,3x,5(a3,1x),a5,3x,5(a3,1x)/
-c    &        '           visc models: ',a3,25x,a3,3x,5(a3,1x)/
-c    &        '        visc crit mods: ',3x,25x,a3,3x,5(a3,1x))
-c1443 format ('            tcx models: ',a3,25x,a3,3x,5(a3,1x)/
-c    &        '        t.c. crit mods: ',3x,25x,a3,3x,5(a3,1x))
-c1444 format ('       surf ten models: ',a3,3x,5(a3,1x),a5,3x,5(a3,1x))
-c     write (*,*) 'ierr at SETUP exit: ',ierr,':  ',herr(1:40)
-c
-      call AMH2OR  !Setup ammonia/water reference state
-      do icomp=1,nc
-        call SETPRCO(icomp)
-      enddo
-c
-c     do i=1,nc
-c       x0=0.d0
-c       x0(i)=1.d0
-c       calculate critical point of eos
-c       call FNCRPT(x0,d,p,t,ierr,herr)
-c       if (ierr.le.0) then
-c         tcrit(i)=t
-c         pcrit(i)=p
-c         Dcrit(i)=d
-c       endif
-c       determine liquid and vapor spinodals (auxiliary splines)
-c       call SETLSPNDL(i,ierr,herr)
-c       call SETVSPNDL(i,ierr,herr)
-c     enddo
-c
-      RETURN
-c
-      end                                              !subroutine SETUP
-c
-c ======================================================================
-c
-      subroutine SETUP0 (i,hfld,hfm,hrf,ierr,herr)
-c
-c     call the SETUP routine with the same inputs as SETUP except for
-c     the hfld variable.  This subroutine is generally used in calls
-c     to the REFPROP DLL since the call cannot handle a string array.
-c     The hfld variable is a string of length 10000.  For a pure fluid,
-c     it simply contains the name of the fluid file (with a path if needed).
-c     For a mixture, it contains the names of the constituents in the
-c     mixture separated by a |.  For the air mixture, this would be
-c     something like (depends on the need for paths):
-c     hfld='fluids\nitrogen.fld|fluids\argon.fld|fluids\oxygen.fld|'
-c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
-c  04-07-05 EWL, original version
-c  01-16-06 EWL, check for missing '|' at end of line
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SETUP0
-c
-      include 'commons.for'
-      character hfld*10000,hfm*255,hrf*3,herr*255,hfmix*255
-      character*255 hf(ncmax)
-c
-      do j=1,ncmax
-        hf(j)=' '
-      enddo
-      if (i.eq.1) then
-        hf(1)=hfld
-        j=index(hf(1),'|')
-        if (j.ne.0) hf(1)(j:)=' '
+      ierr1=0
+      call SETREF (hrff,ixflag,x0,h0,s0,T0,P0,ierr1,herr1)
+      call SWAPERR (ierr,ierr1,herr,herr1)  !Any positive error from SETREF takes precedence over negative errors.
+
+c  If nothing has changed on subsequent calls to SETUP, routine will exit code.
+      if (ierr.le.0) then
+        hsvmix=hFmix
+        hsveos=heosmx
+        hsvvis=hvismx
+        hsvtcx=htcxmx
+        hsvstn=hstnmx
+        hsveosk(1:nc)=heosk(1:nc)
+        hsvvisk(1:nc)=hetak(1:nc)
+        hsvtcxk(1:nc)=htcxk(1:nc)
+        hsvstnk(1:nc)=hstnk(1:nc)
       else
-        m=1
-        do k=1,i
-          j=index(hfld(m:10000),'|')
-          if (j.ne.0) then
-            j=j+m-1
-            hf(k)=hfld(m:j-1)
-            m=j+1
-c  check for inputs without a '|' at the end
-          elseif (k.eq.i .and. hfld(m:).ne.' ') then
-            hf(k)=hfld(m:)
-          else
-            ierr=1
-            herr='[SETUP0 error 1] not enough fluid names on input line'
-            RETURN
-          endif
-        enddo
+        hsveos=' '           !Reset one of the saved variables so the SETUP will not be bypassed on the next call.
       endif
-      hfmix=hfm
-      call SETUP (i,hf,hfmix,hrf,ierr,herr)
-      end                                             !subroutine SETUP0
+
+      do i=1,nc
+        call SETPRCO (i)     !Set Peng-Robinson parameters.
+      enddo
+
+      if (ierr.le.0 .and. ierr2.lt.0) then  !If -101 error from calling SETFLD has been set, overwrite any other warnings from other routines.
+        ierr=ierr2
+        herr=herr2
+      endif
+      call SWAPERR (ierr,ierr3,herr,herr3)  !If 109 error from calling SETFLD has been set, set ierr if it is still zero.
+      call ERRNUM (0,0,' ',' ',0d0,0d0,999d0,ierr,herr)
+
+      if (iPX0Flg.gt.0) call FLAGS ('CP0PH0',2,i,ierr2,herr2)  !Change use of Cp0 equations to PX0.
+
+      if (iaga8.gt.0) then
+        iaga8=1                  !Turn down the AGA flag so that the setup routine will work properly (which also turns it back on).
+        call SETAGA (ierr,herr)  !Setup the AGA8 equation of state if the FLAGS routine or SETAGA routine has been called.
+      endif
+      iReset=0
+      iSetup=-1
+      if (ierr.gt.0) iSetup=ierr
+
+      RETURN
+
+c  Error occurred, set nc to zero so that SETUP will not be bypassed on next call.
+ 1000 nc=0
+      end                                               subroutine SETUP
 c
 c ======================================================================
 c
-      subroutine SETFLD (icomp,hfile,ierr,herr)
+      subroutine SETUP0 (ncomp,hfld,hFmix,hrf,ierr,herr)
 c
-c  open a fluid file and read model coefficients (or get from block data)
+c  Call the SETUP routine with the same inputs as SETUP except for
+c  the hfld variable.  This subroutine is generally used in calls
+c  to the Refprop DLL since the call cannot handle a string array.
+c  The hfld variable is a string of length 10000.  For a pure fluid,
+c  it simply contains the name of the fluid file (with a path if needed).
+c  For a mixture, it contains the names of the constituents in the
+c  mixture separated by a |, #, or ;.  For the air mixture, this would be
+c  something like (depends on the need for paths)
+c  hfld='fluids\nitrogen.fld|fluids\argon.fld|fluids\oxygen.fld|'
 c
-c  inputs:
-c    icomp--pointer specifying component number
+c  Inputs:
+c    ncomp--Number of components (integer)
+c     hfld--String containing fluid file names (character*10000)
+c    hFmix--Name of file containing mixture coefficients (character*255);
+c           for example, 'fluids\HMX.BNC'
+c      hrf--Reference state for thermodynamic calculations (character*3);
+c           see SETUP for details
+c
+c  Outputs:
+c     ierr--Error flag:  0 - Successful
+c           (Values are identical to SETUP; a 109 is returned if the number
+c           of fluids in hfld is not equal to icomp.)
+c     herr--Error string (character*255)
+c
+c  Written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  04-07-05 EWL, original version
+
+      include 'COMMONS.INC'
+      character hfld*(*),hrf*3
+      character*255 hf(ncmax),herr,hFmix
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SETUP0
+
+      if (ncomp.eq.-1) then
+        call SETUP (ncomp,hf,hFmix,hrf,ierr,herr)
+        RETURN
+      endif
+
+      nc2=ncomp
+      if (nc2.eq.-3) then  !Use to force a reread of the fluid files.
+        nc2=nc
+        nc=0
+      endif
+
+      call STRINGSPLIT ((ncmax),hfld,';*#|',n,hf,ierr,herr)
+      if (nc2.eq.0) nc2=n
+      if (nc2.ne.n) goto 109   !Check if number of fluids sent matches ncomp.
+      call SETUP (nc2,hf,hFmix,hrf,ierr,herr)
+      RETURN
+
+ 109  i=n
+      if (n.gt.nc2) i=-1
+      j=nc2+1
+      if (j.lt.1) j=1
+      if (j.gt.ncmax) j=ncmax
+      call ERRNUM (109,i,'SETUP0',hf(j),0d0,0d0,0d0,ierr,herr)
+
+      end                                              subroutine SETUP0
+c
+c ======================================================================
+c
+      subroutine SETFLD (icomp,hFile,jFluidID,ierr,herr)
+c
+c  Open a fluid file and read model coefficients (or get from block data).
+c
+c  Inputs:
+c    icomp--Pointer specifying component number;
 c           zero and negative values are used for ECS reference fluid(s)
-c    hfile--array of file names specifying fluid/mixture components
-c           [character*255 variable] for each of the components;
-c           --or--
-c           when hf(i) is of the form:
-c             BDATA:nn-nn-nn
-c           use coefficients stored in block data for fluid with CAS
-c           number specified by nn-nn-nn;
-c           e.g. to use stored formulation for R134a,
-c           hf(i) = 'BDATA:811-97-2'
-c  outputs:
-c     ierr--error flag:  0 = successful
-c                      101 = error in opening file
-c                      102 = error in file or premature end of file
-c                     -103 = unknown model encountered in file
-c                      104 = error in setup of model
-c                      105 = specified model not found
-c                      106 = cp0 equation not found
-c     herr--error string (character*255 variable if ierr<>0)
-c     [fluid parameters, etc. returned via various common blocks]
+c    hFile--Array of file names specifying fluid/mixture components (character*255)
 c
-c  written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
-c  12-08-95  MM, original version--extracted from old subroutine SETUP
-c  12-12-95  MM, add calls to SETECS, SETETA, SETTCX
-c  12-14-95  MM, add call to RFFILE (add directory to ref fluid file)
-c  01-12-96  MM, do not reset hmxeos(0) if in file 0 (reference fluid)
-c  01-23-96  MM, always call SETETA, SETTCX, etc. if found in .fld file
-c  01-31-96  MM, implement 'NBS' option for EOS (and transport model)
-c  02-27-96  MM, parameter n0=-ncmax to accommodate ECS-thermo model
-c                add Zcrit to common /CCON/
-c  02-29-96  MM, check only hmxeos(i) [not heos] for call to SETxxx
-c  03-13-96  MM, changes to merge with Klein's transport code
-c                add common /TRNMOD/; add calls to SETTRN, SETVSi, SETTCi
-c  03-15-96  MM, always load ECS-transport model (unless htran = 'NUL')
-c  03-19-96  MM, read dipole moment and add to /CCON/
-c  03-20-96  MM, add mixture models to /TRNMOD/
-c  03-21-96  MM, replace /MODEL/ with /EOSMOD/, /STNMOD/
-c  03-27-96  MM, add calls to set up surface tension
-c  03-28-96  MM, add flags ltcx,leta to cover case of fluid-specific
-c                model available for only one of the transport props
-c  06-17-96  MM, check only 'CP' rather than 'CPP' to allow CP1
-c  06-18-96  MM, add calls to SETVS4-6 and SETTC2-4 for future use
-c  10-16-96  MM, add call to SETCI2 (collision integral AUX function)
-c  10-30-96  MM, add calls to SETTC5, SETTC6
-c  11-06-96  MM, check that i.ge.nrf0 before calling collision integral
-c  01-21-97  MM, add call to SETCI1 (collision integral AUX function)
-c  02-06-97  MM, add /CNAM80/ to store full chemical name
-c  02-20-97  MM, read in default reference state from fluid file,
-c                add hsvrfd to /REFST/, new common /CREFDF/
-c  02-24-97  MM, add calls to transport critical models and /CREMOD/
-c  03-26-97 EWL, minor changes for Fortran 90 compatibility
-c  03-27-97 EWL, if file not found, search in likely directories
-c  08-22-97  MM, use double backslash on file open to avoid problem with Unix machines
-c  10-28-97  MM, put fluid file version no. into common
-c  12-01-97  MM, read in synonyms, add to /CNAM80/
-c  03-30-98  MM, initialize ierrvs,ierrtc,ierrst
-c  04-08-98 EWL, initialize ierr1
-c  10-30-98 EWL, change hmxeos to FEQ when called by SETMOD with FE1, etc.
-c  12-01-98 EWL, add Reos and triple point pressure and density to /CCON/
-c  06-22-99 EWL, comment out the "ierr1=104" in the AUX section
-c  11-01-99 EWL, add error if cp0 equation not found
-c                load CPP as default (in case flag to CPP occurs after coefs. in file)
-c  01-14-00 EWL, allow use of 'VIS' as well as 'ETA'
-c  01-26-00  MM, read in citation in addition to model specification
-c                add common /CITE/ to pass this information to GETMOD
-c  02-15-00 EWL, check for case sensitive fluid names
-c  03-07-00 EWL, add TC0 and VS0 models
-c  05-24-00 EWL, initialize hetemp and httemp
-c  08-23-00 EWL, change heos from FE1, etc. to FEQ, and similarly for BWR and ECS
+c  Outputs:
+c     ierr--Error flag:  0 - Successful
+c                      101 - Error in opening file
+c                     -101 - Error in opening file for ECS transport properties
+c                      102 - Error in file or premature end of file
+c                     -107 - Unknown model encountered in file
+c                      105 - Specified model not found
+c                      107 - Cp0 equation not found
+c     herr--Error string (character*255)
+c
+c  Variables used in this routine
+c  hstar - '#' or '@' indicates start of model specification
+c        # indicates NIST-recommended model
+c        @ indicates other model(s)
+c  hflag indicates type of model, for example,
+c        'EOS' - equation of state
+c        'TRN' - transport property model (i.e. ECS model)
+c        'ETA' - pure fluid viscosity model
+c        'TCX' - pure fluid thermal conductivity model
+c        'AUX' - auxiliary model, such as ideal-gas heat capacity
+c  htype is 3-letter key for a particular model + 1-line citation, for example,
+c        'NBS' - NIST-recommended model
+c        'BWR' - modified Benedict-Webb-Rubin equation of state
+c        'FEQ' - fundamental (Helmholtz) equation of state
+c        'ECS' - extended corresponding states model
+c        'HMX' - mixture Helmholtz model
+c        'CPP' - polynomial fit of ideal-gas heat capacity
+c        'VSi' - pure fluid viscosity model #i
+c        'TCi' - pure fluid thermal conductivity model #i
+c
+c
+c  Written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
+c  12-08-95  MM, original version - extracted from old subroutine SETUP
 c  01-17-01 EWL, remove double backslash, which caused problems in Windows
-c  01-23-02 EWL, split common block CITE into 2 pieces for some compilers
-c  07-08-02 EWL, revise checks on location of fld file
-c  01-13-05 WLJ, add new checks for open failure (ORNL)
 c  07-22-05 MLH, allow for transport reference fluids
-c  09-28-05  DT, change occurrences of a backslash to 'char(92)' for compatibility
-c                with some compilers using F77
-c  04-18-06 EWL, make call to "inquire" to check for multiple use of nread=12
+c  09-28-05  DT, change occurrences of a backslash to 'CHAR(92)' for compatibility with some compilers
+c  04-18-06 EWL, make call to inquire to check for multiple use of nread=12
 c  07-24-06 EWL, do not call setfld again if @FEQ found after #FE1, etc.
 c  08-10-06 EWL, create new subroutine to open file and move appropriate code
 c  10-30-06 EWL, check for FEK
-c  11-08-06 EWL, after the call to STFLD2, add href to hfiles() in the negative position so that the transport routines of the reference fluid will be loaded.
-c  04-18-07 EWL, add checks for UN parameters
-c  12-12-07 MLH, allow FEX for generalized model of Xiang and Deiters
+c  11-08-06 EWL, after the call to SETFLD2, add href to hFiles() in the negative position so that the transport routines of the reference fluid will be loaded.
 c  01-09-08 EWL, read in heat of combustion
 c  02-26-09 EWL, check for missing '.fld' on file names
-c
-      include 'commons.for'
-      include 'comtrn.for'
-      character*1 h1,hstar
-      character*3 hsveq
-      character*3 hetemp,httemp
-      character*3 hmaux
-      character*3 hflag,htype
-      character*12 hcasn(n0:nx)
-      character*255 hfile(n0:nx),hreff
-      character*255 herr,herr1
-      character*251 hcite
-      character*255 hstr
-      logical lbdata,leta,ltcx,leosfl,lprfl
-c
- 10   continue
+c  04-04-15  GV, new fields added to read fusion data into common blocks
+
+      include 'COMMONS.INC'
+      include 'COMREFP.INC'
+      include 'COMFEQ.INC'
+      include 'COMANC.INC'
+      include 'COMTRN.INC'
+      character hstar*1,hcite*251,UCASE*255
+      character*3 heqn,hetemp,httemp,hflag,htype
+      character*255 hFile(nq),hfilei,hreff,hstr,herr,herr1,herr2,h2
+
+      n7total=0
+ 10   if (jFluidID.eq.0) ierr=0   !jFluidID is not yet used, this line keeps the compiler happy.
       ierr1=0
+      ierr2=0
       herr=' '
-      herr1=hnull
-      i=icomp
-      icpflg=0
-      lprfl=.false.
-      ltcx=.false.
-      leta=.false.
-      leosfl=.false.
+      herr1=' '
+      hstar=' '
+      hflag=' '
+      hcite=' '
+      htype=' '
       hetemp=' '
       httemp=' '
-      igenfl(i)=0
-      UNNumb(i)=' '
-      family(i)=' '
-      hcmbst(i)=-1.d0
-c     initialize
-      if (i.ge.0) iunflg(i)=0
-c     do not set pr coef for transport/ecs ref fluids other than zero slot
-      if (i.ge.0) then
-        do j=1,20
-          prcoef(i,j)=0.d0
-        enddo
-        iprflag(i)=0
+      hdir(icomp)='File not found'
+      wmas(icomp)=0d0   !Used as a flag in the transport routines.
+      i=icomp
+      icpflg=0
+      iphi0flg=0
+      leosfl=.false.
+      lprfl=.false.
+      leta=.false.
+      ltcx=.false.
+      if (i.le.ncmax) then
+        hInChi(i)   = 'Not available'
+        hInChiKey(i)= 'Not available'
+        hUNNumb(i)  = 'Not available'
+        hFamily(i)  = 'Not available'
+        hAltID(i)   = 'Not available'
+        hSafety(i)  = 'Not available'
+        xCmbst(i)   = -1d0
+        gwpot(i)    = -1d0
+        odpot(i)    = -1d0
+        dcpfus(i)   = -1d0
+        dhfus(i)    = -1d0
+        dvfus(i)    = -1d0
+        pfusref(i)  = -1d0
+        tfusref(i)  = -1d0
       endif
-c     write (*,1102) i,hfile(i)
-c1102 format (/1x,'input file for fluid ',i3,': (',a40,')')
-c     write (*,1003) heos,(hmxeos(j),j=n0,ncmax),
-c    &               hetamx,(heta(j),j=nrf0,nx),htcxmx,(htcx(j),j=nrf0,nx)
-c    &              ,hsten,(hstenk(j),j=n0,ncmax)
-c1003 format ('  SETFLD--heos, hmxeos: ',a3,3x,5(a3,1x),a5,3x,5(a3,1x)/
-c    &        '  (input)  visc models: ',a3,25x,a3,3x,5(a3,1x)/
-c    &        '            tcx models: ',a3,25x,a3,3x,5(a3,1x)/
-c    &        '       surf ten models: ',a3,3x,5(a3,1x),a5,3x,5(a3,1x))
-      if (hfile(i)(1:5).eq.'BDATA' .or. hfile(i)(1:5).eq.'bdata') then
-c  get coefficients from common blocks
+
+c  Set initial PR coefficients for transport/ECS reference fluids for icomp>=0.
+      if (i.gt.0 .and. i.le.ncmax) then
+        PRcoef(1:20,i)=0d0
+        iPRflag(i)=0
+      endif
+
+c  Get coefficients from common blocks.
+      if (hFile(i)(1:5).eq.'BDATA' .or. hFile(i)(1:5).eq.'bdata') then
         lbdata=.true.
         nread=0
-        hcasn(i)=hfile(i)(7:18)
-        hcas(i)=hcasn(i)
-c       write (*,1104) hcasn(i)
-c1104   format (1x,'coefficients from block data; CAS no.: (',a12,')')
+
+c  Read coefficients from file.
       else
-c  read coefficients from file
-c       write (*,1105) hfile(i)
-c1105   format (1x,'reading coefficients from file: (',a40,')')
+        ierr2=ierr
+        herr2=herr
         lbdata=.false.
-        nread=12             !logical unit for file reads
-        if (index(hfile(i),'.').eq.0) then   !Check for missing '.fld'
-          j=index(hfile(i),' ')
-          if (j.ne.0 .and. hfile(i)(j:j+3).eq.'    ')
-     &        hfile(i)=hfile(i)(1:j-1)//'.fld'
-        endif
-        call OPENFL (nread,hfile(i),1,ierr,herr)
-        if (ierr.ne.0) goto 998
-c
-        read (nread,2060) hnam60(i)           !short name
-        j=INDEX(hnam60(i),'!')
-        if (j.ne.0) hnam60(i)=hnam60(i)(1:j-1)
-        hname(i)=hnam60(i)(1:12)
-        read (nread,2012) hcasn(i)           !CAS number
-        hcas(i)=hcasn(i)
-        read (nread,2080) hnam80(i)          !full chemical name
-c       write (*,*) ' SETUP--full name:  ',hnam80(i)
-        read (nread,2080) hsyn1(i)           !synonym 1
-        read (nread,2080) hsyn2(i)           !synonym 2
-c  note:  read in generic fluid constants; these may be reset by
-c         some SETeos routines to correspond with the values used
-c         in the respective models
-        read (nread,*) wmas(i)           !molecular weight [g/mol]
-        read (nread,*) ttpn(i)         !triple point temperature [K]
-        read (nread,*) tnbp(i)         !normal boiling point [K]
-        read (nread,*) tcrit(i)        !critical temperature [K]
-        read (nread,*) pcrit(i)        !critical pressure [kPa]
-        read (nread,*) Dcrit(i)        !critical density [mol/L]
-        read (nread,*) accen(i)        !acentric factor [-]
-        read (nread,*) dipole(i)       !dipole moment [debye]
-        read (nread,2003) hrefdf(i)    !default reference state
-        if (hrefdf(i)(1:2).eq.'OT') then
-c  for 'OTHer' reference state read in reference T,p,h,s
-          read (nread,*)  tdef(i),pdef(i),hdef(i),sdef(i)
-        end if
-        read (nread,*) verfl(i)        !version number
-c
- 150    continue
-        read (nread,2080) hstr
-        if (hstr.ne.' ') then
+        nread=12                       !Logical unit for reading files.
+        call CHKNAMES (i,hFile(i),ierr,herr)
+        call OPENFL (i,nread,hFile(i),hfilei,1,ierr,herr)  !Open fluid file for reading.
+        if (ierr.eq.0) hdir(i)=hfilei
+        if (i.le.nq) hinpnme(i)=hFile(i)
+        ierropn=ierr
+        if (ierr.ne.0 .and. i.gt.ncmax) goto 1101
+        if (ierr.ne.0) goto 101
+
+        read (nread,'(a60)',err=101,end=101) hname(i) !Short name
+          j=INDEX(hname(i),'!')
+          if (j.ne.0) hname(i)=hname(i)(:j-1)
+        read (nread,'(a12)',err=101) hcas(i)   !CAS ID number
+        read (nread,2080,err=101) hnam80(i)    !Full chemical name
+          j=INDEX(hnam80(i),'!')
+          if (j.gt.0) hnam80(i)=hnam80(i)(:j-1)
+        read (nread,2080,err=101) hstr         !Chemical formula
           j=INDEX(hstr,'!')
+          if (j.eq.0) j=255
+          hChemF1(i)=hstr(:j-1)
+          hChemF2(i)=hChemF1(i)
+          j=INDEX(hstr,'{')
           if (j.ne.0) then
-            if (hstr(j:j+2).eq.'!UN') then
-              UNNumb(i)=hstr(1:j-1)
-            elseif (hstr(j:j+2).eq.'!fa') then
-              family(i)=hstr(1:j-1)
-            elseif (hstr(j:j+2).eq.'!he') then
-              read (hstr(1:j-1),*) hcmbst(i)
+            hstr=hstr(j+1:)
+            j=INDEX(hstr,'}')
+            if (j.ne.0) hstr=hstr(:j-1)
+            hChemF2(i)=hstr
+          endif
+        read (nread,2080,err=101) hsyn(i)      !Synonym
+          j=INDEX(hsyn(i),'!')
+          if (j.ne.0) hsyn(i)=hsyn(i)(:j-1)
+
+c  Read in generic fluid constants; these may be reset by some SETeos routines.
+        read (nread,*,err=102) wmas(i)         !Molar mass [g/mol]
+        read (nread,*,err=102) Ttpn(i)         !Triple point temperature [K]
+        read (nread,*,err=102) Tnbp(i)         !Normal boiling point [K]
+        read (nread,*,err=102) Tcrit(i)        !Critical temperature [K]
+        read (nread,*,err=102) Pcrit(i)        !Critical pressure [kPa]
+        read (nread,*,err=102) Dcrit(i)        !Critical density [mol/L]
+        read (nread,*,err=102) accen(i)        !Acentric factor [-]
+        read (nread,*,err=102) dipole(i)       !Dipole moment [debye]
+        read (nread,'(a3)',err=102) hrefdef(i) !Default reference state
+
+c  For 'OTH' (other) reference states, read in reference T,P,h,s.
+        if (hrefdef(i)(1:2).eq.'OT')
+     &    read (nread,*,err=102)  Tdef(i),Pdef(i),hdef(i),sdef(i)
+        read (nread,*,err=102) VerFL(i)        !Version number
+        do k=1,100
+ 150      read (nread,2080,err=101) hstr
+          if (hstr.eq.' ') EXIT
+          j=INDEX(hstr,'!')
+          m=j-1
+          j1=INDEX(hstr,' :')
+          if (m.lt.0) m=j1-1
+          if (j1.ne.0) then
+            j2=INDEX(hstr(j1:),': ')
+            if (j2.ne.0) then
+              h2=UCASE(hstr(j1+2:j1+j2-2))
+              hstr=hstr(1:m)
+              j2=INDEX(hstr,' :')
+              if (j2.ne.0) hstr=hstr(:j2)
+              if (hstr(1:4).eq.'????') hstr='Not available'
+              if (h2.eq.'FAMILY')   hfamily(i)  = hstr               !Family
+              if (h2.eq.'UN')       hUNNumb(i)  = hstr               !UN Number
+              if (h2.eq.'INCHI')    hInChi(i)   = hstr               !InChI string
+              if (h2.eq.'INCHIKEY') hInChiKey(i)= hstr               !InChI key
+              if (h2.eq.'SAFETY')   hSafety(i)  = hstr               !ASHRAE 34 safety classification
+              if (h2.eq.'HEAT')     read (hstr,*,err=150) xCmbst(i)  !Heat of combustion
+              if (h2.eq.'GWP')      read (hstr,*,err=150) gwpot(i)   !Global warming potential
+              if (h2.eq.'ODP')      read (hstr,*,err=150) odpot(i)   !Ozone depletion potential
+              if (h2.eq.'ALTID')    then
+                j=INDEX(hstr,'(')
+                if (j.gt.0) hstr=hstr(:j-1)
+                hAltID(i)  =hstr                 !Alternate fluid ID number for mixing values
+                iAlthash(i)=iHEXtoDec(hAltID(i)) !Convert from hex to integer.
+              endif
+              if (h2.eq.'HASH')     then         !Hash number corresponding to a reduction of the fluid's InChI key
+                hash(i)=hstr
+                if (hstr(9:).ne.' ' .or. hash(i)(8:8).eq.' ') then
+                  call ERRNUM (911,0,' ',' ',0d0,0d0,0d0,ierr,herr)
+                endif
+              endif
+            endif
+          elseif (j.ne.0) then
+            if (hstr(j:j+6).eq.'!family') hfamily(i)=hstr(1:m)            !Family
+            if (hstr(j:j+2).eq.'!UN')     hUNNumb(i)=hstr(1:m)            !UN Number
+            if (hstr(j:j+4).eq.'!heat')   read (hstr(1:m),*) xCmbst(i)    !Heat of combustion
+            if (i.le.ncmax) then
+              if (hstr(j:j+6).eq.'!dcpfus') read (hstr(1:m),*)dcpfus(i)   !The following added by GV to read data required for SLE and SVE calculations
+              if (hstr(j:j+4).eq.'!hfus')   read (hstr(1:m),*)dhfus(i)
+              if (hstr(j:j+4).eq.'!vfus')   read (hstr(1:m),*)dvfus(i)
+              if (hstr(j:j+7).eq.'!pfusref')read (hstr(1:m),*)pfusref(i)
+              if (hstr(j:j+7).eq.'!tfusref')read (hstr(1:m),*)tfusref(i)
             endif
           endif
-          goto 150
-        endif
-c       write (*,*) ' SETUP--end of constants; default = ',hsvrfd(i)
-      end if
-c
-c  search for key characters in cols 1 and 2-4 (if reading from file)
-c  and branch to subsidiary setup routines for specified models
-c
- 100  continue
-      if (.not.lbdata) then           !read from file
-        read (nread,2013,end=199,err=199) hstar,hflag
-        if (hstar.eq.'!') goto 100
-c       write (*,*) ' SETUP--input line:   ',hstar,hflag
-c  hstar = '#' or '@' indicates start of model specification
-c        # indicates NIST-recommended model
-c        @ indicates other model(s)
-c  hflag indicates type of model:
-c        'EOS' = equation of state
-c        'TRN' = transport property model (i.e. ECS model)
-c        'ETA' = pure fluid viscosity model
-c        'TCX' = pure fluid thermal conductivity model
-c        'AUX' = auxiliary model, such as ideal heat capacity
-        if (hstar.eq.'#' .or. hstar.eq.'@') then
-          read (nread,2083) htype,hcite
-c  htype is 3-letter key for particular models + 1-line citation, for example:
-c         'NBS' = NIST-recommended model
-c         'BWR' = modified Benedict-Webb-Rubin equation of state
-c         'FEQ' = fundamental (Helmholtz) equation of state
-c         'ECS' = extended corresponding states model
-c         'HMX' = mixture Helmholtz model
-c         'CPP' = polynomial fit of ideal gas heat capacity
-c         'VSi' = pure fluid viscosity model #i
-c         'TCi' = pure fluid thermal conductivity model #i
-c         write (*,*) ' SETUP--hstar,hflag:  ',hstar,hflag
-c         write (*,*) ' SETUP--htype:        ',htype
-c
-          do k=1,1000             !skip over source comments
-            read (nread,2001) h1
-            if (h1.ne.'?') goto 120   !comment block terminated by '!'
-          enddo
- 120      continue
-        end if
-      end if
-c
-      if (lbdata) then
+        enddo
+      endif
+      if (xCmbst(i).ne.-1d0) xCmbst(i)=xCmbst(i)*1000d0   !Convert from kJ/mol in the fluid files to J/mol
+      if (hash(i).eq.' ') hash(i)=hcas(i)
+      call FLUIDID (hcas(icomp),hash(icomp),iFluidID(icomp))
+      ihash(i)=iHEXtoDec(hash(i))  !Convert from hex to integer.
+
+c  Search for key characters in columns 1 (for # or @) and 2-4, and branch
+c   to subsidiary setup routines for specified models.
+ 100  if (.not.lbdata) then                 !Read from file.
+        do k=1,10000
+          read (nread,'(a1,a3)',end=102,err=102) hstar,hflag
+          if (hstar.eq.'#' .or. hstar.eq.'@') EXIT
+        enddo
+        read (nread,'(a3,a251)',end=102,err=102) htype,hcite
+        hflag=UCASE(hflag)
+        htype=UCASE(htype)
+        call GETID (icomp,0,nread,hstar,htype,ierr)
+        if (ierr.eq.102) goto 102
+      else
         hflag='EOS'
-        htype=heos
-      end if
-c
-      if (hflag.eq.'EOS' .or. hflag.eq.'eos') then
-c
-c  set up equation of state
-c
-        if (hstar.eq.'#') then
-c  special case for NIST-recommended model
-          if (nc.eq.1 .and. heos.eq.'NBS') heos=htype
-          if (i.ge.1 .and. hmxeos(i).eq.'NBS') hmxeos(i)=htype
-c  allow for transport reference fluids
-          if (i.lt.-ncmax .and. hmxeos(i).eq.'NBS') hmxeos(i)=htype
-        end if
-c
-        if (htype(1:2).eq.'BW') then
-c  modified Benedict-Webb-Rubin equation of state found in file
-c         if (heos.eq.'BWR' .or. hmxeos(i).eq.'BWR') then
-          if (hmxeos(i).eq.htype) then
-c           write (*,*) ' SETUP--about to call SETBWR'
+        htype=heosmx
+      endif
+
+c  ---Set up equation of state---
+      if (hflag.eq.'EOS') then
+
+c  NIST-recommended model.
+       if (hstar.eq.'#') then
+         if (nc.eq.1  .and. heosmx  .eq.'NBS') call SETEOSMX (htype)
+         if ( i.ge.1  .and. heosk(i).eq.'NBS') heosk(i)=htype
+         if ( i.gt.ns .and. heosk(i).eq.'NBS') heosk(i)=htype   !Transport reference fluids
+       endif
+
+c  Fundamental (Helmholtz) equation of state.
+       if (htype(1:2).eq.'FE') then
+         if (heosk(i).eq.htype) then
+           if (.not.leosfl) then
+             call SETEOSPURE (i,heosk(i))
+             call SETEOSMX (heosmx)
+             call SETFEQ (nread,i,ierr1,herr1)
+             call SWAPERR (ierr,ierr1,herr,herr1)
+             if (ierr.gt.0) goto 198
+             if (i.le.ncmax) hieos(i)=htype//hcite
+             leosfl=.true.
+           endif
+         endif
+c  Modified Benedict-Webb-Rubin equation of state.
+       elseif (htype(1:2).eq.'BW') then
+          if (heosk(i).eq.htype) then
             if (.not.leosfl) then
-              hmxeos(i)='BWR'
-              if (heos(1:2).eq.'BW') heos='BWR'
-              call SETBWR (nread,i,hcasn(i),ierr1,herr1)
-              hieos(i)=htype//hcite//hnull
+              heosk(i)='FEQ'
+              call SETEOSPURE (i,heosk(i))
+              if (heosmx(1:2).eq.'BW') call SETEOSMX ('FEQ')
+              call SETEOSPURE (i,heosk(i))
+              call SETBWR (nread,i,ierr1,herr1)
+              if (i.le.ncmax) hieos(i)=htype//hcite
               leosfl=.true.
-            end if
-          end if
-        else if (htype(1:2).eq.'FE') then
-c  fundamental (Helmholtz) equation of state found in file
-c         if (heos.eq.'FEQ' .or. hmxeos(i).eq.'FEQ') then
-          if (htype(1:3).eq.'FEX') igenfl(i)=1
-          if (hmxeos(i).eq.htype) then
+            endif
+          endif
+c  Extended corresponding states (ECS) thermo model.
+        elseif (htype(1:2).eq.'EC') then
+          if (heosk(i).eq.htype) then
             if (.not.leosfl) then
-c           write (*,*) ' SETUP--about to call SETFEQ'
-              if (heos(1:2).eq.'FE') heos='FEQ'
-              call SETFEQ (nread,i,hcasn(i),ierr1,herr1)
-              hieos(i)=htype//hcite//hnull
-              leosfl=.true.
-            end if
-          end if
-        else if (htype(1:2).eq.'QU') then
-c  fundamental Quintic (Helmholtz) equation of state found in file
-c         if (heos.eq.'QUI' .or. hmxeos(i).eq.'QUI') then
-          if (hmxeos(i).eq.htype) then
-            if (.not.leosfl) then
-c           write (*,*) ' SETUP--about to call SETQUI'
-              if (heos(1:2).eq.'QU') heos='QUI'
-              call SETQUI (nread,i,hcasn(i),ierr1,herr1)
-              hieos(i)=htype//hcite//hnull
-              leosfl=.true.
-            end if
-          end if
-        else if (htype(1:2).eq.'EC') then
-c  extended corresponding states (ECS) thermo model found in file
-c         if (heos.eq.'ECS' .or. hmxeos(i).eq.'ECS') then
-          if (hmxeos(i).eq.htype) then
-c           write (*,*) ' SETUP--about to call SETECS (thermo)'
-            if (.not.leosfl) then
-              hmxeos(i)='ECS'
-              if (heos(1:2).eq.'EC') heos='ECS'
-              call SETECS (nread,i,hcasn(i),hreff,hsveq,ierr1,herr1)
-c  add directory information to reference fluid file
-              call RFFILE (hfile(i),hreff)
-              iref=-i
-              if (iref.ge.n0) then
-                hfile(iref)=hreff
-                hmxeos(iref)=hsveq
-                hieos(i)=htype//hcite//hnull
-                leosfl=.true.
+              heosk(i)='ECS'
+              call SETEOSPURE (i,heosk(i))
+              if (heosmx(1:2).eq.'EC') call SETEOSMX ('ECS')
+              call SETECS (nread,i,hreff,heqn,ierr1,herr1)
+              call RFFILE (hFile(i),hreff)  !Add directory information to reference fluid file.
+              if (i.le.mxecs) then
+                if (i.le.ncmax) then
+                  hFile(ncmax+i)=hreff
+                  heosk(ncmax+i)=heqn
+                  hieos(i)=htype//hcite
+                  leosfl=.true.
+                endif
               endif
-            end if
-          end if
-        else if (htype(1:2).eq.'PR') then
-c  cubic (Peng-Robinson, etc.) equation of state found in file
-          if (hmxeos(i)(1:2).eq.htype(1:2)) then
-            hmxeos(i)='PR'
-            if (heos(1:2).eq.'PR') heos='PR'
-            call SETPR (nread,i,hcasn(i),ierr1,herr1)
-            hieos(i)=htype//hcite//hnull
-            leosfl=.true.
-          else
-c  get tpr coefficients from fluid file, but nothing else
-            call SETPR (-nread,i,hcasn(i),ierr1,herr1)
-          end if
-          lprfl=.true.
+            endif
+          endif
+c  Cubic (Peng-Robinson, etc.) equation of state.
+        elseif (htype(1:2).eq.'PR') then
+          if (i.le.ncmax) then
+            if (heosk(i)(1:2).eq.htype(1:2)) then
+              heosk(i)='PR'
+              call SETEOSPURE (i,heosk(i))
+              if (heosmx(1:2).eq.'PR') call SETEOSMX ('PR ')
+              call SETPR (0,nread,i,ierr1,herr1)
+              hieos(i)=htype//hcite
+              leosfl=.true.
+            else
+              call SETPR (1,nread,i,ierr1,herr1) !Get tpr coefficients from fluid file.
+            endif
+            lprfl=.true.
+          endif
         else
-c  unidentified model found in file
-          ierr=-103
-          write (herr,2103) htype,i,hnull
-          call ERRMSG (ierr,herr)
-        end if
-        if (ierr1.ne.0) then
-          ierr=104
-          write (herr,2104) hmxeos(i),i,herr1(1:182),hnull
-          call ERRMSG (ierr,herr)
-        end if
-      end if
-c
+c  Unidentified equation of state model found in file.
+          call ERRNUM (-107,i,htype,' ',0d0,0d0,0d0,ierr,herr)
+        endif
+        if (ierr1.ne.0) goto 102
+      endif
+
       if (lbdata) then
         hflag='AUX'
-        htype=hmodcp(i)
-      end if
-c
-      if (hflag.eq.'AUX') then
-c
-c  set up auxiliary model(s)
-c  (model(s) are specified in call to appropriate SETmod routine)
-c
-c       write (*,*) ' SETUP--aux model (',htype,') found in fld file '
-c       write (*,*) ' SETUP--i,htype,hmodcp(i): ',i,htype,hmodcp(i)
+        htype=hcpk(i)
+      endif
+
+c  Set up auxiliary model(s).
+c   (Model(s) are specified in call to appropriate SETmod routine.)
+      if (hflag.eq.'AUX' .and. i.gt.0 .and. i.le.ncmax) then
         ierr1=0
-        hmaux=hmodcp(i)    !possible use in error message
-        if (htype(1:2).eq.'CP' .and. hmodcp(i).eq.htype) then
-c  ideal gas heat capacity function
-c         write (*,*) ' SETUP--about to call SETCPP'
-          call SETCPP (nread,i,hcasn(i),ierr1,herr1)
-          hicp0(i)=htype//hcite//hnull
+        if (htype(1:2).eq.'CP' .and. hcpk(i).eq.htype) then
+c  Ideal-gas heat capacity function.
+          call SETCPP (nread,i,1,ierr1,herr1)
+          iCP0xx(i)=iCP0CP
+          hicp0(i)=htype//hcite
           icpflg=2
-        else if (htype(1:2).eq.'PH' .and. hmodcp(i).eq.htype) then
-c  Helmholtz for ideal gas heat state
-c         write (*,*) ' SETUP--about to call SETPH0'
-          call SETPH0 (nread,i,hcasn(i),ierr1,herr1)
-          hicp0(i)=htype//hcite//hnull
-          icpflg=2
-        elseif (htype(1:3).eq.'CPP' .and. (hmodcp(i)(1:2).eq.'CP'
-     &         .or. hmodcp(i).eq.'NBS') .and. icpflg.eq.0) then
-          call SETCPP (nread,i,hcasn(i),ierr1,herr1)
-          hicp0(i)=htype//hcite//hnull
+        elseif (htype.eq.'CPP' .and. icpflg.eq.0) then
+          call SETCPP (nread,i,1,ierr1,herr1)
           icpflg=1
-        elseif (htype(1:2).eq.'UN') then
-          read (nread,*) tminUN(i)             !lower temperature limit
-          read (nread,*) tmaxUN(i)             !upper temperature limit
-          read (nread,*) pmaxUN(i)             !upper pressure limit
-          read (nread,*) rhomUN(i)             !upper density limit
-          read (nread,*) iunflg(i)             !flag to allow calcs
-          read (nread,*) ntrmUN(i)
-          jterm=0
-          if (ntrmUN(i).ge.1) then
-            do j=1,ntrmUN(i)           !read coefficients
-              jterm=jterm+1
-              read (nread,*) prmUN(i,jterm)
-            enddo
-          end if
-        end if
-        if (ierr1.ne.0) then
-          ierr=104
-          write (herr,2104) hmaux,i,herr1(1:182),hnull
-          call ERRMSG (ierr,herr)
-        end if
-      end if
-c
+          if (iphi0flg.ne.2) then
+            iCP0xx(i)=iCP0CP
+            hicp0(i)=htype//hcite
+          endif
+        elseif (htype(1:2).eq.'PH' .and. hcpk(i).eq.htype .and.
+     &          iphi0flg.ne.2) then
+c  Helmholtz energy for ideal-gas state.
+          call SETCPP (nread,i,2,ierr1,herr1)
+          iCP0xx(i)=iCP0PH
+          hicp0(i)=htype//hcite
+          iphi0flg=2
+        elseif (htype(1:2).eq.'PX' .and. hcpk(i).eq.htype) then
+c  Helmholtz energy for ideal-gas state.
+          call SETCPP (nread,i,3,ierr1,herr1)
+          iCP0xx(i)=iCP0PH
+          hicp0(i)=htype//hcite
+          iphi0flg=2
+          htype(1:2)='PH'
+          hcpk(i)(1:2)='PH'
+        elseif(htype.eq.'PX0'.and.iphi0flg.eq.0)then
+          call SETCPP (nread,i,3,ierr1,herr1)
+          iphi0flg=1
+        elseif(htype.eq.'PH0'.and.iphi0flg.eq.0)then
+          call SETCPP (nread,i,2,ierr1,herr1)
+          iphi0flg=1
+        endif
+        if (ierr1.gt.0) goto 102
+      endif
+
       if (lbdata) hflag='TRN'
-c
+
 c  If the transport models, dielectric models, and surface tension eqs.
-c  (vis, tcx, st, de) are not required, and only the default values in the
-c  fluid files are used, the following files do not have to be compiled and
-c  linked with the other source code:  CORE_DE, CORE_STN, SETUP2,
-c  TRNS_ECS, TRNS_TCX, TRNS_VIS, and TRNSP.  In addition, the
-c  following two lines should be commented out:
-      call STFLD2 (nread,i,hcasn,hcite,hsveq,hetemp,hfile,hflag,
-     &              hreff,hstar,httemp,htype,leta,ltcx,ierr,herr)
-      if (hreff.ne.' ' .and. i.gt.0) then
-        iref=-i
-        if (iref.ge.n0) then
-          if (hfile(iref).eq.'NUL') then
-            hfile(iref)=hreff
-            hmxeos(iref)=hsveq
+c   (vis, tcx, st, de) are not required, and only the default values in the
+c   fluid files are used, the following files do not have to be compiled and
+c   linked with the other source code - CORE_DE, CORE_STN, SETUP2,
+c   TRNS_ECS, TRNS_TCX, TRNS_VIS, and TRNSP.  In addition, the
+c   following two lines should be commented out.
+      call SETFLD2 (nread,i,hstar,hflag,htype,hcite,
+     &              heqn,hreff,hetemp,httemp,ierr1,herr1)
+      call SWAPERR (ierr,ierr1,herr,herr1)
+      nref=nr      !Keeps the compiler from reporting an error when ncmax=1
+      if (hreff.ne.' ' .and. i.le.ncmax) then    !Store info for ECS reference fluid (but not if current fluid is the reference fluid).
+        call RFFILE (hFile(i),hreff)             !Add directory information to reference fluid file.
+        hFile(nref)=hreff                        !*.fld file for reference fluid
+        heosk(nref)=heqn                         !Model for reference fluid equation of state
+        if (i.le.mxecs) then
+          if (hFile(ncmax+i).eq.'NUL') then
+            hFile(ncmax+i)=hreff
+            heosk(ncmax+i)=heqn
           endif
         endif
       endif
-c
-c  do not call the following models if component number less than 0
-      if (i.ge.nrf0 .and. hstar.eq.'#') then
-c
-c  melting line models
-        ierr1=0
-        if (hflag.eq.'MLT' .or. hflag.eq.'mlt') then
-          hmelt=htype
+
+c  Do not call the following models if component number less than 0.
+      ierr1=0
+      if (i.le.ncmax .and. hstar.eq.'#') then
+        k=ICHAR(htype(3:3))-48    !Get the number following the 'PS', 'DL', etc. in the fld file.
+        if (k.lt.0) k=0
+        if (k.gt.9) k=0
+c  Melting line models.
+        if (hflag.eq.'MLT' .and. i.gt.0) then
           hmeltk(i)=htype
-          call SETMLT (nread,i,ierr1,herr1)
-          himelt(i)=htype//hcite//hnull
-c  sublimation line models
-        elseif (hflag.eq.'SBL' .or. hflag.eq.'sbl') then
-          hsubl=htype
+          call SETANC (nread,i,5,ierr1,herr1)
+          himelt(i)=htype//hcite
+          imlttyp(i)=k
+c  Sublimation line models.
+        elseif (hflag.eq.'SBL' .and. i.gt.0) then
+          itypsbl(i)=k
           hsublk(i)=htype
-          call SETSBL (nread,i,ierr1,herr1)
-          hisubl(i)=htype//hcite//hnull
-c  vapor pressure equations
-        elseif (hflag.eq.'PS ' .or. hflag.eq.'ps ') then
-          hpsa=htype
+          call SETANC (nread,i,6,ierr1,herr1)
+          hisubl(i)=htype//hcite
+c  Vapor pressure equations.
+        elseif (hflag.eq.'PS ' .and. i.gt.0) then
           hpsk(i)=htype
-          call SETPS (nread,i,ierr1,herr1)
-          hips(i)=htype//hcite//hnull
-c  liquid pressure equations (for pseudo-pure fluids)
-        elseif (hflag.eq.'PL ' .or. hflag.eq.'pl ') then
-          hpla=htype
+          call SETANC (nread,i,2,ierr1,herr1)
+          hips(i)=htype//hcite
+          ipstyp(i)=k
+c  Liquid pressure equations (for pseudo-pure fluids).
+        elseif (hflag.eq.'PL ' .and. i.gt.0) then
           hplk(i)=htype
-          call SETPL (nread,i,ierr1,herr1)
-          hipl(i)=htype//hcite//hnull
-c  saturated liquid density equations
-        elseif (hflag.eq.'DL ' .or. hflag.eq.'dl ') then
-          hdla=htype
+          call SETANC (nread,i,1,ierr1,herr1)
+          hipl(i)=htype//hcite
+          ipltyp(i)=k
+c  Saturated liquid density equations.
+        elseif (hflag.eq.'DL ' .and. i.gt.0) then
           hdlk(i)=htype
-          call SETDL (nread,i,ierr1,herr1)
-          hidl(i)=htype//hcite//hnull
-c  saturated vapor density equations
-        elseif (hflag.eq.'DV ' .or. hflag.eq.'dv ') then
-          hdva=htype
+          call SETANC (nread,i,3,ierr1,herr1)
+          hidl(i)=htype//hcite
+          idltyp(i)=k
+c  Saturated vapor density equations.
+        elseif (hflag.eq.'DV ' .and. i.gt.0) then
           hdvk(i)=htype
-          call SETDV (nread,i,ierr1,herr1)
-          hidv(i)=htype//hcite//hnull
-        end if
-        if (ierr1.ne.0 .and. ierr.eq.0) then
-          ierr=104
-          write (herr,2104) hflag,i,herr1(1:182),hnull
-          call ERRMSG (ierr,herr)
-        end if
-      end if
-c
-      if (lbdata) RETURN                  !next component
-c
-      if (hflag.eq.'END') then
-c  if fluid-specific 'ETA' and/or 'TCX' models have not been loaded, use
-c  the 'TRN' model (e.g. the ECS model)
-        if (i.ge.nrf0) then
-          if (.not.leta) heta(i)=hetemp
-          if (.not.ltcx) htcx(i)=httemp
-        end if
-c  close the file, return to setup and process the next component
-        rewind (nread)
-        close (unit=nread,err=998)
-c       write (*,1190) hfile(i)
-c1190   format ('  SETUP--file closed: ',a80)
-        if (.not.leosfl) then
-        if (i.ge.-ncmax) then
-c  if a pure fluid equation for the GERG-2004 model was requested, but does
-c  not exist, use the default (FEQ) without returning an error message
-          if (hmxeos(i).eq.'FEK') then
-            hmxeos(i)='FEQ'
-            goto 10
+          call SETANC (nread,i,4,ierr1,herr1)
+          hidv(i)=htype//hcite
+          idvtyp(i)=k
+        endif
+        if (ierr1.ne.0 .and. ierr.eq.0) goto 102
+      endif
+
+      if (lbdata) goto 500
+      if (hflag.ne.'END') goto 100
+
+c  End of file reached.
+c   If fluid-specific 'ETA' and/or 'TCX' models have not been loaded, use
+c   the 'TRN' model (e.g., the ECS model).
+      if (i.le.nq) then
+        if (.not.leta .and. hetak(i).ne.'NBS')
+     &      call ERRNUM(105,100+i,htcxk(i),' ',0d0,0d0,0d0,ierr,herr) !User-specified thermal conductivity equation not found in fluid file.
+        if (.not.ltcx .and. htcxk(i).ne.'NBS')
+     &      call ERRNUM(105,100+i,htcxk(i),' ',0d0,0d0,0d0,ierr,herr) !User-specified thermal conductivity equation not found in fluid file.
+        if (.not.leta) hetak(i)=hetemp
+        if (.not.ltcx) htcxk(i)=httemp
+      endif
+      close (unit=nread,err=101)
+
+c  If a pure fluid equation for the GERG-2008 model was requested, but does
+c   not exist, use the default (FEQ) without returning an error message.
+      if (.not.leosfl .and. i.le.ncmax) then
+        if (heosk(i).eq.'FEK') then
+          heosk(i)='FEQ'
+          n7total=0
+          n7st=0
+          n7oper=0
+          goto 10
+        endif
+       call ERRNUM(105,i,heosk(i),hFile(i)(1:100),0d0,0d0,0d0,ierr,herr) !Equation of state not found in fluid file.
+       goto 500
+      endif
+
+c  Ideal-gas heat capacity equation not found in fluid file.
+      if (i.le.ncmax) then
+        if (i.gt.0) then
+          if (icpflg.eq.0 .or. (icpflg.eq.1.and.hcpk(i).ne.'CPP')) then
+            if (iphi0flg.ne.2)
+     &        call ERRNUM (107,i,' ',' ',0d0,0d0,0d0,ierr,herr)
           endif
-          ierr=105
-          write (herr,2105) i,hfile(i)(1:100),hnull
- 2105     format ('[SETUP error 105] selected equation of state',
-     &            ' not found for component #',i3,':  ',a100,a1)
-          call ERRMSG (ierr,herr)
-          RETURN
         endif
-        if (icpflg.eq.0 .or. (icpflg.eq.1.and.hmodcp(i).ne.'CPP')) then
-          ierr=106
-          write (herr,2106) i,hnull
- 2106     format ('[SETUP error 106] ideal gas heat capacity equation',
-     &            ' not found for component #',i3,'.',a1)
-          call ERRMSG (ierr,herr)
+        if (.not.lprfl) call SETPR(2,999,i,ierr1,herr1)    !Call SETPR to put constants into PR common block if PRT not in FLD file.
+      endif
+      goto 500
+
+c  Error encountered while reading fluid file.
+ 102  call ERRNUM (102,i,hname(i),' ',0d0,0d0,0d0,ierr,herr)
+      if (i.le.ncmax) then
+        if (.not.leta) hetak(i)=hetemp           !If fluid-specific 'ETA' and/or 'TCX' models have not been loaded, use the 'TRN' model.
+        if (.not.ltcx) htcxk(i)=httemp
+      endif
+      goto 500
+
+c  Error in opening fluid file.
+ 101  hfilei=hFile(i)                            !Fluid file name plus a possible path.
+      call FINDLAST (hfilei,CHAR(92),1,j)        !Location of last directory separator in Windows.
+      if (j.eq.0) call FINDLAST (hfilei,'/',1,j) !  in Linux.
+      if (j.eq.0) call FINDLAST (hfilei,':',1,j) !  on a Mac.
+      hstr=hfilei(j+1:)                          !File name.
+      hfilei=hfilei(1:j)                         !Path sent with fluid file name.
+      call FINDLAST (hstr,' ',-255,j)
+      if (j.gt.0) then
+        if (UCASE(hstr).ne.hAltFluidName .and. hAltFluidName.ne.' ')then
+          hstr=hstr(1:j)//' or '//hAltFluidName  !Add alternate fluid file name to error message if not the same as the name sent to SETUP.
         endif
-        endif
-c  call SETPR to put constants into PR common block if PRT not in FLD file
-        if (.not.lprfl) call SETPR(999,i,hcasn(i),ierr1,herr1)
-        RETURN
-      else
-        goto 100
-      end if
- 199  continue
-      ierr=102
-      write (herr,2102) i,hnull
- 2102 format ('[SETUP error 102] error in file or premature end of',
-     &        ' file for component #',i3,'.',a1)
-      call ERRMSG (ierr,herr)
-c  rewind and close the file
-      rewind (nread)
-      close (unit=nread,err=998)
-c     write (*,1199) hfile(i)
-c1199 format (1x,'SETFLD--premature end of file: ',a80)
-c  if fluid-specific 'ETA' and/or 'TCX' models have not been loaded, use
-c  the 'TRN' model (e.g. the ECS model)
-      if (i.ge.nrf0) then
-        if (.not.leta) heta(i)=hetemp
-        if (.not.ltcx) htcx(i)=httemp
-      end if
-      RETURN
-c
- 998  continue
-      ierr=101
-      write (herr,2101) i,hfile(i)(1:80),hnull
- 2101 format ('[SETUP error 101] error in opening file for component #',
-     &        i3,'; filename = (',a80,').',a1)
-      call ERRMSG (ierr,herr)
-      RETURN
-c
- 2001 format (a1)
- 2003 format (a3)
- 2012 format (a12)
- 2013 format (a1,a3)
- 2060 format (a60)
+        call FINDLAST (hstr,' ',-255,j)
+        if (hpath.ne.' ') hstr=hstr(1:j)//' in the path '//hpath          !Add the path to the error message.
+        if (hfilei.ne.' ') hstr=hstr(1:j)//' in the path '//hfilei
+      endif
+      call ERRNUM (101,i,hstr,' ',0d0,0d0,0d0,ierr,herr)
+      goto 198
+ 1101 call ERRNUM (-101,i,hFile(i)(1:80),' ',0d0,0d0,(xerr),ierr,herr)
+      goto 198
+
+ 500  call SWAPERR (ierr,ierr2,herr,herr2)
+ 198  close (unit=nread,err=103)
+ 103  RETURN
+
  2080 format (a255)
- 2083 format (a3,a251)
- 2103 format ('[SETUP warning -103] unknown model (',a3,
-     &        ') encountered in file for component #',i3,'.',a1)
- 2104 format ('[SETUP error 104] Error in setup of (',a3,
-     &        ') model for component #',i3,':  ',a182,a1)
+
+      end                                              subroutine SETFLD
 c
-      end                                             !subroutine SETFLD
+c ======================================================================
+c
+      subroutine SETFLD2 (nread,i,hstar,hflag,htype,hcite,
+     &                   heqn,hreff,hetemp,httemp,ierr,herr)
+c
+c  Define transport, dielectric, and surface tension models.
+c  See comments to SETFLD for additional information.
+c
+c  Written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
+c  11-19-94  MM, original version (SETFLD)
+c  11-08-06 EWL, load TCX and ETA coefficients into negative arrays
+c  12-26-06 MLH, add VS4 model
+c  11-02-07 MLH, add Chung model
+c  10-24-14 MLH, add CI3 model for collision integral
+c  12-07-15 MLH, add VS6 model for Velosovic type models that use CI3
+c  06-22-16 EWL, shorten code
+
+      include 'COMMONS.INC'
+      include 'COMTRN.INC'
+      character hstar*1,hcite*251
+      character*3 heqn,hetemp,httemp,hflag,htype
+      character*255 hreff,herr,herr1
+
+      ierr =0
+      ierr1=0
+      heqn =' '
+      herr =' '
+      herr1=' '
+      hreff=' '
+      if (mxref.le.0) RETURN
+
+c  Set up auxiliary models.
+      if (hflag.eq.'AUX') then
+
+c  Do not call collision integral model (or other auxiliary models
+c    associated with the transport properties) if component number < 0.
+c  There is only one reference fluid for transport properties so arrays
+c    are not dimensioned for the negative component numbers to
+c    accommodate the multiple reference fluids in the ECS-thermo model.
+
+c  Functions for collision integral (used in transport correlations).
+        if (htype(1:2).eq.'CI' .and.
+     &     (htype.eq.hmdeta(i) .or. htype.eq.hmdtcx(i))) then
+           call SETCI (nread,i,htype,ierr1,herr1)
+
+c  Thermal conductivity critical enhancement models.
+        else
+          iFlg=0
+          if (htype.eq.htcxcrecs(i) .and. htype.eq.'TK6')  iFlg=1
+          if (htype.eq.htcxcr(i) .and. htype(1:2).eq.'TK') iFlg=1
+          if (htype.eq.'TK3' .and. lEQ0(Tmtck(i)))         iFlg=1  !If no other critical enhancement has been loaded and TK3 is found, load it for use with ECS if needed.
+          if (iFlg.eq.1) then
+            call SETTCE (nread,i,htype,ierr1,herr1)
+            hitcxc(i)=htype//hcite
+          endif
+        endif
+        call SWAPERR (ierr,ierr1,herr,herr1)
+      endif
+
+c  TRN (ECS transport) property models.
+c  The 'TRN' models apply to both viscosity and thermal conductivity.
+      if (hflag.eq.'TRN') then
+        if (hstar.eq.'#') then    !NIST-recommended model
+          if (nc.eq.1) then
+            if (hvismx.eq.'NBS') hvismx=htype
+            if (htcxmx.eq.'NBS') htcxmx=htype
+          endif
+          if (i.ge.1 .and. hetak(i).eq.'NBS') hetak(i)=htype
+          if (i.ge.1 .and. htcxk(i).eq.'NBS') htcxk(i)=htype
+          leta=.true.   !When the TRN model is the NIST-recommended one, the ECS method is
+          ltcx=.true.   ! equivalent to a fluid-specific model for purposes of the leta and ltcx flags.
+        else
+c  Load the 'TRN' model if a fluid-specific 'ETA' or 'TCX' has not yet been loaded.
+c   This is indicated by the flags leta and ltcx.  If a fluid-specific
+c   correlation is encountered later in the file this will be overwritten.
+c   This is necessary to cover the case of a fluid-specific (and NIST-rec)
+c   model available for only one of the transport properties.
+          hetemp=htype
+          httemp=htype
+        endif
+
+c  Extended corresponding states model for transport properties found.
+c  Always load the ECS model for possible use if a pure fluid correlation is out of range.
+        if (htype.eq.'ECS') then
+          if (hvismx.ne.'NUL' .or. htcxmx.ne.'NUL') then
+            call SETTRN (nread,i,hreff,heqn,ierr1,herr1)
+            call SWAPERR (ierr,ierr1,herr,herr1)
+            if (ierr.ne.0) goto 102
+            if (i.gt.0) then
+              if (hieta(i)(1:3).eq.'NUL') hieta(i)=htype//hcite
+              if (hitcx(i)(1:3).eq.'NUL') hitcx(i)=htype//hcite
+            endif
+          endif
+        else
+          goto 107      !Unidentified model found in file.
+        endif
+      endif
+
+c  Pure fluid viscosity models.
+      if (i.le.nq) then
+      if (hflag.eq.'ETA' .or. hflag.eq.'VIS') then
+        if (hstar.eq.'#') then    !NIST-recommended model
+          if (nc.eq.1 .and. hvismx  .eq.'NBS') hvismx=htype
+          if ( i.ne.0 .and. hetak(i).eq.'NBS') hetak(i)=htype
+        endif
+        if (htype.eq.hetak(i) .and. htype(1:2).eq.'VS') then
+          call SETVIS (nread,i,htype,ierr1,herr1)
+          leta=.true.   !Flag that a fluid-specific viscosity model was loaded.
+          hieta(i)=htype//hcite
+          call SWAPERR (ierr,ierr1,herr,herr1)
+        endif
+      endif
+
+c  Pure fluid thermal conductivity models.
+      if (hflag.eq.'TCX') then
+        if (hstar.eq.'#') then    !NIST-recommended model
+          if (nc.eq.1 .and. htcxmx  .eq.'NBS') htcxmx=htype
+          if ( i.ne.0 .and. htcxk(i).eq.'NBS') htcxk(i)=htype
+        endif
+        if (htype.eq.htcxk(i) .and. htype(1:2).eq.'TC') then
+          call SETTCX (nread,i,htype,ierr1,herr1)
+          ltcx=.true.   !Flag that a fluid-specific thermal conductivity model was loaded.
+          hitcx(i)=htype//hcite
+          call SWAPERR (ierr,ierr1,herr,herr1)
+        endif
+      endif
+      endif
+
+c  Pure fluid surface tension models.
+c  Do not call surface tension models if component number greater than ncmax.
+
+      if (i.le.ncmax) then
+        if (hflag.eq.'STN') then
+          if (hstar.eq.'#' .and. i.gt.0) then         !NIST-recommended model
+            if (nc.eq.1 .and. hstnmx  .eq.'NBS') hstnmx  =htype
+            if (hstnk(i).eq.'NBS') hstnk(i)=htype
+          endif
+          if (htype.eq.'ST1' .and. i.gt.0) then       !Surface tension model 1
+            if (hstnk(i).eq.'ST1') then
+              call SETANC (nread,i,7,ierr1,herr1)
+              histn(i)=htype//hcite
+            endif
+          else
+            goto 107                                  !Unidentified model found in file
+          endif
+        endif
+
+c  Pure fluid dielectric constant models.
+c  Do not call dielectric constant models if component number greater than ncmax.
+        if (hflag.eq.'DE ') then
+          if (hstar.eq.'#' .and. i.gt.0) then         !NIST-recommended model
+            if (nc.eq.1 .and. hdilmx  .eq.'NBS') hdilmx  =htype
+            if (hdilk(i).eq.'NBS') hdilk(i)=htype
+          endif
+          if (htype(1:2).eq.'DE' .and. i.gt.0) then   !Dielectric constant model
+            if (hdilk(i)(1:2).eq.'DE') then
+              call SETANC (nread,i,8,ierr1,herr1)
+              hidiel(i)=htype//hcite
+            endif
+          else
+            goto 107                                  !Unidentified model found in file
+          endif
+        endif
+      endif
+      RETURN
+
+ 107  if (hstar.eq.'#' .and. i.le.ncmax)
+     &  call ERRNUM (-107,i,htype,' ',0d0,0d0,0d0,ierr,herr)
+      RETURN
+ 102  call ERRNUM (102,i,hcite,' ',0d0,0d0,0d0,ierr,herr)
+      RETURN
+
+      end                                             subroutine SETFLD2
 c
 c ======================================================================
 c
       subroutine SETMOD (ncomp,htype,hmix,hcomp,ierr,herr)
 c
-c  set model(s) other than the NIST-recommended ('NBS') ones
+c  Set model(s) other than the NIST-recommended ('NBS') ones.
 c
 c  This subroutine must be called before SETUP; it need not be called
 c  at all if the default (NIST-recommended) models are desired.
 c
-c  inputs:
-c    ncomp--number of components (1 for pure fluid) [integer]
-c    htype--flag indicating which models are to be set [character*3]
-c           'EOS':  equation of state for thermodynamic properties
-c           'ETA':  viscosity
-c           'TCX':  thermal conductivity
-c           'STN':  surface tension
-c           'NBS':  reset all of the above model types and all
-c                   subsidiary component models to 'NBS';
-c                   values of hmix and hcomp are ignored
-c     hmix--mixture model to use for the property specified in htype [character*3];
-c           ignored if number of components = 1
-c           some allowable choices for hmix:
-c             'NBS':  use NIST recommendation for specified fluid/mixture
-c             'HMX':  mixture Helmholtz model for thermodynamic properties
-c             'ECS':  extended corresponding states for viscosity or therm. cond.
-c             'STX':  surface tension mixture model
-c    hcomp--component model(s) to use for property specified in htype [array (1..ncomp) of character*3]
-c             'NBS':  NIST recommendation for specified fluid/mixture
-c           some allowable choices for an equation of state:
-c             'FEQ':  Helmholtz free energy model
-c             'BWR':  pure fluid modified Benedict-Webb-Rubin (MBWR)
-c             'ECS':  pure fluid thermo extended corresponding states
-c           some allowable choices for viscosity:
-c             'ECS':  extended corresponding states (all fluids)
-c             'VS1':  the 'composite' model for R134a, R152a, NH3, etc.
-c             'VS2':  Younglove-Ely model for hydrocarbons
-c             'VS4':  Generalized friction theory of Quinones-Cisneros and Deiters
-c             'VS5':  Chung et al. (1988) predictive model
-c           some allowable choices for thermal conductivity:
-c             'ECS':  extended corresponding states (all fluids)
-c             'TC1':  the 'composite' model for R134a, R152a, etc.
-c             'TC2':  Younglove-Ely model for hydrocarbons
-c             'TC5':  Chung et al. (1988) predictive model
-c           some allowable choices for surface tension:
-c             'ST1':  surface tension as f(tau); tau = 1 - T/Tc
+c  Inputs:
+c    ncomp--Number of components (1 for pure fluid) (integer)
+c    htype--Flag indicating which model to set (character*3):
+c           'NBS' - Reset all of the above model types to 'NBS' (values of hmix and hcomp are ignored)
+c           'EOS' - Equation of state
+c           'ETA' - Viscosity
+c           'TCX' - Thermal conductivity
+c           'STN' - Surface tension
+c     hmix--Mixture model for the property specified in htype (character*3) (ignored if number of components = 1):
+c           'NBS' - Use NIST recommendation for specified fluid/mixture
+c           'HMX' - Mixture Helmholtz model for thermodynamic properties
+c           'ECS' - Extended corresponding states for viscosity or therm. cond.
+c           'STX' - Surface tension mixture model
+c    hcomp--Component model(s) for property specified in htype [array (1..ncomp) of character*3]:
+c           'NBS' - NIST recommendation for specified fluid/mixture
+c           'FEQ' - Helmholtz energy model
+c           'BWR' - Pure fluid modified Benedict-Webb-Rubin (MBWR)
+c           'ECS' - Pure fluid thermo extended corresponding states
+c           'ECS' - Extended corresponding states (all fluids)
+c           'PRT' - Peng-Robinson (PRT model from fluid file)
+c           'VS1' - The 'composite' model for R134a, R152a, NH3, etc.
+c           'VS2' - Younglove-Ely model for hydrocarbons
+c           'VS4' - Generalized friction theory of Quinones-Cisneros and Deiters
+c           'VS5' - Chung et al. (1988) predictive model
+c           'VS6' - Vesovic form of VS1 model
+c           'VS7' - Polynomial/exponential model
+c           'ECS' - Extended corresponding states (all fluids)
+c           'TC1' - The 'composite' model for R134a, R152a, etc.
+c           'TC2' - Younglove-Ely model for hydrocarbons
+c           'TC5' - Chung et al. (1988) predictive model
+c           'ST1' - Surface tension as f(tau); tau = 1 - T/Tc
 c
-c  outputs:
-c     ierr--error flag:  0 = successful
-c                      113 = ncomp outside of bounds
-c     herr--error string (character*255 variable if ierr<>0)
-c     [fluid parameters, etc. returned via various common blocks]
+c  Outputs:
+c     ierr--Error flag:  0 - Successful
+c                      113 - ncomp outside of bounds
+c     herr--Error string (character*255)
 c
-c  written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
+c  Written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
 c  03-20-96  MM, original version
-c  03-21-96  MM, replace /MODEL/ with /EOSMOD/, /STNMOD/
-c  03-28-96  MM, add option if htype='NBS' reset all models
-c  03-28-97  MM, add initialization of hnull (repeat of SETUP initialization);
-c                add /RESETM/ to check for initialization of models
-c  03-31-97  MM, reset all models if lreset true, even for htype<>'NBS'
-c  04-10-97  MM, add and initialize /CREMOD/ (critical enhancements)
-c  10-01-97  MM, add compiler switch to allow access by DLL
-c  10-30-98 EWL, change heos to FEQ when called by SETMOD with FE1, etc.
-c  03-11-99 EWL, reset lsatt and lsatp to .false. when called
-c  01-14-00 EWL, allow use of 'VIS' as well as 'ETA'
-c  07-24-06 EWL, remove excess code
-c  07-24-06 EWL, only use hmix if ncomp<>1
-c  12-12-07 MLH, add generalized Helmholtz model FEX of Xiang and Deiters (2007)
 c  05-17-11 EWL, change nc to ncomp
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SETMOD
-c
-      include 'commons.for'
-      include 'comtrn.for'
-      character*3 htype,hmix,hcomp(1:ncmax)
-      character*255 herr
-c
-c  repeat initialization of following from SETUP in case SETMOD is called
-c  before first call to SETUP
-      hnull=CHAR(0)        !null character to terminate error strings
-      hprsav=' '
-      do i=izero0,ncomp
-        ntrmUN(i)=0
-        iunflg(i)=0
-      enddo
-      do i=n0,nx
-        hmxsv(i)=' '
-      enddo
-      lsatt=.false.
-      lsatp=.false.
+
+      include 'COMMONS.INC'
+      include 'COMTRN.INC'
+      character*3 htype,htype2,hmix,hmix2,hcomp(1:ncmax),hcomp2(1:ncmax)
+      character*255 herr,UCASE
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SETMOD
+
       ierr=0
       herr=' '
       if (ncomp.lt.1 .or. ncomp.gt.ncmax) then
-        ierr=113
-        herr='[SETUP error 113] number of components out of bounds'
-        call ERRMSG (ierr,herr)
+        call ERRNUM (113,0,'SETUP',' ',0d0,0d0,0d0,ierr,herr)
         RETURN
       endif
-      ncset=ncomp
-c
-c     write (*,1000) ncomp,htype,hmix,(hcomp(i),i=1,ncomp)
-c1000 format (1x,' SETMOD--input ncomp,htype,hmix,hcomp:  ',i3,7(1x,a3))
-      if (htype.eq.'NBS' .or. htype.eq.'nbs' .or. lreset) then
-c  reset all models
-c       write (*,*) ' SETMOD--about to reset all models to NBS'
-        heos='NBS'
-        hpheq='NBS'   !phase equilibria model, not currently implemented
-        hetamx='NBS'
-        htcxmx='NBS'
-        hsten='NBS'
-        hdiel='NBS'
-        hmelt='NBS'
-        hsubl='NBS'
-        hpsa='NBS'
-        hpla='NBS'
-        hdla='NBS'
-        hdva='NBS'
-        do i=n0,ncmax
-          if (i.ge.1 .and. (htype.eq.'NBS' .or. htype.eq.'nbs'))
-     &        hcomp(i)='NBS'
-          hmxeos(i)='NBS'
-          hmodcp(i)='NBS'
-          hstenk(i)='NBS'
-          hdielk(i)='NBS'
-          hmeltk(i)='NBS'
-          hsublk(i)='NBS'
-          hpsk(i)='NBS'
-          hplk(i)='NBS'
-          hdlk(i)='NBS'
-          hdvk(i)='NBS'
-        enddo
-        do i=nrf0,ncmax
-          heta(i)='NBS'
-          hetacr(i)='NUL'
-          htcx(i)='NBS'
-          htcxcr(i)='NUL'
-          hmdeta(i)='NUL'
-          hmdtcx(i)='NUL'
-        enddo
-        lreset=.false.
-      end if
-      if (htype.eq.'EOS' .or. htype.eq.'eos') then
-c  equation of state specification
-        heos=hmix
-c       if (heos(1:3).eq.'FEX') igenfl(i)=1
-        if (ncomp.eq.1) heos=hcomp(1)
-        if (heos(1:2).eq.'FE') heos='FEQ'
-        if (heos(1:2).eq.'QU') heos='QUI'
-        if (heos(1:2).eq.'BW') heos='BWR'
-        if (heos(1:2).eq.'EC') heos='ECS'
-        do i=1,ncomp
-          hmxeos(i)=hcomp(i)
-        enddo
-      else if (htype.eq.'ETA' .or. htype.eq.'eta' .or.
-     &         htype.eq.'VIS' .or. htype.eq.'vis') then
-c  viscosity specification
-        hetamx=hmix
-        if (ncomp.eq.1) hetamx=hcomp(1)
-        do i=1,ncomp
-          heta(i)=hcomp(i)
-        enddo
-      else if (htype.eq.'TCX' .or. htype.eq.'tcx') then
-c  viscosity specification
-        htcxmx=hmix
-        if (ncomp.eq.1) htcxmx=hcomp(1)
-        do i=1,ncomp
-          htcx(i)=hcomp(i)
-        enddo
-      else if (htype.eq.'STN' .or. htype.eq.'stn') then
-c  surface tension specification
-        hsten=hmix
-        if (ncomp.eq.1) hsten=hcomp(1)
-        do i=1,ncomp
-          hstenk(i)=hcomp(i)
-        enddo
-      end if
-c     write (*,1003) heos,(hmxeos(j),j=n0,ncmax),
-c    &               hetamx,(heta(j),j=nrf0,nx),
-c    &               htcxmx,(htcx(j),j=nrf0,nx),
-c    &               hsten,(hstenk(j),j=n0,ncmax)
-c1003 format ('  SETMOD--heos, hmxeos: ',a3,3x,5(a3,1x),a5,3x,5(a3,1x)/
-c    &        '  (exit)   visc models: ',a3,25x,a3,3x,5(a3,1x)/
-c    &        '           t.c. models: ',a3,25x,a3,3x,5(a3,1x)/
-c    &        '       surf ten models: ',a3,3x,5(a3,1x),a5,3x,5(a3,1x))
-c
-      RETURN
-c
-      end                                             !subroutine SETMOD
-c
-c ======================================================================
-c
-      subroutine GERG04 (ncomp,iflag,ierr,herr)
-c
-c  set the pure model(s) to those used by the GERG 2004 formulation.
-c
-c  This subroutine must be called before SETUP; it need not be called
-c  at all if the default (NIST-recommended) models are desired.
-c  To turn off the GERG settings, call this routine again with iflag=0,
-c  and then call the SETUP routine to reset the parameters of the equations
-c  of state.
-c
-c  inputs:
-c    ncomp--number of components (1 for pure fluid)
-c    iflag--set to 1 to load the GERG 2004 equations, set to 0 for defaults
-c  outputs:
-c     ierr--error flag:  0 = successful
-c     herr--error string returned from SETMOD
-c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
-c  01-24-07 EWL, original version
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: GERG04
-c
-      include 'commons.for'
-      character*255 herr
-      character*3 htype,hmix,hcomp(1:ncmax)
-c
-      htype='EOS'
-      hmix='HMX'
+
+c  Repeat initialization of the following from SETUP in case SETMOD is called
+c   before first call to SETUP.
+      call RESETA (0)
+      hsavpr=' '
+      hsavprk=' '
+      ncSet=ncomp
+      htype2=UCASE(htype)
+      hmix2=UCASE(hmix)
       do i=1,ncomp
-        hcomp(i)='DEF'
-        if (iflag.eq.1) hcomp(i)='FEK'
+        hcomp2(i)=UCASE(hcomp(i))
       enddo
-      call SETMOD (ncomp,htype,hmix,hcomp,ierr,herr)
-      iGERG04=iflag
-      RETURN
-      end                                             !subroutine GERG04
+
+      if (htype2.ne.'NBS') iReset=1
+      if (htype2.eq.'NBS' .or. lReset) then
+c  Reset all models.
+        call SETEOSMX ('NBS')
+        hvismx ='NBS'
+        htcxmx ='NBS'
+        hstnmx ='NBS'
+        hdilmx ='NBS'
+        heosk  ='NBS'
+        hcpk   ='NBS'
+        hetak  ='NBS'
+        hetacr ='NBS'
+        htcxk  ='NBS'
+        htcxcr ='NBS'
+        hmdeta ='NBS'
+        hmdtcx ='NBS'
+        iCP0xx = 0
+        hpsk  ='NBS'   !Ancillary equations
+        hplk  ='NBS'
+        hdlk  ='NBS'
+        hdvk  ='NBS'
+        hmeltk='NBS'
+        hsublk='NBS'
+        hdilk ='NBS'
+        hstnk ='NBS'
+        hetacr(1:ncmax)='NUL'
+        htcxcr(1:ncmax)='NUL'
+        hmdeta(1:ncmax)='NUL'
+        hmdtcx(1:ncmax)='NUL'
+        lReset=.false.
+        if (htype2.eq.'NBS') hcomp2='NBS'
+      endif
+
+c  Equation of state
+      if (htype2.eq.'EOS') then
+        call SETEOSMX (hmix2)
+        if (ncomp.eq.1) call SETEOSMX (hcomp2(1))
+        do i=1,ncomp
+          if (hcomp2(i).ne.' ') heosk(i)=hcomp2(i)
+        enddo
+
+c  Viscosity
+      elseif (htype2.eq.'ETA' .or. htype2.eq.'VIS') then
+        hvismx=hmix2
+        if (ncomp.eq.1) hvismx=hcomp2(1)
+        do i=1,ncomp
+          if (hcomp2(i).ne.' ') hetak(i)=hcomp2(i)
+        enddo
+
+c  Thermal conductivity
+      elseif (htype2.eq.'TCX') then
+        htcxmx=hmix2
+        if (ncomp.eq.1) htcxmx=hcomp2(1)
+        do i=1,ncomp
+          if (hcomp2(i).ne.' ') htcxk(i)=hcomp2(i)
+        enddo
+
+c  Surface tension specification
+      elseif (htype2.eq.'STN') then
+        hstnmx=hmix2
+        if (ncomp.eq.1) hstnmx=hcomp2(1)
+        do i=1,ncomp
+          if (hcomp2(i).ne.' ') hstnk(i)=hcomp2(i)
+        enddo
+
+c  Do nothing for NBS, but check for it before the next statement.
+      elseif (htype2.eq.'NBS') then
+
+      else
+        call ERRNUM (504,0,'SETMOD',htype2,0d0,0d0,0d0,ierr,herr)
+        RETURN
+      endif
+
+      call ERRNUM (-912,0,' ',' ',0d0,0d0,0d0,ierr,herr)
+
+      end                                              subroutine SETMOD
 c
 c ======================================================================
 c
-      subroutine SETREF (hrf,ixflag,x0,h0,s0,t0,p0,ierr,herr)
+      subroutine SETREF (hrf,ixflag,x0,h0,s0,T0,P0,ierr,herr)
 c
-c  set reference state enthalpy and entropy
+c  Set reference state enthalpy and entropy.
 c
-c  This subroutine must be called after SETUP; it need not be called at
-c  all if the reference state specified in the call to SETUP is to be
-c  used.
+c  This subroutine must be called after SETUP; it need not be called at all
+c  if the reference state specified in the call to SETUP is to be used.
 c
-c  inputs:
-c      hrf--reference state for thermodynamic calculations [character*3]
-c           'NBP':  h,s = 0 at normal boiling point(s)
-c           'ASH':  h,s = 0 for sat liquid at -40 C (ASHRAE convention)
-c           'IIR':  h = 200, s = 1.0 for sat liq at 0 C (IIR convention)
-c           'DEF':  default reference state as specified in fluid file
-c                   is applied to each component (ixflag = 1 is used)
-c           'OTH':  other, as specified by h0, s0, t0, p0 (real gas state)
-c           'OT0':  other, as specified by h0, s0, t0, p0 (ideal gas state)
-c           'NA' :  not applicable, do not set up reference state (for use in debugging or fitting)
-c           '???':  change hrf to the current reference state and exit.
-c   ixflag--composition flag:  1 = ref state applied to pure components
-c                              2 = ref state applied to mixture x0
-c  following input has meaning only if ixflag = 2
-c       x0--composition for which h0, s0 apply; array(1:nc) [mol frac]
-c           this is useful for mixtures of a predefined composition,
-c           e.g. refrigerant blends such as R410A
-c  following inputs have meaning only if hrf = 'OTH'
-c       h0--reference state enthalpy at t0,p0 {x0} [J/mol]
-c       s0--reference state entropy at t0,p0 {x0} [J/mol-K]
-c       t0--reference state temperature [K]
-c           t0 = -1 indicates saturated liquid at normal boiling point
-c                   (bubble point for a mixture)
-c       p0--reference state pressure [kPa]
-c           p0 = -1 indicates saturated liquid at t0 {and x0}
-c           p0 = -2 indicates saturated vapor at t0 {and x0}
-c  outputs:
-c     ierr--error flag:  0 = successful
-c                       22 = Tmin > Tref for IIR reference state
-c                       23 = Tcrit < Tref for IIR reference state
-c                       24 = Tmin > Tref for ASHRAE reference state
-c                       25 = Tcrit < Tref for ASHRAE reference state
-c                       26 = Tmin > Tnbp for NBP reference state
-c                       27 = Tref, Pref for OTH ref state outside limits
-c                      -28 = can't apply 'DEF' to mixture;
-c                            will apply to pure components
-c                      -29 = unknown reference state specified;
-c                            will use 'DEF'
-c                      119 = convergence failure in calculating reference state
-c     herr--error string (character*255 variable if ierr<>0)
-c     [fluid parameters, etc. returned via various common blocks]
+c  Inputs:
+c      hrf--Reference state for thermodynamic calculations (character*3):
+c           'NBP' - h,s = 0 at normal boiling point(s)
+c           'ASH' - h,s = 0 for saturated liquid at -40 C (ASHRAE convention)
+c           'IIR' - h = 200 kJ/kg, s = 1 kJ/kg-K for sat. liquid at 0 C (IIR convention)
+c           'DEF' - Default reference state as specified in fluid file
+c           'OTH' - Other, as specified by h0, s0, T0, P0 (real gas state)
+c           'OT0' - Other, as specified by h0, s0, T0, P0 (ideal-gas state)
+c           'NA'  - Not applicable, do not set up the reference state.
+c                   The values of e, h, and s will have a random reference state.
+c                   Do not use except for EOS testing.
+c           '???' - Set hrf to the value of the current reference state and exit
+c   ixflag--Composition flag:
+c           1 - Reference state applied to pure components
+c           2 - Reference state applied to mixture x0
+c       x0--Composition for which h0 and s0 apply;
+c           array(1:nc) (array of mole fractions)
+c           This is useful for mixtures of a predefined composition,
+c           e.g., refrigerant blends such as R410A.
+c           Only has meaning if ixflag = 2
+c       h0--Reference state enthalpy at T0, P0, and x0 [J/mol] (only has meaning if hrf = 'OTH' or 'OT0')
+c       s0--Reference state entropy at T0, P0, and x0 [J/mol-K] (only has meaning if hrf = 'OTH' or 'OT0')
+c       T0--Reference state temperature [K] (only has meaning if hrf = 'OTH' or 'OT0')
+c           T0 = -1 indicates saturated liquid at normal boiling point (bubble point for a mixture)
+c       P0--Reference state pressure [kPa] (only has meaning if hrf = 'OTH' or 'OT0')
+c           P0 = -1 indicates saturated liquid at T0 (and x0)
+c           P0 = -2 indicates saturated vapor at T0 (and x0)
 c
-c  written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
-c  01-11-96  MM, original version--extracted from old subroutine SETUP
-c  01-16-96  MM, add check for inputs same as previous call
-c  01-19-96  MM, bug fixes and set flag ksetrf to 1 when SETREF called
-c  02-27-96  MM, parameter n0=-ncmax to accommodate ECS-thermo model
-c                add Zcrit to common /CCON/
-c  03-19-96  MM, add dipole moment to /CCON/
-c  03-21-96  MM, replace /MODEL/ with /REFST/
-c  06-18-96  MM, check ref state temperature against LIMITX
-c  01-07-97  MM, check limits for case of NBP ref state (re: CO2 bug)
-c  01-10-97  MM, pass error flag from limits errors to calling routine
-c  02-20-97  MM, add 'DEF' option (default ref state read from fld file)
-c                add hsvrfd to /REFST/, new common /CREFDF/
-c  03-25-97  MM, xliq,xvap used but not dimensioned; change to xl,xv
-c  03-26-97 EWL, changes for Fortran 90 compatibility
-c  05-14-97  MM, fix bug in checking for inputs same as last call
-c  10-01-97  MM, add compiler switch to allow access by DLL
-c  10-16-97  MM, allow ixflag = 2 for 'DEF' when all fluids are same
-c  11-24-97  MM, check for errors on calls to SATT, SATP, TPFLSH
-c  04-24-98  MM, move check for hrf='DEF' with ixflag=2;
-c                add check for 'DEF' within mixture-adjust calc
-c  08-13-98  MM, initialize "negative" components only for ECS model
-c                (do 200 loop); add common /EOSMOD/
-c  08-14-98  MM, pass tref to LIMITX (avoid undefined variable error)
-c  08-17-98  MM, initialize Dx,px for ixflag=2 case
-c  08-21-98  MM, initialize ierrsv,herrsv
-c  12-01-98 EWL, add Reos and triple point pressure and density to /CCON/
-c  11-25-02 EWL, reset tsvcp0 so that cp0 is recalculated (because Tref changed)
-c  11-26-02 EWL, add OTO input when h0 and s0 are given for the ideal gas
-c  08-31-04 EWL, only do ixflg=2 option if nc.gt.1
-c  08-30-05 EWL, add check for OTH when storing reference entropy and enthalpy in common
+c  Outputs:
+c     ierr--Error flag:
+c            0 - Successful
+c           22 - Tmin > Tref for IIR reference state
+c           23 - Tcrit < Tref for IIR reference state
+c           24 - Tmin > Tref for ASHRAE reference state
+c           25 - Tcrit < Tref for ASHRAE reference state
+c           26 - Tmin > Tnbp for NBP reference state
+c          -28 - Can't apply 'DEF' to mixture; will apply to pure components
+c          -29 - Unknown reference state specified; will use 'DEF'
+c          119 - Convergence failure in calculating reference state
+c     herr--Error string (character*255)
+c
+c  Written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
+c  01-11-96  MM, original version - extracted from old subroutine SETUP
 c  05-31-06 EWL, add ability to find out what the reference state is when hrf='???'
-c  09-06-06 EWL, update logic and fix several small bugs
 c  12-06-12 EWL, remove calls to PUREFLD
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SETREF
-c
-      include 'commons.for'
-      character*3 hrf
-      character*3 hrefi(n0:nx),hrdef
-      character*255 herr,herr2,herrsv
-      dimension x(ncmax),x0(ncmax),xl(ncmax),xv(ncmax),prefi(n0:nx)
-c
-c  initialize error codes and strings
+c  07-04-16 EWL, shorten and rework code
+
+      include 'COMMONS.INC'
+      character*3 hrefi(nx),hrdef,hrf2,hrf*(*)
+      character*255 herr,herr2,herrsv,UCASE
+      dimension z(ncmax),x0(ncmax),xl(ncmax),xv(ncmax),pref(nx)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SETREF
+
+c  Initialize error codes, strings, and flags.
       ierr=0
       ierrsv=0
+      iSetup=0
+      iSetRef=0
       herr=' '
-      herrsv=hnull
-c     write (*,1000) hrf,ixflag,nc
-c1000 format (/1x,' SETREF--entering reference state = ',a3,
-c    &           '; with ixflag, nc =',2i4)
-c     write (*,1001) 'input',hrf,ixflag,h0,s0,t0,p0,(x0(i),i=1,nc)
-c     write (*,1001) 'saved',hsvrfs,ixfsav,h0sav,s0sav,t0sav,p0sav,
-c    &                (x0sav(i),i=1,nc)
-c1001 format ('  SETREF--',a5,' href,xflag,h0,s0,t0,p0: ',a3,i3,4f10.4/
-c    &        '          ',5x,'                     x0: ',6x,5f10.4)
-c
-c  compare inputs to previous values (stored in /REFST/ and /REFSAV/)
-c  if nothing has changed SETREF can be bypassed
-c
-      l1same=.false.    !flag for initialization of pure components
-      l2same=.false.    !flag for application of ref state to mixture
-      ixflg=ixflag      !input value changed if input href not valid
-      if (hrf.eq.'???') then
-        hrf=hrefdf(1)      !Return the default reference state for a pure fluid
+      herrsv=' '
+      l1same=.false.         !Flag for initialization of pure components.
+      l2same=.false.         !Flag for application of reference states to mixtures.
+      ixflg=ixflag           !Copy ixflag to new variable (value is changed if input href is not valid).
+      hrf2=UCASE(hrf)
+      if (hrf2.eq.' ') then
+        hrf2=hsvref
+        if (hsvref.eq.'NBS') hrf2='DEF'
+      elseif (hrf2.eq.'???') then
+        herr=hrefdef(1)      !Return the default reference state for a pure fluid.
         RETURN
       endif
-      if (hrf.eq.hsvrfs) then
+      if (lSkipRef) RETURN   !Exit if the flag to skip SETREF has been set in subroutine FLAGS.
+      if (lAGA8) RETURN      !Exit if the AGA8 flag is on.
+
+c  Check to see if reference state has changed, if so, exit without any calculations.
+      if (hrf2.eq.hsvref) then
         l1same=.true.
-        if (hrf(1:2).eq.'OT') then
-c  check h0, s0, t0, p0 only if 'OTHer' reference state is used
-          if (abs(s0-s0sav).gt.1.0d-10 .or.
-     &        abs(h0-h0sav).gt.1.0d-10 .or.
-     &        abs(t0-t0sav).gt.1.0d-10 .or.
-     &        abs(p0-p0sav).gt.1.0d-10) then
-            l1same=.false.
-          end if
-        end if
-        if (ixflag.eq.ixfsav) then
+        if (hrf2(1:2).eq.'OT') then     !Check h0, s0, T0, and P0 only if 'OTHer' reference state is used.
+          if (ABS(s0-s0sav).gt.1d-10 .or. ABS(h0-h0sav).gt.1d-10 .or.
+     &        ABS(T0-T0sav).gt.1d-10 .or. ABS(P0-P0sav).gt.1d-10)
+     &    l1same=.false.
+        endif
+        if (ixflg.eq.ixfsav) then      !Check if composition has changed.
           l2same=.true.
-          if (ixflag.eq.2) then
-c  check x0 only if ixflag = 2
+          if (ixflg.eq.2) then         !Check x0 only if ixflag = 2.
             do i=1,nc
-              if (abs(x0(i)-x0sav(i)).gt.1.0d-10) then
-                l2same=.false.
-              end if
+              if (ABS(x0(i)-x0sav(i)).gt.1d-10) l2same=.false.
             enddo
-          end if
-        end if
-        if (l1same .and. l2same .and. ksetrf.eq.1) then
-c  return if all inputs are same and also SETUP has not been executed
-c  since last call to SETREF (as indicated by ksetrf)
-c         write (*,*)
-c         write (*,*) ' SETREF--inputs are identical, return'
-          RETURN
-        end if
-      end if
-c
-      if ((hrf.eq.'DEF' .or. hrf.eq.'def') .and. ixflag.eq.2 .and.
-     &    nc.gt.1) then
-c  check if all fluids have same reference state
+          endif
+        endif
+c  Return if all inputs are the same and also SETUP has not been executed
+c   since last call to SETREF (as indicated by iSetRf).
+        if (l1same .and. l2same .and. iSetRf.eq.1) RETURN
+      endif
+
+c  Exit for 'NA' ('Not Applicable').
+      if (hrf2.eq.'NA' .or.
+     &   (hrf2.eq.'DEF' .and. hrefdef(1).eq.'NA' .and. nc.eq.1)) then
+        href=0d0
+        sref=0d0
+        goto 500
+      endif
+
+c  Check if all fluids have same reference state for a DEFault input.
+      if (hrf2.eq.'DEF' .and. ixflg.eq.2 .and. nc.gt.1) then
         ldef=.true.
-c       write (*,2001) (hsvrfd(i),i=1,nc)
-c2001   format (1x,' SETREF--default ref states:  ',5(a3,1x))
         do i=1,nc
-          if (hrefdf(1).ne.hrefdf(i) .or. hrefdf(i)(1:2).eq.'OT') then
-            ldef=.false.
-          end if
+        if (hrefdef(1).ne.hrefdef(i) .or.
+     &      hrefdef(i)(1:2).eq.'OT') ldef=.false.
         enddo
         if (.not.ldef) then
-          ierrsv=-28
-          herrsv='[SETREF warning -28] cannot apply reference '
-     &         //'state (DEF) at a specified mixture composition '
-     &         //'when components have different default reference '
-     &         //'states; will apply defaults to each pure component'
-     &         //hnull
-          call ERRMSG (ierrsv,herrsv)
+          call ERRNUM (-28,0,' ',' ',0d0,0d0,0d0,ierrsv,herrsv)
           ixflg=1
-        end if
-      end if
-c
-c     write (*,*)
-      if (l1same .and. ksetrf.eq.1 .and. ixflg.ge.ixfsav) then
-c  can skip initialization of pure components if:
-c  --reference state is the same (as indicated by l1same)
-c  --SETUP has not been called since last call to SETREF (indicated by ksetrf)
-c  --value of ixflag is >= ixfsav, i.e. this call applies ref state to mixture
-c    while last call applied to the pures, or if both applied to pures,
-c    but not if last call was applied to mix, this call to pures
-c       write (*,*) ' SETREF--skip initialization of pure components'
+        endif
+      endif
+
+      if (l1same .and. iSetRf.eq.1 .and. ixflg.ge.ixfsav) then
+c  Can skip initialization of pure components if
+c    Reference state is the same.
+c    SETUP has not been called since last call to SETREF.
+c    Value of ixflag is >= ixfsav, i.e., this call to SETREF applies the reference state to
+c      a mixture while the previous call applied the reference state to each of the pure fluids.
+
+
+c  Otherwise, check for valid input reference state and then calculate reference values.
       else
-c  must initialize pure component reference states
-        do i=n0,nc
-c  following is temporary assignment, needed for SATP and/or THERM
-c  (SATP calls ENTRO, and ENTRO needs rhoref, but SATP is used to
-c  calculate rhoref; thus need to put in temporary value here)
-          rhoref(i)=1.0d0
-        enddo
-c
-c  initialize reference temperature, entropy, and enthalpy
-c
-c       write (*,*) ' SETREF--240 loop from/to: ',-nc,nc
-        do i=-nc,nc
-c  "negative" components refer to ECS reference fluids, for other models
-c  the "negative" components are not defined
-c       write (*,*) 'SETREF--start init for i,model: ',i,hmxeos(i)
-          lcheck=.false.
-          if (i.ge.n0) then
-            if (hmxeos(i).ne.'NUL') lcheck=.true.  !Do this inside an if statement in case i=-1 but n0=1
-          endif
-          if (i.ge.1) lcheck=.true.
-          if (lcheck) then
-c         write (*,*) 'SETREF--start init for i,model: ',i,hmxeos(i)
-            if (hrf.eq.'IIR' .or. hrf.eq.'ASH' .or. hrf.eq.'NBP' .or.
-     &          hrf(1:2).eq.'OT' .or. hrf.eq.'NA') then
-              hrefi(i)=hrf
-            else         !DEFault or unknown reference state
-              hrefi(i)=hrefdf(i)
-              ixflg=1    !must apply ref state to pures only
-              if (hrf.ne.'DEF' .and. hrf.ne.'def') then
-                ierr=-29
-                herr='[SETREF warning -29] reference state not found, '
-     &             //'using default reference state'//hnull
-                call ERRMSG (ierr,herr)
-              end if
-            end if
-c
-c         write (*,*) ' SETREF--i,hrefi:  ',i,' ',hrefi(i)
-            href(i)=0.0d0
-            sref(i)=0.0d0
-            if (hrefi(i).eq.'IIR') then
-c  IIR reference state
-c           write (*,*) ' SETREF--IIR ref state with ixflag =',ixflg
-              tref(i)=273.15d0
-              prefi(i)=-1.0d0   !code for reference state of sat liquid
-              href(i)=200.0d0*wmas(i) !reference enthalpy is 200.0 kJ/kg
-              sref(i)=wmas(i)         !reference entropy is 1.0 kJ/(kg.K)
-            else if (hrefi(i).eq.'ASH') then
-c  ASHRAE reference state
-c           write (*,*) ' SETREF--ASH ref state with ixflag =',ixflg
-              tref(i)=233.15d0
-              prefi(i)=-1.0d0   !code for reference state of sat liquid
-            else if (hrefi(i).eq.'NBP') then
-c  normal boiling point reference state
-c           write (*,*) ' SETREF--NBP ref state with ixflag =',ixflg
-              tref(i)=tnbp(i)
-              prefi(i)=-1.0d0   !code for ref state of saturated liquid
-            else if (hrefi(i)(1:2).eq.'OT') then
-c  'other' reference state--use input values of h0, s0, t0, p0
-c           write (*,*) ' SETREF--OTHer ref state with ixflag =',ixflg
-              if (hrf.eq.'DEF' .or. hrf.eq.'def') then
-c  if input to SETREF is 'DEF' reference t,p,h,s come from fluid file
-                tref(i)=tdef(i)
-                prefi(i)=pdef(i)
-                href(i)=hdef(i)
-                sref(i)=sdef(i)
-              else
-c  otherwise, reference t,p,h,s are inputs to SETREF
-                tref(i)=t0
-                prefi(i)=p0
-                href(i)=h0
-                sref(i)=s0
-              end if
-            else if (hrefi(i).eq.'NUL') then
-c  this case should be encountered only for i<0 when any model other
-c  than the ECS model is specified; fill arrays with dummy values
-              tref(i)=300.0
-              prefi(i)=1.0d-6
-            else if (hrefi(i).eq.'NA') then
-c  this case is for bypassing the reference state in equation development
-              tref(i)=300.0
-              prefi(i)=1.0d-6
-            else
-c  unknown reference state (use normal boiling point)
-              ierr=-29
-              write (herr,1238) hrefi(i),i,hnull
- 1238         format ('[SETREF warning -29] reference state (',a3,') ',
-     &           'for component ',i3,' not found; will use ',
-     &           'NBP reference state. ',a1)
-              call ERRMSG (ierr,herr)
-              tref(i)=tnbp(i)
-              prefi(i)=-1.0d0   !code for ref state of saturated liquid
-            end if
-          end if
-        enddo
-c
-c  check limits of equation of state against reference state temperature
-c
-        do 400 i=1,nc
-        Dx=0.0d0
-        px=0.0d0
-        t=tref(i)
-        call LIMITK ('EOS',i,t,Dx,px,tmin,tmax,Dmax,pmax,ierr2,herr2)
-c
-        if (hrefi(i).eq.'IIR') then
-c  IIR reference state
-          if (tmin.gt.273.15d0) then
-c  minimum temperature of EOS is above IIR reference state temperature
-c  issue error message
-            ierr=22
-            write (herr,1022) i,tmin,hrefdf(i),hnull
- 1022       format ('[SETUP warning 22] ',
-     &        'minimum temperature for component ',i3,' is greater ',
-     &        'than IIR reference temperature; Tmin =',g12.5,
-     &        ' K, Tref = 273.15 K.; will use default (',a3,'). ',a1)
-          else
-            if (Tcrit(i).lt.274.15d0) then
-c  critical temperature is too low to use IIR reference state
-c  issue error message
-              ierr=23
-              write (herr,1023) i,Tcrit(i),hrefdf(i),hnull
- 1023         format ('[SETUP warning 23] ',
-     &        'critical temperature for component ',i3,' is less ',
-     &        'than IIR reference temperature; Tcrit =',g12.5,
-     &        ' K, Tref = 273.15 K; will use default (',a3,'). ',a1)
-            end if
-          end if
-c
-        else if (hrefi(i).eq.'ASH') then
-c  ASHRAE reference state
-          if (tmin.gt.233.15d0) then
-c  minimum temperature of EOS is above reference state temperature
-            ierr=24
-            write (herr,1024) i,tmin,hrefdf(i),hnull
- 1024       format ('[SETUP warning 24] ',
-     &        'minimum temperature for component ',i3,' is greater ',
-     &        'than ASHRAE reference temperature; Tmin =',g12.5,
-     &        ' K, Tref = 233.15 K; will use default (',a3,'). ',a1)
-          else
-            if (Tcrit(i).lt.234.15d0) then
-c  critical temperature is too low to use IIR reference state
-              ierr=25
-              write (herr,1025) i,Tcrit(i),hrefdf(i),hnull
- 1025         format ('[SETUP warning 25] ',
-     &        'critical temperature for component ',i3,' is less ',
-     &        'than ASHRAE reference temperature; Tcrit =',g12.5,
-     &        ' K, Tref = 233.15 K; will use default (',a3,'). ',a1)
-            end if
-          end if
-        else if (hrefi(i).eq.'NBP') then
-c  Normal Boiling Point reference state
-          if (tmin.gt.tnbp(i)) then
-c  minimum temperature of EOS is above boiling point temperature
-c  issue error message (this is a problem with CO2)
-            ierr=26
-            write (herr,1026) i,tmin,tnbp(i),hrefdf(i),hnull
- 1026       format ('[SETUP warning 26] ',
-     &        'minimum temperature for component ',i3,' is greater ',
-     &        'than boiling point temperature; Tmin =',g12.5,
-     &        ' K, Tnbp =',g12.5,' K; will use default (',a3,'). ',a1)
-          end if
-        end if
-c
-        if (ABS(ierr).ge.22) then
-c  if specified reference state is outside limits for component i,
-c  use default state (read in from fluid file); this code assumes
-c  that the specification in the fluid file is valid
-          call ERRMSG (ierr,herr)
-          href(i)=0.0d0
-          sref(i)=0.0d0
-          if (hrefdf(i).eq.'IIR') then
-c           write (*,1282) i,hrefi(i),hsvrfd(i)
-c1282       format (2x,'SETREF--specified reference state for component'
-c    &                ,i4,' (',a3,'), is not valid; will apply default '
-c    &                ,'reference state (',a3,') to pures. ')
+        if (hrf2.eq.'IIR' .or. hrf2.eq.'ASH' .or. hrf2.eq.'NBP' .or.
+     &      hrf2(1:2).eq.'OT') then
+          hrefi=hrf2
+        else
+c  DEFault or unknown reference state.
+          hrefi(1:nc)=hrefdef(1:nc)
+          ixflg=1            !DEFault reference state applied to mixture not allowed.
+          if (hrf2.ne.'DEF')
+     &      call ERRNUM (-29,0,' ',' ',0d0,0d0,0d0,ierrsv,herrsv)
+        endif
+
+
+
+
+
+c  Initialize reference temperature, entropy, and enthalpy.
+        do i=1,nc
+100       tref(i)=298.15d0
+          pref(i)=1d0
+          href(i)=0d0
+          sref(i)=0d0
+          Dref(i)=1d-3
+
+c  IIR reference state.
+          if (hrefi(i).eq.'IIR') then
             tref(i)=273.15d0
-            prefi(i)=-1.0d0
-            href(i)=200.0d0*wmas(i) !reference enthalpy is 200.0 kJ/kg
-            sref(i)=wmas(i)         !reference entropy is 1.0 kJ/(kg.K)
-          else if (hrefdf(i).eq.'ASH') then
-c           write (*,1282) i,hrefi(i),hsvrfd(i)
+            pref(i)=-1d0          !Code for saturated liquid.
+            href(i)=200d0*wmas(i) !Reference enthalpy is 200.0 kJ/kg
+            sref(i)=wmas(i)       !Reference entropy is 1.0 kJ/(kg.K)
+
+c  ASHRAE reference state.
+          elseif (hrefi(i).eq.'ASH') then
             tref(i)=233.15d0
-            prefi(i)=-1.0d0
-          else if (hrefdf(i).eq.'NBP') then
-c           write (*,1282) i,hrefi(i),hsvrfd(i)
-            tref(i)=tnbp(i)
-            prefi(i)=-1.0d0
-          else if (hrefdf(i)(1:2).eq.'OT') then
-c           write (*,1282) i,hrefi(i),hsvrfd(i)
-            tref(i)=tdef(i)
-            prefi(i)=pdef(i)
-            href(i)=hdef(i)
-            sref(i)=sdef(i)
-          else     !unknown reference state; set to reasonable values
-c           write (*,*) ' SETREF--default reference state is unknown'
-            tref(i)=0.8d0*Tcrit(i)
-            prefi(i)=-1.0d0
-          end if
-          hrefi(i)=hrefdf(i)
-          ixflg=1                 !must apply ref state to pures only
-        end if
-c  save any error flags/messages to pass up the chain; then reset
-        if (ierr.ne.0) then
-          ierrsv=ierr
-          herrsv=herr
-        endif
-        ierr=0
-        herr=' '
- 400    continue
-c
-c  apply reference enthalpy and entropy to each component; this for
-c  case of ixflag =1; also used as initialization for ixflag = 2
-c
-        do 600 i=1,nc
-c       write (*,1002) i,tref(i),href(i),sref(i)
-c1002   format (1x,' SETREF--i,tref,href,sref: ',i3,f7.2,f10.1,f10.3)
-c       x(1:nc)=0.d0
-        x=0.d0
-        x(i)=1.d0
-        if (hrefi(i).eq.'NBP') then
-c  find bubble point at one atmosphere for each pure component
-          pnbp=101.325d0
-          call SATP (pnbp,x,1,tbub,rhol,rhov,xl,xv,ierr,herr)
-          if (rhol.gt.0.d0) rhoref(i)=rhol
-          tref(i)=tbub
-        elseif (hrefi(i).eq.'NA') then
-c  Don't do anything if deactivated
-        else if (prefi(i).lt.0.0d0) then
-c  find saturated liquid or vapor density (includes ASH and IIR states)
-          if (prefi(i).lt.-1.99d0) then
-            call SATT (tref(i),x,2,p,rhol,rhov,xl,xv,ierr,herr)
-            rhoref(i)=rhov
-          else
-            call SATT (tref(i),x,1,p,rhol,rhov,xl,xv,ierr,herr)
-            rhoref(i)=rhol
-          end if
-        else if (hrefi(i).eq.'OTH') then
-c  find density at specified t,p (either input to SETREF or default value)
-          t=tref(i)
-          p=prefi(i)
-          call TPFLSH (t,p,x,D,Dl,Dv,xl,xv,q,e,h,s,cv,cp,w,ierr,herr)
-          rhoref(i)=D
-        else if (hrefi(i).eq.'OT0') then
-c  find density at specified t,p (either input to SETREF or default value)
-          t=tref(i)
-          p=prefi(i)
-          call RMIX(x0)
-          rhoref(i)=p/R/T
-        end if
-        if (ierr.ge.1) then
-c  error encountered in calculating reference state--set reference
-c  density to critical density?
-          rhoref(i)=Dcrit(i)
-          ierr=119
-          herr2=herr
-          write (herr,1119) i,herr2(1:162),hnull
-          call ERRMSG (ierr,herr)
- 1119     format ('[SETREF error 119] convergence failure in ',
-     &            'calculating reference state for component #',i3,
-     &            ':  ',a162,a1)
-        end if
-        if (hrefi(i).ne.'NA') then
-          tsvcp0(i)=0.d0  !reset tsvcp0 to force recalculation of cp0
-          if (hrefi(i).eq.'OT0') then
-            call THERM0(tref(i),rhoref(i),x,ptherm,e,h,s,cv,cp,w,a,g)
-          else
-            call THERM (tref(i),rhoref(i),x,ptherm,e,h,s,cv,cp,w,hjt)
+            pref(i)=-1d0          !Code for saturated liquid
+
+c  NBP - Normal boiling point reference state.
+          elseif (hrefi(i).eq.'NBP') then
+            tref(i)=Tnbp(i)
+            pref(i)=-1d0          !Code for saturated liquid
+
+c  OTHer reference state - use input values of h0, s0, T0, P0 or values from fluid file.
+          elseif (hrefi(i)(1:2).eq.'OT') then
+            if (hrf2.eq.'DEF') then
+              tref(i)=Tdef(i)     !If input to SETREF is 'DEF' reference T,P,h,s come from fluid file.
+              pref(i)=Pdef(i)
+              href(i)=hdef(i)
+              sref(i)=sdef(i)
+            else
+              tref(i)=T0          !Otherwise, reference T,P,h,s are inputs to SETREF.
+              pref(i)=P0
+              href(i)=h0
+              sref(i)=s0
+            endif
           endif
-          if (ixflg.ne.2 .or. nc.eq.1 .or. hrefi(i)(1:2).ne.'OT') then
-            sref(i)=s              !store reference entropy in common
-            href(i)=h              !ditto for enthalpy
-          endif
-          tsvcp0(i)=0.d0
-        endif
-c       write (*,1004) i,tref(i),href(i),sref(i),rhoref(i)
-c1004   format (1x,' SETREF--after SATT, etc.: ',i3,f7.2,f10.1,2f10.3)
- 600    continue
-      end if     !end of initialization for pure components
-c
-      if (ixflg.eq.2 .and. nc.gt.1) then
-c
-c  reference state applied to mixture of specified composition
-c  this option is not available if the 'DEFault' state is chosen
-c
-c       write (*,1005) hrf,(x0(i),i=1,nc)
-c1005   format (1x,' SETREF--about to apply ref state "',a3,
-c    &             '" to mixture w/ x = ',5f10.5)
-        if (hrf(1:2).eq.'OT') then
-          tmix=t0
-          pref=p0
-          smix=s0
-          hmix=h0
-        else
-          hrdef='NUL'   !initialize pointer to default ref state
-          if (hrf.eq.'DEF' .or. hrf.eq.'def') then
-c  DEFault reference state--should get here only if all components have the
-c  same default ref state stored in their respective fluid files
-            hrdef=hrefdf(1)
-          end if
-          hmix=0.0d0
-          smix=0.0d0
-          if (hrf.eq.'IIR' .or.hrdef.eq.'IIR') then
-c  IIR reference state
-            tmix=273.15d0
-            pref=-1.0d0       !code for ref state of saturated liquid
-            smix=1.0d0        !reference entropy is 1.0 kJ/(kg.K)
-            hmix=200.0d0      !reference enthalpy is 200. kJ/kg
-          else if (hrf.eq.'ASH' .or.hrdef.eq.'ASH') then
-c  ASHRAE reference state
-            tmix=233.15d0
-            pref=-1.0d0       !code for reference state of sat liquid
-          else
-c  boiling point or unknown ref state
-c  find bubble point of specified mixture
-            pnbp=101.325d0
-            call SATP (pnbp,x0,1,tbub,Dmix,rhov,xl,xv,ierr,herr)
-            tmix=tbub
-            pref=-1.0d0       !code for reference state of sat liquid
-          end if
-c  check mix reference temperature against limits, if outside limits
-c  take average of component Tref's (would be different only if one or
-c  more components were outside limits)
-          Dx=0.0d0     !initialize (check only temperature)
-          px=0.0d0
-          call LIMITX ('EOS',tmix,Dx,px,x0,tmin,tmax,Dmx,pmx,ie2,herr2)
-          if (tmix.lt.tmin .or. tmix.gt.tmax) then
-            tmix=0.0d0
-            do i=1,nc
-              tmix=tmix+x0(i)*tref(i)
-            enddo
-          end if
-c  predefined reference states are on mass basis
-          wmm=WMOL(x0)
-          smix=smix*wmm
-          hmix=hmix*wmm
-        end if
-c
-        if (pref.lt.0.0d0) then
-c  find liquid or vapor density (includes IIR and ASHrae states)
-          if (pref.lt.-1.99d0) then
-            call SATT (tmix,x0,2,p,rhol,Dmix,xl,xv,ierr,herr)
-          else
-            call SATT (tmix,x0,1,p,Dmix,rhov,xl,xv,ierr,herr)
-          end if
-        else
-c  find density at specified t0, p0
-          call LIMITX ('EOS',t0,Dx,p0,x0,tmin,tmax,Dmx,pmx,ierr,herr2)
-          if (ierr.ge.1) then
-            ierr=27
-            herr='[SETREF error 27] specified reference state for '//
-     &           'mixture is outside equation limits: '//herr2(1:170)//
-     &           hnull
-            call ERRMSG (ierr,herr)
-            RETURN
-          end if
-          call TPFLSH (t0,p0,x0,D,Dl,Dv,xl,xv,q,e,h,s,cv,cp,w,ierr,herr)
-          tmix=t0
-          Dmix=D
-        end if
-c
-        call THERM (tmix,Dmix,x0,ptherm,e,h,s,cv,cp,w,hjt)
-        do i=1,nc
-c  modify sref, href by amount needed for specified mixture
-c  to agree with s0, h0
-c         write (*,1006) s,smix,h,hmix
-c1006     format (1x,' SETREF  s,smix,h,hmix:  ',2f10.4,2f10.1)
-          sref(i)=sref(i)+s-smix
-          href(i)=href(i)+h-hmix
-c         write (*,1008) i,tref(i),href(i),sref(i),rhoref(i)
-c1008 format (1x,' SETREF--after mix adjust: ',i3,f7.2,f10.1,2f10.3)
-        enddo
-      end if
-c
-c  variable ksetrf is flag to indicate that SETREF has been called
-c  it is reset to 0 each time SETUP is called (indicating that SETREF
-c  must be recalled)
-      ksetrf=1
-c
-c  copy inputs to common block
-c
-      hsvrfs=hrf
-      ixfsav=ixflg
-      if (hrf(1:2).eq.'OT') then
-c  save h0, s0, t0, p0 only if 'OTHer' reference state is used
-        h0sav=h0
-        s0sav=s0
-        t0sav=t0
-        p0sav=p0
-      end if
-      if (ixflg.eq.2) then
-c  save x0 only if ixflg = 2
-        do i=1,nc
-          x0sav(i)=x0(i)
-        enddo
-      end if
-c
-c  reset error flag/message (the more significant errors are those which
-c  arise from out-of-bounds conditions, not any potential errors in calls
-c  to SATT, etc.)
-      if (ierr.eq.0 .and. ierrsv.ne.0) then
-        ierr=ierrsv
-        herr=herrsv
-      end if
-c
-      RETURN
-c
-      end                                             !subroutine SETREF
-c
-c ======================================================================
-c
-      subroutine SETMIX (hmxnme,hfmix,hrf,ncc,hfiles,x,ierr,herr)
-c
-c  open a mixture file (e.g., R410A.mix) and read constituents and
-c  mole fractions
-c
-c  inputs:
-c    hmxnme--mixture file name to be read in [character*255]
-c    hfmix--mixture coefficients [character*255]
-c           file name containing coefficients for mixture model
-c    hrf--reference state for thermodynamic calculations [character*3]
-c         (see info in subroutine setup for specifics)
-c  outputs:
-c     ncc--number of fluids in mixture
-c     hfiles--array of file names specifying mixture components
-c             that were used to call setup. [character*255 variable]
-c     x--array of mole fractions for the specified mixture
-c     ierr--error flag:  0 = successful
-c                      101 = error in opening file
-c                     -102 = mixture file contains mixing parameters
-c                     -103 = composition not equal to one
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
-c  03-27-06 EWL, original version
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SETMIX
-c
-      include 'commons.for'
-      character*3 hrf
-      character*255 hmxnme,hfmix,hfiles(ncmax),herr,herr2,MixName
-      dimension x(ncmax)
-c
-      ierr2=0
-      nread=12             !logical unit for file reads
-      call OPENFL (nread,hmxnme,2,ierr,herr)
-      if (ierr.ne.0) goto 998
-      read (nread,2000,err=998,end=998) MixName
-      read (nread,*,err=998,end=998) xMixMolarMass,xMixTc,xMixPc,xMixDc
-      read (nread,*,err=998,end=998) ncc
-      do i=1,ncc
-        read (nread,2000,err=998,end=998) hfiles(i)
-        call RFFILE(hfmix,hfiles(i))
-      enddo
-      sum=0
-      do i=1,ncc
-        read (nread,*,err=998,end=998) x(i)
-        sum=sum+x(i)
-      enddo
-      if (ABS(sum-1.d0).gt.0.0000001.and.sum.gt.0.d0.and.ncc.gt.1) then
-        ierr2=-103
-        herr2='[SETMIX error -103] '//
-     &       'The composition of the mixture does not sum '//
-     &       'to one. The compositions have been normalized.'
-        call ERRMSG (ierr2,herr2)
-        do i=1,ncc
-          x(i)=x(i)/sum
-        enddo
-      endif
-      read (nread,*,err=998,end=998) i
-      if (i.ne.0) then
-        ierr2=-102
-        herr2='[SETMIX error -102] '//
-     &       'The mixture file contains updated binary interaction '//
-     &       'parameters which have been ignored.'
-        call ERRMSG (ierr2,herr2)
-      endif
-      close (nread)
-      call SETUP (ncc,hfiles,hfmix,hrf,ierr,herr)
-      if (ierr.eq.0 .and. ierr2.ne.0) then
-        ierr=ierr2
-        herr=herr2
-      endif
-      RETURN
- 998  continue
-      ierr=101
-      herr='[SETMIX error 101] error in opening mixture file:  '//hmxnme
-      call ERRMSG (ierr,herr)
-      RETURN
-c
- 2000 format (a255)
-      end                                             !subroutine SETMIX
-c
-c ======================================================================
-c
-      subroutine RFFILE (hfilei,hflref)
-c
-c  provide a full path specification for the '.fld' file for the ECS
-c  reference fluid given a specification for a component '.fld' file
-c  e.g. 'c:\REFPROP\fluids\r123.fld' and the reference fluid pointer
-c  which is stored in that file, e.g. 'r134a.fld'
-c
-c  N.B.  This routine assumes that the reference fluid '.fld' file
-c        is in the same directory as the component file(s)
-c
-c  inputs:
-c   hfilei--file name specifying mixture component (character*255)
-c   hflref--file name specifying reference fluid (character*255)
-c  output:
-c   hflref--file name specifying reference fluid (character*255)
-c           the output value of hflref consists of the directory
-c           information gleaned from hfilei concatenated with the
-c           input value of hflref
-c
-c  written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
-c  12-14-95  MM, original version
-c  12-18-95  MM, use htemp to concatenate character strings (cannot
-c                concatenate string with itself on some compilers)
-c  02-22-07 EWL, check for null character in input string
-c
-      include 'commons.for'
-      character*255 hfilei,hflref,htemp
-c
-      if (hfilei(1:5).eq.'BDATA' .or. hfilei(1:5).eq.'bdata') then
-c  special case if component data is read from block data;
-c  assume that reference fluid is in same directory as main program
-c  i.e., hflref is simply fluid name + '.fld', e.g. 'r134a.fld'
-c  --or--
-c  the pointer to the reference fluid in block data is also to
-c  block data, e.g. 'BDATA:811-97-2' for R134a
-      else
-c  usual case of fluid read from '.fld' file
-        ncfile=index(hfilei,char(0))
-        if (ncfile.eq.0) ncfile=LEN(hfilei)
-        jpoint=0
-        do i=1,ncfile
-          j=1+ncfile-i
-c  search for directory delimiters
-c  (\,:,/  for DOS, Macintosh, and Unix, respectively)
-          jchar=ICHAR(hfilei(j:j))
-          if (jchar.eq.92 .or. jchar.eq.58 .or. jchar .eq.47) then
-            jpoint=j
-            goto 100
-          end if
-        enddo
- 100    continue             !file delimiter character has been found
-c       write (*,1004) ncfile,jpoint
-c1004   format (1x,' RFFILE--ncfile, jpoint: ',2i4)
-        if (jpoint.le.0) then
-c  no path name provided in specification of component .fld file
-c  assume that reference fluid is in same directory as main program
-c  i.e., hflref is simply fluid name + '.fld', e.g. r134a.fld
-        else
-          htemp=hfilei(1:jpoint)//hflref
-          hflref=htemp
-        end if
-      end if
-c     write (*,1005) hflref
-c1005 format (1x,' RFFILE--full path for reference fld file: ',a255)
-c
-      RETURN
-      end                                             !subroutine RFFILE
-c
-c ======================================================================
-c
-      subroutine OPENFL (nread,hfl,idir,ierr,herr)
-c
-c  open a file for input
-c
-c  inputs:
-c    nread--unit number
-c      hfl--file name [character*255 variable]
-c  outputs:
-c     ierr--error flag:  0 = successful
-c                      101 = error in opening file
-c     herr--error string (character*255 variable if ierr<>0)
-c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
-c  08-10-06 EWL, original version (with code taken from old SETFLD)
-c  11-10-06 EWL, add additional checks on the input file name
-c  01-04-07 EWL, add even more checks
-c
-      include 'commons.for'
-      character*26 lower,upper
-      character*255 herr,hfl,hfilei,hfilej
-      character*1 bs
-      logical lread
-c
-      lower = 'abcdefghijklmnopqrstuvwxyz'
-      upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-!$OMP CRITICAL(REFPROP_OPEN_FILE)
-      ierr=0
-      herr=' '
-c
-c  check for ^M in filename caused by binary download to UNIX machines
-      j=INDEX(hfl,CHAR(13))
-      if (j.ne.0) hfl=hfl(1:j-1)//hfl(j+1:255)
-c
- 10   continue
-      INQUIRE(unit=nread,opened=lread)  !Check that unit #nread is not
-      if (lread) then                   !already being used.
-        nread=nread+1
-        goto 10
-      endif
-c
-c  find last occurrence of a character other than a space
-      kp=0
-      if (hpath.ne.' ') then
-        do j=1,255
-          if (hpath(j:j).ne.' ') kp=j
-        enddo
-      endif
-c
-      do m=1,2
-        bs=char(92)
-        if (m.eq.2) bs='/'      !Try same options for a Unix system
-c  add the file path if SETPATH called
-        hfilei=hfl
-        if (kp.ne.0) then
-          if (hpath(kp:kp).ne.'/' .and. hpath(kp:kp).ne.char(92)) then
-            hfilei=hpath(1:kp)//bs//hfl
-          else
-            hfilei=hpath(1:kp)//hfl
-          endif
-        endif
-c  if your compiler reports an error message on the following line,
-c  remove the action='READ' piece and try it again.
-c  There are two more similar occurrences below.
-        open (unit=nread,file=hfilei,status='old',iostat=ioerr,
-     &        action='READ')
-        if (ioerr.eq.0) goto 11
-c
-c  try the file path with 'fluids\' added to it if SETPATH called
-        if (kp.ne.0) then
-          if (idir.ne.2) then
-            hfilei=hpath(1:kp)//'fluids'//bs//hfl  !Look in hpath\fluids directory
-            if (hpath(kp:kp).ne.'/' .and. hpath(kp:kp).ne.char(92))
-     &          hfilei=hpath(1:kp)//bs//'fluids'//bs//hfl
-          else
-            hfilei=hpath(1:kp)//'mixtures'//bs//hfl
-            if (hpath(kp:kp).ne.'/' .and. hpath(kp:kp).ne.char(92))
-     &          hfilei=hpath(1:kp)//bs//'mixtures'//bs//hfl
-          endif
-          open (unit=nread,file=hfilei,status='old',iostat=ioerr,
-     &          action='READ')
-          if (ioerr.eq.0) goto 11
-        endif
-      enddo
-c
-c  Loop over possible paths in DOS/Windows and UNIX machines
-c  and try upper/lower case scenarios.
-c  01-13-05 WLJ at ORNL
-      do m=1,4
-        bs=char(92)
-        if (m.ge.3) bs='/'      !Try same options for a Unix system
-        do k=1,6
-          if (idir.ne.2) then
-            if (k.eq.1) hfilei=' '                             ! Current directory
-            if (k.eq.2) hfilei='fluids'//bs                    ! Fluids subdirectory
-            if (k.eq.3) hfilei=bs//'refprop'//bs//'fluids'//bs ! From \Refprop\Fluids\
-            if (k.eq.4) hfilei='..'//bs//'fluids'//bs          ! From ..\Fluids\
-            if (k.eq.5) hfilei=':fluids:'                      ! Mac
-            if (k.eq.6) hfilei='c:'//bs//'Program Files'//bs// ! C:\Program files\Refprop\Fluids
-     &                         'Refprop'//bs//'fluids'//bs
-          else
-            if (k.eq.1) hfilei=' '
-            if (k.eq.2) hfilei='mixtures'//bs
-            if (k.eq.3) hfilei=bs//'refprop'//bs//'mixtures'//bs
-            if (k.eq.4) hfilei='..'//bs//'mixtures'//bs
-            if (k.eq.5) hfilei=':mixtures:'
-            if (k.eq.6) hfilei='c:'//bs//'Program Files'
-     &                         //bs//'Refprop'//bs//'mixtures'//bs
-          endif
-c  find last occurrence of a character other than a space
-          kl=1
-          do j=1,255
-            if (hfilei(j:j).ne.' ') kl=j+1
-          enddo
-          hfilei(kl:)=hfl
-          hfilej=hfilei
-c  find last occurrence of bs so that only the part after bs gets upper/lower cased when k=1
-          km=1
-          do j=1,255
-            if (hfilei(j:j).eq.bs) km=j+1
-          enddo
-          if (k.eq.1 .and. km.ne.1) kl=km
-c  checks for case sensitive machines
-          do kk=1,5
-c  add the path from SETPATH to the beginning
-            if (m.eq.2 .or. m.eq.4) then
-              if (kp.ne.0) then
-                if(hpath(kp:kp).ne.'/'.and.hpath(kp:kp).ne.char(92)
-     &         .and. hfilei(1:1).ne.'/'.and.hfilei(1:1).ne.char(92))then
-                  hfilei=hpath(1:kp)//bs//hfilei
-                else
-                  hfilei=hpath(1:kp)//hfilei
-                endif
+
+
+c  Check limits of equation of state against reference state temperature.
+          if (i.gt.0) then
+            call LIMITK ('EOS',i,tref(i),0d0,0d0,Tmin,T,D,P,j,herr2)
+
+c  IIR reference state.
+            if (hrefi(i).eq.'IIR') then
+              if (Tmin.gt.273.15d0) then    !Minimum temperature of EOS is above IIR reference state temperature.
+                call ERRNUM (22,i,hrefdef(i),' ',Tmin,0d0,0d0,
+     &                       ierrsv,herrsv)
+              elseif (Tcrit(i).lt.274.15d0) then !Critical temperature is too low to use IIR reference state.
+                call ERRNUM (23,i,hrefdef(i),' ',Tcrit(i),0d0,0d0,
+     &                       ierrsv,herrsv)
+              endif
+
+c  ASHRAE reference state.
+            elseif (hrefi(i).eq.'ASH') then
+              if (Tmin.gt.233.15d0) then    !Minimum temperature of EOS is above reference state temperature.
+                call ERRNUM (24,i,hrefdef(i),' ',Tmin,0d0,0d0,
+     &                      ierrsv,herrsv)
+              elseif (Tcrit( i).lt.234.15d0) then     !Critical temperature is too low to use IIR reference state.
+                call ERRNUM (25,i,hrefdef(i),' ',Tcrit(i),0d0,0d0,
+     &                       ierrsv,herrsv)
+              endif
+
+c  NBP - Normal Boiling Point reference state.
+            elseif (hrefi(i).eq.'NBP') then
+              if (Tmin.gt.Tnbp(i)) then     !Minimum temperature of EOS is above boiling point temperature (this is a problem with CO2).
+                call ERRNUM (26,i,hrefdef(i),' ',Tmin,Tnbp(i),0d0,
+     &                       ierrsv,herrsv)
               endif
             endif
-            open (unit=nread,file=hfilei,status='old',iostat=ioerr,
-     &            action='READ')
-            if (ioerr.eq.0) goto 11
-            hfilei=hfilej
-c  try all upper case
-            if (kk.eq.1) then
-              do j=kl,255
-                kc=INDEX(lower, hfilei(j:j))
-                if (kc.ne.0) hfilei(j:j)=upper(kc:kc)
-              enddo
-c  try lower case '.fld':
-            elseif (kk.eq.2) then
-              j=INDEX(hfilei,'.FLD')
-              if (j.ne.0) then
-                hfilei=hfilej(1:j-1)//'.fld'//hfilej(j+4:255)
+
+c  If specified reference state is outside limits for component i,
+c   use default state (read in from fluid file).
+            if (ierrsv.ge.22 .and. ierrsv.le.26) then
+              ixflg=1        !Apply reference state to only the pure fluids.
+              if (hrefi(i).ne.hrefdef(i)) then
+                hrefi(i)=hrefdef(i)
+                goto 100
               endif
-              j=INDEX(hfilei,'.BNC')
-              if (j.ne.0) then
-                hfilei=hfilej(1:j-1)//'.bnc'//hfilej(j+4:255)
-              endif
-              j=INDEX(hfilei,'.MIX')
-              if (j.ne.0) then
-                hfilei=hfilej(1:j-1)//'.mix'//hfilej(j+4:255)
-              endif
-c  try all lower case
-            elseif (kk.eq.3) then
-              do j=kl,255
-                kc=INDEX(upper, hfilei(j:j))
-                if (kc.ne.0) hfilei(j:j)=lower(kc:kc)
-              enddo
-c  try upper case '.FLD'
-            elseif (kk.eq.4) then
-              j=INDEX(hfilei,'.fld')
-              if (j.ne.0) then
-                hfilei=hfilej(1:j-1)//'.FLD'//hfilej(j+4:255)
-              endif
-              j=INDEX(hfilei,'.bnc')
-              if (j.ne.0) then
-                hfilei=hfilej(1:j-1)//'.BNC'//hfilej(j+4:255)
-              endif
-              j=INDEX(hfilei,'.mix')
-              if (j.ne.0) then
-                hfilei=hfilej(1:j-1)//'.MIX'//hfilej(j+4:255)
-              endif
-            end if
-          enddo
-c         write (*,1106) hfl(i),hfl
-c1106     format (1x,'initial file specification failed:  ',a80/
-c    &            1x,'reading coefficients from file:     ',a80)
+            endif
+          endif
         enddo
-      enddo
-      ierr=101
- 11   continue
-!$OMP END CRITICAL(REFPROP_OPEN_FILE)
-      RETURN
-      end                                             !subroutine OPENFL
+
+
+
+
+
+c  Apply reference enthalpy and entropy to each component.
+c  This is for ixflag = 1; also used as initialization for ixflag = 2.
+        do i=1,nc
+          z(1:nc)=0d0
+          z(i)=1d0
+          D=Dref(i)
+          if (Tref(i).le.0.) Tref(i)=300d0
+
+c  Find bubble point at one atmosphere.
+          if (hrefi(i).eq.'NBP' .or. tref(i).eq.-1.) then
+            pnbp=101.325d0
+            call SATP (pnbp,z,1,tref(i),D,Dv,xl,xv,ierr,herr)
+
+c  Find saturated liquid or vapor density (includes ASH and IIR states).
+          elseif (pref(i).lt.0.) then
+            if (pref(i).lt.-1.99d0) then
+              call SATT (tref(i),z,2,P,Dl,D,xl,xv,ierr,herr)
+            else
+              call SATT (tref(i),z,1,P,D,Dv,xl,xv,ierr,herr)
+            endif
+
+c  Find real gas density at specified T and P.
+          elseif (hrefi(i).eq.'OTH') then
+            call TPFLSH (tref(i),pref(i),z,D,Dl,Dv,xl,xv,
+     &                  q,e,h,s,Cv,Cp,w,ierr,herr)
+
+c  Find ideal-gas density at specified T and P.
+          elseif (hrefi(i).eq.'OT0') then
+            D=pref(i)/Reos(i)/tref(i)
+          endif
+          Dref(i)=D
+
+c  Error encountered in calculating reference state.
+          if (ierr.ge.100 .or. Dref(i).le.0.) then
+            Dref(i)=1d-3
+            call ERRNUM (119,i,herr,' ',0d0,0d0,0d0,ierr,herr)
+          elseif (ierr.gt.0) then      !Ignore out of bound errors.
+            ierr=0
+          endif
+          TsvCp0=0d0         !Reset TsvCp0 to force recalculation of Cp0.
+          if (hrefi(i).eq.'OT0') then
+            call THERM0 (tref(i),Dref(i),z,ptherm,e,h,s,Cv,Cp,w,a,g)
+          else
+            call THERM (tref(i),Dref(i),z,ptherm,e,h,s,Cv,Cp,w,hjt)
+          endif
+          sref(i)=s          !Store reference entropy and enthalpy in common blocks.
+          href(i)=h
+          if (Tref(i).le.0.) Tref(i)=300d0
+        enddo
+      endif                  !End of initialization for pure components.
+
+
+
+
+
+c  Reference state applied to a mixture of a specified composition.
+      if (ixflg.eq.2 .and. nc.gt.1) then
+        hmix=0d0
+        smix=0d0
+        if (hrf2(1:2).eq.'OT') then
+          tmix=T0
+          pmix=P0
+          hmix=h0
+          smix=s0
+c  DEFault reference state - should get here only if all components have the
+c   same default reference state stored in their respective fluid files.
+        else
+          hrdef='NUL'        !Initialize pointer to default reference state.
+          if (hrf2.eq.'DEF') hrdef=hrefdef(1)
+c  IIR reference state.
+          if (hrf2.eq.'IIR' .or. hrdef.eq.'IIR') then
+            tmix=273.15d0
+            pmix=-1d0        !Code for saturated liquid
+            wmm=WMOL(x0)
+            hmix=200d0*wmm   !Reference enthalpy is 200.0 kJ/kg.
+            smix=wmm         !Reference entropy is 1.0 kJ/(kg.K).
+c  ASHRAE reference state.
+          elseif (hrf2.eq.'ASH' .or.hrdef.eq.'ASH') then
+            tmix=233.15d0
+            pmix=-1d0        !Code for saturated liquid
+          else
+c  Boiling point or unknown reference state.  Find bubble point of specified mixture.
+            pnbp=101.325d0
+            T=300d0
+            call SATP (pnbp,x0,1,T,Dmix,Dv,xl,xv,ierr,herr)
+            tmix=T
+            pmix=-1d0        !Code for saturated liquid
+          endif
+c  Check mixture reference temperature against limits.
+c  If outside limits, take average of component Tref's.
+          T=tmix
+          call LIMITX ('EOS',T,0d0,0d0,x0,Tmin,Tmax,Dmx,pmx,j,herr2)
+          if (T.lt.Tmin .or. T.gt.Tmax) tmix=SUM(x0(1:nc)*tref(1:nc))
+        endif
+
+c  Find liquid or vapor reference state density (includes IIR and ASHrae states).
+        if (pmix.lt.0.) then
+          if (pmix.lt.-1.99d0) then
+            call SATT (tmix,x0,2,P,Dl,Dmix,xl,xv,ierr,herr)
+          else
+            call SATT (tmix,x0,1,P,Dmix,Dv,xl,xv,ierr,herr)
+          endif
+        else
+c  Find density at specified T and P.
+          if (tmix.lt.1) then
+            Dmix=1d-10  !pmix/tmix/xRgas    !For T<1 K, assume the user wants h and s at a zero temperature reference state.
+          else
+            call TPFLSH (tmix,pmix,x0,Dmix,Dl,Dv,xl,xv,q,e,h,s,Cv,Cp,w,        !Get reference state density.
+     &                   ierr,herr)
+          endif
+        endif
+
+        TsvCp0=0d0      !Reset TsvCp0 to force recalculation of Cp0.
+        call THERM (tmix,Dmix,x0,P,e,h,s,Cv,Cp,w,hjt)
+c  Modify sref and href by amount needed for specified mixture to agree with s0 and h0.
+        sref(1:nc)=sref(1:nc)+s-smix
+        href(1:nc)=href(1:nc)+h-hmix
+      endif
+
+
+
+
+
+c  Flag iSetRf indicates that SETREF has been called.  It is reset to 0 each time SETUP is called.
+ 500  if (ierr.lt.100) then
+        iSetRf=1
+        ixfsav=ixflg
+        hsvref=hrf2
+        h0sav=h0
+        s0sav=s0
+        T0sav=T0
+        P0sav=P0
+        x0sav(1:nc)=x0(1:nc)
+      else
+        hsvref=' '
+      endif
+
+c  Set error flag/message with the more significant errors.
+      call SWAPERR (ierr,ierrsv,herr,herrsv)
+      iSetRef=-1
+      if (ierr.gt.0) iSetRef=ierr
+
+      end                                              subroutine SETREF
 c
 c ======================================================================
 c
-      subroutine SETPATH (hpth)
+      subroutine SETMIX (hMixNme,hFmix,hrf,ncc,hFiles,z,ierr,herr)
 c
-c  set the path where the fluid files are located
+c  Open a mixture file (e.g., R410A.mix) and read constituents and
+c  mole fractions.
 c
-c  inputs:
-c     hpth--location of the fluid files [character*255 variable]
-c           The path does not need to contain the ending "\" and it can
-c           point directly to the location where the DLL is stored if a
-c           fluids subdirectory (with the corresponding fluid files) is
-c           located there.
-c           example:  hpth='C:\Program Files\Refprop'
+c  Inputs:
+c  hMixNme--Mixture file name (character*255)
+c    hFmix--File containing mixture coefficients (character*255)
+c      hrf--Reference state (character*3); See subroutine SETUP for specifics.
 c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
-c  09-22-06 EWL, original version
-c  03-07-07 EWL, check for null character
+c  Outputs:
+c      ncc--Number of fluids in mixture
+c   hFiles--Array of file names specifying mixture components
+c           that were used to call setup (character*255)
+c        z--Array of mole fractions for the specified mixture
+c     ierr--Error flag:  0 - Successful
+c                      101 - Error in opening file
+c                     -102 - Mixture file contains mixing parameters
+c                      805 - Sum of compositions not equal to one
+c     herr--Error string (character*255)
 c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SETPATH
-c
-      include 'commons.for'
-      character hpth*(*)
-c
-      hpath=hpth
-      i=index(hpath,char(0))
-      if (i.ne.0) hpath(i:255)=' '
+c  Written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  03-27-06 EWL, original version
+
+      include 'COMMONS.INC'
+      character hrf*3,UCASE*255
+      character*255 hMixNme,hFmix,herr,herr2,hMixName,hFiles(ncmax),hfli
+      dimension z(ncmax)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SETMIX
+
+      ierr=0
+      ierr2=0
+      herr=' '
+
+      nread=12
+      hAltFluidName=' '
+      call OPENFL (0,nread,hMixNme,hfli,2,ierr,herr)
+      if (ierr.ne.0) goto 101
+      read (nread,'(a255)',err=101,end=101) hMixName
+      hname(0)=hMixName
+      hnam80(0)=hMixName
+      read (nread,*,err=101,end=101) xmw,TC,Pc,Dc  !Read in the molar mass, Tc, Pc, and Dc of the mixture.
+      read (nread,*,err=101,end=101) ncc
+      do i=1,ncc
+        read (nread,'(a255)',err=101,end=101) hFiles(i)
+        call RFFILE (hFiles(i),hFmix)
+      enddo
+      read (nread,*,err=101,end=101) (z(i),i=1,ncc)
+      sumx=SUM(z(1:ncc))
+      if (ABS(sumx-1d0).gt.1d-4 .and. sumx.gt.0. .and. ncc.gt.1)then
+        call ERRNUM (805,0,'SETMIX',' ',0d0,0d0,0d0,ierr2,herr2)
+        z(1:ncc)=z(1:ncc)/sumx
+      endif
+      read (nread,*,err=101,end=101) i
+      if (i.ne.0) call ERRNUM (-102,0,' ',' ',0d0,0d0,0d0,ierr2,herr2)
+      close (nread)
+      call SETUP (ncc,hFiles,hFmix,hrf,ierr,herr)
+      call SWAPERR (ierr,ierr2,herr,herr2)  !If no error from SETUP, return errors set above.
+      PDmixTc=Tc
+      PDmixPc=Pc
+      PDmixDc=Dc
+      ncPDmix=ncc
+      zPDmix(1:nc)=z(1:nc)
+      hPDmix=UCASE(hMixNme)
+      i=INDEX(hPDmix,'.MIX')
+      if (i.gt.0) hPDmix=hPDmix(1:i-1)
       RETURN
-      end                                            !subroutine SETPATH
+
+ 101  call ERRNUM (101,101,'SETMIX',hMixNme,0d0,0d0,0d0,ierr,herr)
+
+      end                                              subroutine SETMIX
+c
+c ======================================================================
+c
+      subroutine SETNC (ncomp)
+c
+c  Allow the user to modify the value of nc (the number of components in
+c  a mixture) so that a subset of the loaded mixtures can be used.
+c  For example, a 4 component mixture could be set up, but nc could
+c  be set to 3 to calculate properties of the mixture of the first three
+c  components.  The last component can then be used as a pure fluid.
+c  For example, SETUP could be called to load four fluids, R32.fld,
+c  R125.fld, R134a.fld, and R407C.ppf, followed by a call to SETNC(3)
+c  so that the 4th component is not used in mixture calculations.
+c  The pseudo-pure fluid equation in R407C.ppf can be accessed by calling
+c  PUREFLD(4) to get single-phase thermodynamic properties, and VLE
+c  states or transport properties that require the first three components
+c  can be obtained by calling PUREFLD(0) and setting the composition
+c  array z with the appropriate values.
+c
+c  Input:
+c    ncomp--number of components in the mixture
+c
+c  Written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  02-04-10 EWL, original version
+
+      include 'COMMONS.INC'
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SETNC
+
+      nc=ncomp
+      if (nc.gt.1 .and. heosmx.eq.'FEQ') call SETEOSMX ('HMX')
+      end                                               subroutine SETNC
+c
+c ======================================================================
+c
+      subroutine GETMOD (icomp,htype,hcode,hcite)
+c
+c  Retrieve citation information for the property models used.
+c
+c  Inputs:
+c    icomp--Pointer specifying component number;
+c           zero and negative values are used for ECS reference fluid(s)
+c    htype--Flag indicating which model is to be retrieved (character*3):
+c           'EOS' - Equation of state
+c           'CP0' - Ideal-gas heat capacity
+c           'ETA' - Viscosity
+c           'TCX' - Thermal conductivity
+c           'TKK' - Thermal conductivity critical enhancement
+c           'STN' - Surface tension
+c           'DE ' - Dielectric constant
+c           'MLT' - Melting line (i.e., freezing line)
+c           'SBL' - Sublimation line
+c           'PS ' - Vapor pressure equation
+c           'DL ' - Saturated liquid density equation
+c           'DV ' - Saturated vapor density equation
+c
+c  Outputs:
+c    hcite--Component model used for property specified in htype;
+c           the first 3 characters repeat the model designation of hcode
+c           and the remaining are the citation for the source  (character*255)
+c    hcode--Component model used for property specified in htype (character*3):
+c           'FEQ' - Helmholtz energy model
+c           'ECS' - Pure fluid thermo extended corresponding states
+c           'ECS' - Extended corresponding states (all fluids)
+c           'VS1' - The 'composite' model for R134a, R152a, NH3, etc.
+c           'VS2' - Younglove-Ely model for hydrocarbons
+c           'VS4' - Generalized friction theory of Quinones-Cisneros and Dieters
+c           'VS5' - Chung et al. model
+c           'VS6' - Vesovic form of VS1 model
+c           'VS7' - Polynomial/exponential model
+c           'ECS' - Extended corresponding states (all fluids)
+c           'TC1' - The 'composite' model for R134a, R152a, etc.
+c           'TC2' - Younglove-Ely model for hydrocarbons
+c           'TC5' - Predictive model of Chung et al. (1988)
+c           'ST1' - surface tension as f(tau); tau = 1 - T/Tc
+c
+c  Written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
+c  01-26-00  MM, original version
+c  06-22-16 EWL, shorten code
+
+      include 'COMMONS.INC'
+      character htype*3,htyp*3,hcode*3,hcite*255,UCASE*255
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::GETMOD
+
+      htyp=UCASE(htype)
+      hcite=' '
+      hcode=' '
+      if (icomp.lt.1 .or. icomp.gt.nx) RETURN
+      if (htyp.eq.'EOS') hcite=hieos(icomp) !Equation of state
+      if (htyp.eq.'CP0') hcite=hicp0(icomp) !Ideal-gas heat capacity
+      if (htyp.eq.'ETA') hcite=hieta(icomp) !Viscosity
+      if (htyp.eq.'VIS') hcite=hieta(icomp) !Viscosity
+      if (htyp.eq.'VSK') hcite=hietac(icomp)!Viscosity critical enhancement
+      if (htyp.eq.'TCX') hcite=hitcx(icomp) !Thermal conductivity
+      if (htyp.eq.'TKK') hcite=hitcxc(icomp)!Thermal conductivity critical enhancement
+      if (htyp.eq.'STN') hcite=histn(icomp) !Surface tension
+      if (htyp.eq.'DE ') hcite=hidiel(icomp)!Dielectric constant
+      if (htyp.eq.'MLT') hcite=himelt(icomp)!Melting line
+      if (htyp.eq.'SBL') hcite=hisubl(icomp)!Sublimation line
+      if (htyp.eq.'PS ') hcite=hips(icomp)  !Vapor pressure ancillary
+      if (htyp.eq.'PL ') hcite=hipl(icomp)  !Liquid pressure ancillary
+      if (htyp.eq.'DL ') hcite=hidl(icomp)  !Saturated liquid density ancillary
+      if (htyp.eq.'DV ') hcite=hidv(icomp)  !Saturated vapor density ancillary
+      hcode=hcite(1:3)
+
+      end                                              subroutine GETMOD
 c
 c ======================================================================
 c
@@ -2552,182 +1934,740 @@ c  can be calculated as if SETUP had been called for a pure fluid.
 c  Calling this routine will disable all mixture calculations.
 c  To reset the mixture setup, call this routine with icomp=0.
 c
-c  inputs:
-c   icomp--fluid number in a mixture to use as a pure fluid
+c  Input:
+c    icomp--fluid number in a mixture to use as a pure fluid
+c          (set to zero to reset)
 c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  Written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
 c  06-13-06 EWL, original version
 c  01-07-10 EWL, move most variables to subroutine RESETA
-c  02-04-10 EWL, allow icomp to be set to values greater than nc, but not
-c                greater than ncmax.  This is used for loading a mixture
-c                and a ppf file, but changing nc to that of the mixture
-c                so that the ppf is located at nc+1 (see subroutine SETNC)
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: PUREFLD
-c
-      include 'commons.for'
-c
-      call RESETA
+c  02-04-10 EWL, allow icomp to be set to values greater than nc, but not greater than ncmax; see subroutine SETNC
+
+      include 'COMMONS.INC'
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::PUREFLD
+
+      call RESETA (0)
       icnc=0
       if (icomp.ge.0 .and. icomp.le.ncmax) icnc=icomp
-c
-      RETURN
-      end                                            !subroutine PUREFLD
+      end                                             subroutine PUREFLD
 c
 c ======================================================================
 c
-      subroutine SETNC (ncomp)
+      subroutine GERG04 (ncomp,iFlag,ierr,herr)
 c
-c  Allow the user to modify the value of nc (the number of components in
-c  a mixture) so that a subset of the full setup can be used.
-c  For example, a 5 component mixture could be set up, but nc could
-c  be set to 3 to calculate properties for just the first three components.
-c  This also allows a mixture to be setup with one or more pure fluids
-c  loaded after the components in the mixture.  For example, R407C could
-c  be loaded by calling setup with R32.fld, R125.fld, R134a.fld, and R407C.ppf.
-c  The number of components would be set to 3, and PUREFLD would be called
-c  to access the properties from component 4, the pseudo-pure fluid equation.
+c  This is a duplicate of the GERG08 routine below, and is meant only for use
+c  with older versions of Refprop.
 c
-c  inputs:
-c   ncomp--number of components in the mixture
-c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
-c  02-04-10 EWL, original version
-c
-cx DEC$ ATTRIBUTES DLLEXPORT :: SETNC
-c
-      include 'commons.for'
-c
-      nc=ncomp
-      RETURN
-      end                                              !subroutine SETNC
+      include 'COMMONS.INC'
+      character*255 herr
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::GERG04
+
+      call GERG08 (ncomp,iFlag,ierr,herr)
+      end                                              subroutine GERG04
 c
 c ======================================================================
 c
-      subroutine RESETA
+      subroutine GERG08 (ncomp,iFlag,ierr,herr)
 c
-c  Reset all variables that store saved properties so that new
-c  new calculations are made regardless of previous inputs.
+c  Use the GERG 2008 formulation for all pure fluid and mixture calculations.
 c
-c  written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  This subroutine must be called before SETUP; it need not be called at all
+c  if the default (NIST-recommended) models are desired.  To turn off
+c  the GERG settings, call this routine again with iFlag=0, and then call
+c  the SETUP routine to reset the parameters of the equations of state.
+c  Once this routine is called, it need not be called again to keep the
+c  GERG08 model active, even when calling SETUP.
+c
+c  Inputs:
+c    ncomp--Number of components (no longer used)
+c    iFlag--Set to 1 to load the GERG 2008 equations, set to 0 for defaults
+c
+c  Outputs:
+c     ierr--Error flag:  0 - Successful
+c     herr--Error string (character*255) (returned from SETMOD)
+c
+c  Written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  01-24-07 EWL, original version
+c  07-10-13 EWL, change 'DEF' to 'NBS' when iFlag=0
+c  04-04-16 EWL, copy the GERG04 routine and label it GERG08 here
+
+      include 'COMMONS.INC'
+      character*255 herr
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::GERG08
+
+      ierr=ncomp   !Keep the compiler happy since ncomp is no longer used.
+      ierr=0
+      herr=' '
+      ig=iGERG08
+
+c The code below defines the use of the iGERG08 variable.  For internal use only: Use the
+c  logical flag lGERG08 to determine if the GERG model is active or not.
+
+c  Turn GERG off
+      if (iFlag.le.0) then
+        if     (iGERG08.eq.2) then
+          iGERG08=-1         !Set to -1 to indicate that the GERG is on, but will be turned off on the next call to SETUP.
+        elseif (iGERG08.eq.1) then
+          iGERG08=-1         !Set to -1 to indicate that the GERG was waiting to be turned on, but this call resets that request.
+        elseif (iGERG08.eq.-1) then
+                             !Do nothing, the code is waiting for SETUP to be called to deactivate the GERG model.
+        endif
+
+c  Turn GERG on
+      else
+        if     (iGERG08.ge.1) then
+                             !Do nothing, the code is either waiting for SETUP to be called to activate the GERG model or it is currently active.
+        elseif (iGERG08.eq.0) then
+          iGERG08=1          !Set to 1 to indicate that the GERG will be turned on during the next call to SETUP.
+        elseif (iGERG08.eq.-1) then
+          iGERG08=1          !Set to 1 to indicate that the GERG was waiting to be turned off, but this call resets that request.
+        endif
+
+      endif
+
+      if (iGERG08.eq.-1 .or. iGERG08.eq.1) iReset=1  !Turn on the iReset flag if the GERG08 equation will be turned on or off on the next call to SETUP.
+
+c  Check if AGA8 is active.
+      if (lAGA8 .and. (iGERG08.eq.-1 .or. iGERG08.eq.1)) then
+        call ERRNUM (809,0,'GERG08',' ',0d0,0d0,0d0,ierr,herr)
+        iGERG08=ig
+      endif
+      end                                              subroutine GERG08
+c
+c ======================================================================
+c
+      subroutine SETREFDIR (hpth)
+c
+c  Set a path to the location of original fluid files so that a user
+c  can specify where their fluid file is located, but the reference
+c  files needed for transport properties, etc., such as nitrogen.fld,
+c  can be found.
+c
+c  Input:
+c     hpth--Location of the fluid files (character*255)
+c           The path does not need to contain the ending "\".
+c           For example:  hpth='C:\Program Files\Refprop\fluids'
+c
+c  written by Tobias Loew, tobi@die-loews.de, to allow fluids in arbitrary directories.
+c  02-10-18  TL, original version
+
+      include 'COMMONS.INC'
+      character hpth*(*),REMOVENUL*255
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::SETREFDIR
+
+      hrefdir=hpth
+      hrefdir=REMOVENUL(hrefdir)
+      if (hrefdir.ne.' ') then
+        call FINDLAST (hrefdir,' ',-255,kPTH)
+        if (kPTH.ne.0 .and. kPTH.ne.255) then
+          if (hrefdir(kPTH:kPTH).ne.CHAR(92) .and.
+     &        hrefdir(kPTH:kPTH).ne.CHAR(58) .and.
+     &        hrefdir(kPTH:kPTH).ne.CHAR(47)) then
+              hrefdir(kPTH+1:kPTH+1)=CHAR(92)
+          endif
+        endif
+      endif
+
+      end                                           subroutine SETREFDIR
+c
+c ======================================================================
+c
+      subroutine GETREFDIR (hpth)
+c
+c  Get the path where the original fluid files are located.  See
+c  SETREFDIR for more information.
+c
+c  Output:
+c     hpth--Location of the original fluid files (character*255)
+c
+c  written by Tobias Loew, tobi@die-loews.de
+c  02-10-18  TL, original version
+
+      include 'COMMONS.INC'
+      character hpth*(*)
+ccDEC$ ATTRIBUTES DLLEXPORT, Decorate::GETREFDIR
+      hpth=hrefdir
+      end                                           subroutine GETREFDIR
+c
+c ======================================================================
+c
+      subroutine RFFILE (hfilei,hflref)
+c
+c  Provide a full path specification for the fluid file for the ECS
+c  reference fluid, e.g., if 'C:\REFPROP\fluids\r123.fld' is the input,
+c  and the reference fluid pointer stored in the file is 'r134a.fld',
+c  then return 'C:\REFPROP\fluids\r134a.fld' as the output.
+c
+c  This routine assumes that the reference fluid file is in the same
+c  directory as the component file(s).
+c
+c  Inputs:
+c   hfilei--File name specifying the pure fluid or mixture component (character*255)
+c   hflref--File name specifying the reference fluid (character*255)
+c
+c  Output:
+c   hflref--Modified value of the input sent in hflref with the directory
+c           information from hfilei.
+c
+c  Written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
+c  12-14-95  MM, original version
+c  02-22-07 EWL, check for null character in input string
+c  02-10-18  TL, allow different reference fluid directory
+c
+      include 'COMMONS.INC'
+      character*255 hfilei,hflref,UCASE,REMOVENUL
+
+c  Special case if component data is read from block data.
+      if (UCASE(hfilei(1:5)).eq.'BDATA') RETURN
+      if (INDEX(hflref,CHAR(92)).ne.0 .or.
+     &    INDEX(hflref,CHAR(58)).ne.0 .or.
+     &    INDEX(hflref,CHAR(47)).ne.0) RETURN
+
+c Added by T. Loew to allow an input fluid and a reference fluid to be
+c  located in different directories.
+      if (hrefdir.ne.' ') then
+        call FINDLAST (hrefdir,' ',-255,kPTH)
+        hflref=hrefdir(1:kPTH)//hflref
+        RETURN
+      endif
+
+c  Search for directory delimiters ('\', ':', '/'  for DOS, Macintosh, and Unix, respectively).
+      hfilei=REMOVENUL(hfilei)
+      i=INDEX(hfilei,CHAR(92),.true.)
+      if (i.eq.0) i=INDEX(hfilei,'/',.true.)
+      if (i.eq.0) i=INDEX(hfilei,':',.true.)
+      if (i.gt.0) hflref=hfilei(1:i)//hflref     !A file path was provided in the specification of the component *.fld file.  Attach this to the reference *.fld file name.
+
+      end                                              subroutine RFFILE
+c
+c ======================================================================
+c
+      subroutine OPENFL (icomp,nread,hflIn,hflOut,idir,ierr,herr)
+c
+c  Open a file for input.
+c
+c  Inputs:
+c    icomp--Component number.
+c    nread--Unit number
+c    hflIn--File name (character*255)
+c     idir--File is a '.fld' file if set to 1
+c           file is a '.mix' file if set to 2
+c
+c  Outputs:
+c   hflOut--File name read in
+c     ierr--Error flag:  0 - Successful
+c                      101 - Error in opening file
+c     herr--Error string (character*255)
+c
+c  The default location for the file is either the current directory
+c    or the directory specified by SETPATH if it was called.  If not
+c    found, then look in the Fluids subdirectory.  If still not found,
+c    use the delimiters "/" and ":" to search in the same directories
+c    on Unix and Mac machines.
+c
+c  If the file is still not found, the following sequence of locations
+c    is searched to attempt to find the file
+c      1 - Current directory
+c      2 - Fluids\*.fld
+c      3 - RPprefix\Fluids\*.fld     (where RPprefix is the string contained in the Windows's environment variable)
+c      4 - \Refprop\Fluids\*.fld
+c      5 - C:\Program files\Refprop\Fluids\*.fld
+c      6 - C:\Program files (x86)\Refprop\Fluids\*.fld
+c    ("Fluids" is replaced with "Mixtures" if the input variable idir is equal to 2.)
+c
+c  Although #1 and #2 appear to be the same as the initial search, they differ
+c    in that the path is not used in the attempt to find the files.
+c
+c  If these fail, the last backslash character in options 1-8 above is replaced
+c    first with the slash character and then with a colon to search on Unix
+c    and Mac machines.
+c
+c  For case sensitive machines, the following upper and lower case scenarios
+c    are tried for the fluid name.
+c      All upper case.
+c      All lower case.
+c      File extension as upper case.
+c      File extension as lower case.
+c    (The case of the path is not changed when it is added before the file name.)
+c
+c  If the path is given, either in the input variable or by calling
+c    SETPATH, then only search in the path and the subdirectory 'fluids'
+c    in the path.  Assuming the file is found, the reference fluids are then
+c    loaded, but do not have to be in the path but can be in any of the
+c    directories discussed above.
+c
+c  Written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
+c  08-10-06 EWL, original version (with code taken from old SETFLD)
+c  10-17-13 EWL, add check for (x86) in directory name
+c  01-15-15 IHB, add check for directory in RPprefix environment variable
+c  07-11-15 EWL, rework code
+c  02-28-18 EWL, rework code again...
+
+      include 'COMMONS.INC'
+      character b*1,bs*1,hbs*1,hfm(2)*8,hfmm*10
+      character*255 herr,hflIn,hflOut,hfld,hInPath,hfilej,hTmp,RPprefix
+      character*255 UCASE,LCASE,LTRIM,CHANGEALL,hFLDarray(150)
+
+      ierr=0
+      herr=' '
+      hbs=CHAR(92) !Code character for backslash.  Use CHAR(92) everywhere to work with all compilers.
+      hfld=hflIn
+      iFLDarray=0
+
+c  Check if requested file is a fluid file or a mixture file.
+      im=8
+      hfm(1)='fluids'
+      hfm(2)='FLUIDS'
+      if (idir.eq.2) then
+        im=10
+        hfm(1)='mixtures'
+        hfm(2)='MIXTURES'
+      endif
+      b='?'
+
+c  Check for ^M in filename caused by binary download to UNIX machines.
+      j=INDEX(hfld,CHAR(13))
+      if (j.ne.0) hfld=hfld(1:j-1)//hfld(j+1:)
+
+c  Check the RPprefix environment variable as a potential place to get fluid
+c   files.  The following two lines can be commented out if a specific compiler
+c   does not recognize the code.
+      if (kRPx.eq.0) then
+        call GETENV ('RPprefix',RPprefix)
+        RPprefix=LTRIM(RPprefix)
+        call FINDLAST (RPprefix,'     ',-255,kRPx)    !Find the last occurrence of a character other than a space in the RPprefix environment variable.
+        if (kRPx.ne.0) then                           !Strip the backslash from the end of the RPprefix variable.
+          if (RPprefix(kRPx:kRPx).eq.hbs) kRPx=kRPx-1
+        endif
+        if (kRPx.eq.0) kRPx=-1    !Once done, if there is no RPprefix environment variable, set kRPX to -1 to not repeat this code.
+      endif
+
+c  Find the last occurrence of a character other than a space in the path (set
+c   in the call to SETPATH).
+      call FINDLAST (hpath,'     ',-255,kPTH)
+      if (kPTH.gt.0) then         !Strip the slash or backslash from the end of the path.
+        if (hpath(kPTH:kPTH).eq.'/' .or. hpath(kPTH:kPTH).eq.':' .or.
+     &      hpath(kPTH:kPTH).eq.hbs) kPTH=kPTH-1
+      endif
+
+c  Extract the path out of the input string sent to the routine.
+      hInPath=' '
+      call FINDLAST (hfld,hbs,1,kIPTH)
+      if (kIPTH.eq.0) call FINDLAST (hfld,'/',1,kIPTH)
+      if (kIPTH.eq.0) call FINDLAST (hfld,':',1,kIPTH)
+      if (kIPTH.gt.0) then
+        kIPTH=kIPTH-1
+        hInPath=hfld(:kIPTH)
+        hfld=hfld(kIPTH+2:)       !Set hfld to the fluid file name without any path.
+        if (icomp.le.nx) kPTH=0   !If path sent in input string, don't look at that sent to SETPATH.
+      endif
+      call FINDLAST (hfld,'      ',-255,kFLD)
+
+c  Add ".FLD" if no extension is already given and there's no period in the last four characters of the file name.
+      ii=kFLD
+      if (ii.le.3) ii=4
+      hTmp=UCASE(hfld(ii-3:kFLD))
+      if(hTmp.ne.'.FLD' .and. hTmp.ne.'.BNC' .and.
+     &   hTmp.ne.'.MIX'.and.INDEX(hTmp,'.').eq.0) hfld(kFLD+1:)='.FLD'
+
+c  Open the file (but first add the paths, etc., to the file name).
+      mm3=1
+      if (hAltFluidName.ne.' ' .and. hAltFluidName.ne.hfld) mm3=2    !Check if an alternate fluid file name was found in CHKNAMES.
+      if (icomp.gt.nx) mm3=1
+      do m1=1,2         !Loop over fluids and FLUIDS subdirectories.
+      do m2=1,3         !Loop over the various machine dependent delimiters.
+      do m3=1,mm3       !Loop between the input file name and the alternate file name.
+
+                      hfilej=hfld                !Use the input file name first.
+        if (m3.eq.2)  hfilej=hAltFluidName       !Use the alternative name from CHKFLUIDS (such as n-pentane --> pentane) next.
+
+c  Try all three machine dependent delimiters.
+                      bs=hbs      !Backslash
+        if (m2.eq.2)  bs='/'      !Try same options for a Unix system.
+        if (m2.eq.3)  bs=':'      !Try same options for a Mac.
+        hfmm=b//hfm(m1)(:im-2)//b
+
+c  Search in the path set by the call to SETPATH.
+        if (m1.eq.1) then         !Search only on the first pass through for m1.
+          if (kIPTH.gt.0) then
+            hflOut=hInPath(1:kIPTH)//bs//hfilej  !Add to the fluid file the directory sent to the routine.
+            call OPENFL2 (nread,iFLDarray,0,ioerr,hflOut,hFLDarray)
+            if (ioerr.eq.0) RETURN               !***File found, return to main routine***
+          elseif (kPTH.gt.0) then
+            hflOut=hpath(1:kPTH)//bs//hfilej     !Add to the fluid file the directory set by the call to SETPATH.
+            call OPENFL2 (nread,iFLDarray,0,ioerr,hflOut,hFLDarray)
+            if (ioerr.eq.0) RETURN
+          endif
+        endif
+
+c  If file is not found, look in the Fluids\ (or 'Mixtures\') directory (and first add the path if SETPATH was called).
+        if (kIPTH.gt.0) then
+          hflOut=hInPath(:kIPTH)//hfmm(:im)//hfilej
+        elseif (kPTH.gt.0) then
+          hflOut=hPath(:kPTH)//hfmm(:im)//hfilej !Look in hpath\Fluids directory.
+        else
+          hflOut=hfmm(2:im)//hfilej              !Look in the Fluids subdirectory.
+        endif
+        hflOut=CHANGEALL(hflOut,b,bs)
+        call OPENFL2 (nread,iFLDarray,m1-1,ioerr,hflOut,hFLDarray)
+        if (ioerr.eq.0) RETURN
+      enddo
+      enddo
+
+c  File was not found in default directory, try other locations to find the file by
+c   looping over possible paths in Windows, UNIX, and Mac machines, and trying upper/lower
+c   case scenarios.
+      mm2=4
+      if (ihPath.eq.2) goto 500                  !File not found and flag to quit when this happens has been activated.
+      if (kPTH.gt.0 .or. kIPTH.gt.0) mm2=3       !File not found and a path was specified (i.e., don't look in other directories).
+      if (icomp.gt.nx) mm2=4                     !Search everywhere for reference fluids.
+      ik=6
+      if (ihPath.eq.1 .or. kIPTH.gt.0 .or. kPTH.gt.0) ik=2 !If a path exists, don't check all the extra directories below.
+      if (icomp.gt.nx) ik=6
+      do m2=1,mm2  !Loop over the various machine dependent delimiters
+      do m3=1,mm3  !Loop between the input file name and the alternate file name
+                     bs=hbs
+        if (m2.eq.2) bs='/'       !Try same options for a Unix system.
+        if (m2.eq.3) bs=':'       !Try same options for a Mac.
+        do k=1,ik
+          if (m2.ne.4) then
+                      hflOut=' '                                          !Current directory
+            if(k.eq.2)hflOut=                                 hfmm(2:im)  !Fluids subdirectory
+            if(k.eq.3.and.kRPx.gt.0)hflOut=  RPprefix(1:kRPx)//hfmm(:im)  !Use the RPprefix environmental variable appended with "Fluids\".
+            if(k.eq.4)hflOut=                      '?Refprop'//hfmm(:im)  !\Refprop\Fluids\
+            if(k.eq.5)hflOut=      'c:?Program Files?Refprop'//hfmm(:im)  !C:\Program files\Refprop\Fluids
+            if(k.eq.6)hflOut='c:?Program Files (x86)?Refprop'//hfmm(:im)  !C:\Program files (x86)\Refprop\Fluids
+            if (ik.le.2) then
+              if (kPTH.gt.0) hflOut=hpath(1:kPTH)//b//hflOut
+              if (kIPTH.gt.0) hflOut=hInPath(1:kIPTH)//b//hflOut
+            endif
+            hflOut=CHANGEALL(hflOut,b,bs)
+
+            !Try the different directories listed above.
+            call FINDLAST (hflOut,' ',-255,kl)   !Find last occurrence of a character other than a space.
+            hflOut(kl+1:)=hfld                   !Append fluid name after the part specified in k=1 to 7 above.
+            if (m3.eq.2) hflOut(kl+1:)=hAltFluidName
+            hfilej=hflOut
+            call OPENFL2 (nread,iFLDarray,0,ioerr,hflOut,hFLDarray)
+            if (ioerr.eq.0) RETURN               !***File found, return to main routine***
+          endif
+
+c  Find last occurrence of the delimiter so that only the part after it gets
+c   upper/lower cased when k=1.  This happens only when a path is sent in the
+c   character string for the fluid name (e.g., 'c:\refprop\fluids\r134a.fld').
+          if (k.eq.1) call FINDLAST (hflOut,bs,1,kl)
+
+c  Checks for case sensitive machines.
+          if (m2.ne.1) then
+            do kk=1,5
+              i=0
+              if (kk.gt.1 .or. m1.gt.1) i=1
+              if (m2.eq.4 .and. kPTH.ne.0) hflOut=hpath(1:kPTH)//hflOut
+              call OPENFL2 (nread,iFLDarray,i,ioerr,hflOut,hFLDarray)
+              if (ioerr.eq.0) RETURN             !***File found, return to main routine***
+
+c  Try all upper case.
+              if (kk.eq.1) then
+                hflOut=hfilej(1:kl)//UCASE(hfilej(kl+1:))
+c  Try all lower case.
+              elseif (kk.eq.2) then
+                hflOut=hfilej(1:kl)//LCASE(hfilej(kl+1:),255-kl)
+c  Try upper case 'FLD', 'BNC', and 'MIX'.
+              elseif (kk.eq.3) then
+                hflOut=hfilej
+                hflOut=CHANGEALL(hflOut,'.fld','.FLD')
+                hflOut=CHANGEALL(hflOut,'.bnc','.BNC')
+                hflOut=CHANGEALL(hflOut,'.mix','.MIX')
+c  Try lower case 'fld', 'bnc', and 'mix'.
+              elseif (kk.eq.4) then
+                hflOut=hfilej
+                hflOut=CHANGEALL(hflOut,'.FLD','.fld')
+                hflOut=CHANGEALL(hflOut,'.BNC','.bnc')
+                hflOut=CHANGEALL(hflOut,'.MIX','.mix')
+              endif
+            enddo
+          endif
+        enddo
+      enddo
+      enddo
+      enddo
+
+c  Routine failed to find the fluid file, exit with error number.
+ 500  ierr=101
+      hflOut=hflIn
+      end                                              subroutine OPENFL
+c
+c ======================================================================
+c
+      subroutine OPENFL2 (nread,iFLDarray,iulc,ioerr,hfilei,hFLDarray)
+c
+c  Save the file paths+names that have been tried, but failed, and
+c  don't try opening those same files again.
+
+      include 'COMMONS.INC'
+      character*255 hfilei,hFLDarray(150),CHANGEALL,hb*1
+
+      hb=CHAR(92)
+      hfilei=CHANGEALL(hfilei,hb,'/')            !Change all backslashes to forward slashes if both exist.
+
+      if (iulc.ge.1) then                        !Check if the test is for case sensitivity.
+        if (hfilei(2:3).eq.':/') RETURN          !If it starts with "c:\", etc., then the machine is not case sensitive for the current input string.
+      endif
+
+      ioerr=1
+      if (INDEX(hfilei(3:),':/').gt.0) RETURN    !Not a legitimate name if c:\ is in the middle of the filename.
+      if (hfilei(1:3).eq.'c::') RETURN
+
+      do i=1,iFLDarray
+        if (hfilei.eq.hFLDarray(i)) RETURN       !Exit if name has already been tried.
+      enddo
+
+      if (iFLDarray.lt.150) then                 !Save the file name.
+        iFLDarray=iFLDarray+1
+        hFLDarray(iFLDarray)=hfilei
+      endif
+
+      if (iDebug.eq.2) then
+        open (unit=22,file='filename.dat',access='append')
+        write (22,'(a)') hfilei                  !Write all file names and paths to a file called filename.dat.
+        close (22)
+      endif
+
+c Changed by T. Loew: Do not use INQUIRE/OPEN sequence since it is not thread-save
+c (same unit-number may be returned multiple times BEFORE being blocked by OPEN).
+c Use OPEN with NEWUNIT instead (this needs slight changes to the code, since the unit
+c returned by NEWUNIT is always negative).
+
+c  Check that unit #nread is not already being used.
+c      do i=1,100
+c        INQUIRE (unit=nread,opened=lread)
+c        if (.not.lread) EXIT
+c        nread=nread+1
+c      enddo
+
+c  For use in certain threaded applications:
+c     open (newunit=nread,file=hfilei,status='old',iostat=ioerr,
+c    &      action='READ',err=1)
+
+c  If your compiler reports an error message on the following lines,
+c   then try removing the action='READ' piece.
+      open (unit=nread,file=hfilei,status='old',iostat=ioerr,
+     &      action='READ',err=1)
+
+ 1    continue
+      end                                             subroutine OPENFL2
+c
+c ======================================================================
+c
+      subroutine GETID (icomp,iFlag,nread,hstar,htype,ierr)
+c
+c  Internal routine to read the header in each section in the fluid file.
+c
+      include 'COMMONS.INC'
+      character*255 hstr,UCASE,LTRIM
+      character h15*15,htype*3,hcn*255,htp*2,hstar*1
+      k=iFlag  !iFlag not used yet, keep the compiler happy.
+      do k=1,10000
+        read (nread,'(a)',end=102,err=102) hstr  !Read the next line in the file.
+        hstr=LTRIM(hstr)
+        h15=hstr(:1)
+        if (h15.ne.':') EXIT      !Look for special flags that begin with a colon, such as :DOI:
+        j=INDEX(hstr,'!')         !Remove anything after the explanation mark (which are just comments).
+        if (j.ne.0) hstr=hstr(:j-1)
+        j=INDEX(hstr(2:),':')     !Look for the end of the special flag (the location of the second colon).
+        if (j.eq.0) EXIT
+        hcn=UCASE(hstr(2:j))
+        hstr=LTRIM(hstr(j+2:))
+        htp=htype(1:2)
+        if (hstar.eq.'#' .or. htp.eq.'EC') then
+          i=0
+          if (htp.eq.'BW') i=1    !Extract the type of section (EOS, Viscosity, etc.)
+          if (htp.eq.'FE') i=1
+          if (htp.eq.'VS') i=2
+          if (htp.eq.'TC') i=3
+          if (htp.eq.'EC') i=4
+          if (htp.eq.'ST') i=5
+          if (htp.eq.'DE') i=6
+          if (htp.eq.'ML') i=7
+          if (htp.eq.'SB') i=8
+          if (i.gt.0 .and. hcn.eq.'DOI') hDOI(icomp,i)=hstr       !The flag :DOI: was found.
+          if (i.gt.0 .and. hcn.eq.'WEB') hWEB(icomp,i)=hstr       !The flag :WEB: was found.
+          if (i.gt.0 .and. hcn.eq.'TRUECRITICALPOINT') THEN
+            read (hstr,*) TcTrue(icomp),DcTrue(icomp)              !Equation of state critical point (where dpdd=0 and d^2pdd^2=0 at constant pressure)
+          endif
+        endif
+      enddo
+      if (h15.eq.'?') then
+        do k=1,10000                                !Skip over source comments.
+          read (nread,'(a)',end=102,err=102) h15    !The question mark must be in the first 15 characters.
+          h15=LTRIM(h15)
+          if (h15(1:1).ne.'?') EXIT                 !Exit when the question marks stop.  The ending line without a question mark is not used for anything.
+        enddo
+      endif
+      RETURN
+ 102  ierr=102
+      end
+c
+c ======================================================================
+c
+      subroutine RESETA (iFlag)
+c
+c  Reset all variables that store saved properties so that new calculations
+c  are made regardless of previous inputs, including the flag
+c  in SATSPLN enable spline calculations.  Do not include variables
+c  such as iAnc here that should be reset only when SETUP is called.
+c
+c  Input:
+c    iFlag--if 0, reset values calculated when SATSPLN was called
+c         --if 1, reset all except those calculated from the call to SATSPLN
+c         --if 2, reset all flags including those set by the call to FLAGS
+c
+c  Written by E.W. Lemmon, NIST Thermophysics Division, Boulder, Colorado
 c  01-07-10 EWL, original version
-c  02-04-10 EWL, change the ianc variable into an array
-c
-      include 'commons.for'
-c
-c  Do not include variables such as ianc here which should not be reset
-c  in general.  They belong in the call to SETUP.
-c
-      d72l=0.0d0
-      d72v=0.0d0
-      thmax=0.0d0
-      hmax=0.0d0
-      htpl=0.0d0
-      htpv=0.0d0
-      stpl=0.0d0
-      stpv=0.0d0
-      tsmax=0.0d0
-      smax=0.0d0
-      tsmin=0.0d0
-      smin=0.0d0
-      tsminm=0.0d0
-      sminm=0.0d0
-      lsatt=.false.
-      lsatp=.false.
-      icnc=0
-      ieflg=0
-      iSatFlg=0
-      iSatFlg2=0
-      do i=n0,nx
-        delsvf(i)=0.0d0
-        tausvf(i)=0.0d0
-      enddo
-c initialize saturated values
-      tsavt=0.d0
-      psavt=0.d0
-      dlsavt=0.d0
-      dvsavt=0.d0
-      kphsvt=0
-      icsavt=0
-      tsavp=0.d0
-      psavp=0.d0
-      dlsavp=0.d0
-      dvsavp=0.d0
-      kphsvp=0
-      icsavp=0
-      do i=1,ncmax
-        xsavt (i)=0.d0
-        xlsavt(i)=0.d0
-        xvsavt(i)=0.d0
-        xsavp (i)=0.d0
-        xlsavp(i)=0.d0
-        xvsavp(i)=0.d0
-        pstmin(i)=0.d0
-        pltmin(i)=0.d0
-        dltmin(i)=0.d0
-        dvtmin(i)=0.d0
-        x0sav(i)=0.d0
-      enddo
-c
-      RETURN
-      end                                             !subroutine RESETA
+c  12-17-15 EWL, add iFlag input variable
+
+      include 'COMMONS.INC'
+      include 'COMREFP.INC'
+      include 'COMFEQ.INC'
+      include 'COMANC.INC'
+      include 'COMTRN.INC'
+
+      if (ABS(iErrNum).lt.100) iErrNum=0         !Only reset if the user has not requested to always or never print error messages.
+
+      icnc     = 0
+      ieflg    = 0
+      iSatFlg  = 0
+      iSatFlg1 = 0
+      iSatFlg2 = 0
+      iTPFlg   = 0
+      ignbnd2  = 0
+      MixTyp   = 0
+      iDlDvFlg = 0
+      iUnitNumbRef=-98765    !Use to reset the checks in REFSAV.
+
+      d72l   = 0d0
+      d72v   = 0d0
+      delsvm = 0d0
+      delsvf = 0d0
+      tausvm = 0d0
+      tausvf = 0d0
+      T0sav  = 0d0
+
+      Dsvph0 = 0d0
+      Tsvph0 = 0d0
+      x0sav  = 0d0
+      Cp0Sav = 0d0
+      CpiSav = 0d0
+      CptSav = 0d0
+      TsvCp0 = 0d0
+      PH0sav = 0d0
+      PH1sav = 0d0
+      PH2sav = 0d0
+
+      Thmax   = -1d0
+      Temax   = -1d0
+      Tsmax   = -1d0
+      Tsmin   = -1d0
+      Tsmin2  = -1d0
+      Dhmax   = 0d0
+      Demax   = 0d0
+      Dsmax   = 0d0
+      Dsmin   = 0d0
+      Dsmin2  = 0d0
+      Hhmax   = 0d0
+      Eemax   = 0d0
+      Ssmax   = 0d0
+      Ssmin   = 0d0
+      SSmin2  = 0d0
+      lfeqsav = .false.
+      lSatTP  = .false.
+      l2phase = .false.
+      itrnflag=0
+      hmixsav = ' '
+      DatTmaxSpln=0d0
+      DatTminSpln=0d0
+      Rxgas=xRgas
+      hrefdir=' '
+
+      if (iFlag.ge.1) then
+        narr=0
+        ierrCrt=0
+        iSpline=0
+        zSpln=0d0
+        crtT=0d0
+        crtP=0d0
+        crtD=0d0
+        PmxT=0d0
+        PmxP=0d0
+        Pmxd=0d0
+        TmxT=0d0
+        TmxP=0d0
+        Tmxd=0d0
+      endif
+
+c  Turn off all flags set by the call to FLAGS.
+      if (iFlag.ge.2) then
+        lErrSwt =.false.
+        lSkipRef=.false.
+        lSkipECS=.false.
+        lCache1 =.true.
+        lCache2 =.true.
+        hRef3='DEF'
+        iReset  =1
+        ihPath  =0
+        ignbnd  =0
+        iDebug  =0
+        iPX0flg =0
+        iErrNum =0
+        kijzero =0
+        iErrPrnt=0
+        iSetRef2=0
+        itrnflag=0
+        call PREOS (0)
+      endif
+
+      end                                              subroutine RESETA
 c
 c ======================================================================
 c
       block data BDSET
 c
-c  This block data initializes the common blocks which save input
-c  arguments to SETUP and SETREF.  This is done to check if arguments
-c  are unchanged since previous call; if so, routine can be bypassed.
+c  Initialize variables in the common blocks.
 c
-c  written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
+c  Written by M. McLinden, NIST Thermophysics Division, Boulder, Colorado
 c  01-10-96  MM, original version
-c  01-16-96  MM, add saves for SETREF
-c  02-27-96  MM, parameter n0=-ncmax to accommodate ECS-thermo model
-c  03-20-96  MM, changes to accommodate SETMOD:  initialize /TRNMOD/
-c                initialize heos, etc to 'NBS'
-c  03-21-96  MM, replace /MODEL/ with /EOSMOD/, /STNMOD/, /REFST/
-c  03-22-96  MM, initialize hetamx,htcxmx,hsten to 'NBS', rather than 'NUL'
-c  03-27-96  MM, ditto for component models, hmxeos,hetamx,htcxmx,hstenk
-c  02-20-97  MM, initialize default ref states in /REFST/
-c  03-28-97  MM, add /RESETM/ and set lreset=.true. so that models are
-c                initialized by call to SETMOD rather than here
-c  07-15-97  MM, move /FLAGS/ here from ftn_pas.f
-c  11-25-97  MM, insert 2 extra 9's into the funny numbers in /FLAGS/
-c  12-16-97  MM, set last open variable in /FLAGS/ to 'error'
-c  12-01-98 EWL, add default for iprnterr
-c  07-10-06 EWL, move any variables set to 'NUL' to beginning of SETUP
-c                to comply with ANSI standards
-c
-      include 'commons.for'
-      data nc,icnc /2*0/
-      data lreset /.true./ !reset all models on 1st call to SETUP/SETMOD
-      data lrst /.false./
-      data linit /.true./
-      data x0sav /nx*0.0d0/
-      data h0sav,s0sav,t0sav,p0sav /4*0.0d0/
-      data ixfsav,ksetrf /2*0/
-      data xnota /-9.99991d6/ !flag indicating 'not applicable'
-      data x2ph  /-9.99992d6/ !flag indicating '2-phase'
-      data xsubc /-9.99993d6/ !flag indicating 'subcooled'
-      data xsuph /-9.99994d6/ !flag indicating 'superheated'
-      data xsupc /-9.99995d6/ !flag indicating 'supercritical'
-      data xinf  /-9.99996d6/ !flag indicating 'infinite'
-      data xerr  /-9.99997d6/ !flag indicating 'error'
-      data xnotd /-9.99998d6/ !flag indicating property 'not defined'
-      data xnotc /-9.99999d6/ !flag indicating property 'not calculated'
-      data iprnterr /0/
-      data iSatFlg2 /0/
-      data iGERG04 /0/
-      data hpath /' '/
-      data izero0,ione1,itwo2 /0,1,2/
-      data hmxeos /51*'NBS'/
-      end                                              !block data BDSET
-c
-c
+
+      include 'COMMONS.INC'
+      include 'COMREFP.INC'
+      data nc,icnc,ihPath,iPass,iRefExit,iDebug,kijzero,iRefSv /8*0/
+      data lSkipRef,lSkipECS,lRst,lErrSwt,lNan,lGERG08,lAGA8,
+     &     lTest,lRcnstWag,lAGA8sv /10*.false./
+      data lReset,lCache1,lCache2,lRcnst /4*.true./
+      data x0sav /nx*0d0/
+      data h0sav,s0sav,T0sav,P0sav /4*0d0/
+      data tref,Dref /nx*298.15d0,nx*1d-3/
+      data href,sref /nx*0d0,nx*0d0/
+      data TrnTj,TrnDj /2*0d0/
+      data ixfsav,iSetRf,iSetRef2,iErrNum,ignbnd,iFldMix /6*0/
+      data iErrPrnt,iSatFlg1,iSatFlg2,iGERG08,iFitter /5*0/
+      data iersav,iersav2,iersav3,ihrsav2,iUUnits(1,0) /5*0/
+      data iRDbnc,iRDmxm,kRPx,iPX0Flg,iAGA8,iReset /6*0/
+      data iPRold,iNumber,iSetup,iSetRef,ncPDmix /5*0/
+      data hsveos,hsvvis,hsvtcx,hsvstn, hsvmix,hsvref/6*'NBS'/
+      data hsveosk,hsvvisk      /nx*'NBS',nx*'NBS'/
+      data hsvstnk,hsvtcxk      /nx*'NBS',nx*'NBS'/
+      data heosk,hsvfld,hrefdef /nq*'NBS',nx*'NBS',nq*'NBS'/
+      data hpath,hFldOld,hRef3 /2*' ','DEF'/
+      data h0Ref3,s0Ref3,t0Ref3,p0Ref3 /4*300d0/
+      data iUnitTag/501*0/
+      data CALtoJ/4.184d0/
+
+      end                                               block data BDSET
+
+
 c        1         2         3         4         5         6         7
 c23456789012345678901234567890123456789012345678901234567890123456789012
 c
 c ======================================================================
-c                                                       end file setup.f
+c                                                     End file SETUP.FOR
 c ======================================================================
