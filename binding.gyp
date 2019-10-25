@@ -2,7 +2,7 @@
   "targets": [
     {
       "target_name": "node-refprop",
-      "sources": [ "src/node-refprop.cpp", "src/thermostate.cpp" ],
+      "sources": [ "src/node-refprop.cpp"],
       "include_dirs": [
 				"<!(node -e \"require('nan')\")"
 			]

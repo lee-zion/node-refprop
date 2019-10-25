@@ -33,8 +33,15 @@ binding.gyp
 
 # [Build]
 
+node-gyp configure
+node-gyp build
+or
+node-gyp rebuild
+
 # [Testing]
 
 Testing codes for build result in Javascript within mocha
+
+npm test
 
 # [Deployment]

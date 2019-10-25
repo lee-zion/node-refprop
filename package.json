@@ -14,7 +14,7 @@
     "rebuild": "node-gyp rebuild",
     "rebuild:dev": "node-gyp rebuild --debug",
     "clean": "node-gyp clean",
-    "start": "node-gyp configure && node-gyp build && mocha"
+    "start": "node-gyp clean && node-gyp configure && node-gyp build && npm test"
   },
   "license": "MIT",
   "binary": {

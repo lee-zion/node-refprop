@@ -3,18 +3,24 @@ var should = require("should");
 var assert = require("assert");
 var fs = require("fs");
 
-describe("refprop", function() {
-  it("should load without error", function() {
+describe("refprop 10.0", function() {
+  it("should give some hard-coded values", function() {
+    refprop.getFluid();
+  });
+});
+
+describe.skip("refprop 9.1", function() {
+  it.skip("should load without error", function() {
     assert.equal(refprop.setFluid("R134A"), undefined);
   });
 
-  it("should throw an error for invalid fluids", function() {
+  it.skip("should throw an error for invalid fluids", function() {
     (function() {
       refprop.setFluid("urine");
     }.should.throw());
   });
 
-  it("should compute single-phase states for pure fluids", function() {
+  it.skip("should compute single-phase states for pure fluids", function() {
     refprop.setFluid("nitrogen");
 
     var result = refprop.statePoint({ T: 273.15, P: 101.3e3 });
@@ -44,7 +50,7 @@ describe("refprop", function() {
     result.S.should.be.approximately(6.7442e3, 0.1);
   });
 
-  it("should compute two-phase states for pure fluids", function() {
+  it.skip("should compute two-phase states for pure fluids", function() {
     refprop.setFluid("isobutan");
 
     var result = refprop.statePoint({ T: 220, Q: 0.5 });
@@ -85,7 +91,7 @@ describe("refprop", function() {
     result.kV.should.be.approximately(9.6201e-3, 0.0001);
   });
 
-  it("should load without error", function() {
+  it.skip("should load without error", function() {
     refprop.setPPF("R410A");
     console.log(typeof refprop);
     console.log(refprop);
